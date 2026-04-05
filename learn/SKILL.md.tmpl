@@ -22,7 +22,7 @@ Check if learnings exist:
 ```bash
 eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
 PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
-LEARNINGS_FILE="$PROJECT_DIR/learnings.md"
+LEARNINGS_FILE="$PROJECT_DIR/learnings.jsonl"
 
 if [ -f "$LEARNINGS_FILE" ]; then
   ENTRY_COUNT=$(grep -c "^##" "$LEARNINGS_FILE" 2>/dev/null || echo "0")
