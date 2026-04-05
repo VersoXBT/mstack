@@ -1,11 +1,12 @@
 ---
 name: m-seo
 preamble-tier: 3
-version: 1.0.0
+version: 2.0.0
 description: |
   On-page SEO optimization. Takes a URL or content file and checks: title tag, meta
   description, H1/H2 structure, keyword density, internal links, image alt text,
-  schema markup, and URL structure. Outputs an actionable checklist with fixes.
+  schema markup, Core Web Vitals, cannibalization signals, mobile-first indicators,
+  and URL structure. Outputs an actionable prioritized checklist with fixes.
 allowed-tools:
   - Bash
   - Read
@@ -67,8 +68,11 @@ Extract:
 - H3 list
 - Word count (approximate)
 - All links (internal and external)
-- Image count and alt text presence
+- Image count, src filenames, and alt text presence
 - URL structure
+- Existing schema markup (`application/ld+json` blocks)
+- Viewport meta tag presence
+- Canonical tag presence
 
 ## Step 2: Title Tag Analysis
 
@@ -79,13 +83,24 @@ Check the title tag against SEO best practices:
 | Present | Pass/Fail | {found or missing} |
 | Length 50-60 chars | Pass/Fail | {current length} chars |
 | Primary keyword included | Pass/Fail | {keyword found Y/N} |
-| Keyword near start | Pass/Fail | {position} |
-| Brand name format | Pass/Fail | {format check} |
-| Click-worthy | Pass/Fail | {assessment} |
+| Keyword in first 3 words | Pass/Fail | {position} |
+| Power word present | Pass/Fail | {e.g. Best, Guide, Free, Proven, How to} |
+| Numbers or year included | Pass/Fail | {specificity signal Y/N} |
+| Brand name appended | Pass/Fail | {format: "Keyword Topic — Brand"} |
+| No keyword stuffing | Pass/Fail | {assessment} |
+| SERP preview fits | Pass/Fail | {truncation risk at ~580px / 60 chars} |
+
+**Title optimization formulas — pick the one that fits the content type:**
+- Informational: `{Primary Keyword}: {Benefit or Promise} ({Year})`
+- How-to: `How to {Task} — {N Steps / Time to complete}`
+- List: `{N} {Adjective} {Topic} [{Power word: Tips / Examples / Tools]}`
+- Commercial: `Best {Category} for {Audience} in {Year} — {Brand}`
+- Local: `{Service} in {City} | {Unique Value Prop} — {Brand}`
 
 If issues found, provide a fixed version:
-- Current: `{current title}`
-- Recommended: `{improved title}` ({char count} chars)
+- Current: `{current title}` ({current char count} chars)
+- Recommended: `{improved title}` ({new char count} chars)
+- SERP preview: `{how it appears truncated on desktop}`
 
 ## Step 3: Meta Description Analysis
 
@@ -95,9 +110,10 @@ If issues found, provide a fixed version:
 | Length 140-155 chars | Pass/Fail | {current length} chars |
 | Primary keyword included | Pass/Fail | {found Y/N} |
 | CTA or value statement | Pass/Fail | {present Y/N} |
+| Unique (not duplicate of another page) | Pass/Fail | {assessment} |
 
 If issues found, provide a fix:
-- Current: `{current meta}`
+- Current: `{current meta}` ({char count} chars)
 - Recommended: `{improved meta}` ({char count} chars)
 
 ## Step 4: Heading Structure Analysis
@@ -141,61 +157,348 @@ Recommendations:
 - {Remove {N} redundant uses — over-optimized}
 - {Add semantic variation: "keyword synonym"}
 
-## Step 6: Internal Links
+## Step 6: Keyword Cannibalization Check
+
+Cannibalization occurs when two or more pages on the same site compete for the same primary keyword, splitting ranking signals and confusing Google about which page to rank.
+
+**Detection steps:**
+
+1. Search for pages targeting the same keyword within the local file set:
+```bash
+grep -rl "{keyword}" {content directory} 2>/dev/null | head -20
+```
+
+2. If browse is available, run a site: operator search:
+```
+site:{domain} "{keyword}"
+```
+Note every URL that appears — more than 2 results is a cannibalization risk.
+
+3. Check for overlap indicators:
+   - Same keyword in `<title>` on multiple pages
+   - Same keyword in H1 on multiple pages
+   - Similar URL slugs targeting the same term
+   - Nearly identical meta descriptions
+
+**Cannibalization verdict:**
+
+| Signal | Finding |
+|--------|---------|
+| Pages with same primary keyword | {count} pages found |
+| URLs in conflict | {list} |
+| Severity | None / Low / Medium / High |
+
+**Fixes by severity:**
+- **Low (2 pages, different intent):** Add canonical tag on the weaker page pointing to the stronger; differentiate the content angle (informational vs. commercial).
+- **Medium (2-3 pages, similar intent):** 301-redirect thin or lower-traffic page to the canonical version. Consolidate content.
+- **High (3+ pages, same intent):** Full consolidation — merge content into one definitive page, 301 all others. Update internal links to point to the surviving URL.
+
+## Step 7: Internal Links & Link Equity
 
 Count: {count} internal links found
 
-Check:
-- [ ] At least 2-3 internal links to related content
-- [ ] Anchor text is descriptive (not "click here" or "read more")
-- [ ] No broken internal links (check with browse if available)
-- [ ] Most important pages linked to from this content
+**Link equity checks:**
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| At least 3 internal links to related content | Pass/Fail | {count} found |
+| Anchor text is descriptive | Pass/Fail | {generic anchors list} |
+| No "click here" / "read more" anchors | Pass/Fail | {count violations} |
+| Anchor text variety (no repeat exact anchors) | Pass/Fail | {duplicates list} |
+| No broken internal links | Pass/Fail | {checked Y/N} |
+| Pillar page linked from cluster pages | Pass/Fail | {assessment} |
+| Orphan page risk (this page linked from nowhere) | Pass/Fail | {assessment} |
+
+**Topical cluster linking — check these directions:**
+
+- **Hub → Spoke:** Does the pillar/hub page for this topic link down to this article?
+- **Spoke → Hub:** Does this article link back up to the pillar page?
+- **Spoke → Spoke:** Does this article link to at least 2 sibling articles on related subtopics?
 
 If browse is available, spot-check links:
 ```bash
 $B goto "{internal link URL}"
-# check 200 response
+# confirm 200 response
 ```
 
-Suggested internal links to add:
-1. Link to {related page} with anchor text "{suggested anchor}"
-2. Link to {related page} with anchor text "{suggested anchor}"
+**Link equity distribution note:** Pages with the most inbound internal links receive more link equity. Ensure the highest-converting pages (product pages, landing pages) are reachable within 3 clicks from the home page and receive the most internal links.
 
-## Step 7: Image Alt Text Audit
+Suggested internal links to add:
+1. Link to {related page} with anchor text "{suggested anchor}" — {why it helps}
+2. Link to {related page} with anchor text "{suggested anchor}" — {why it helps}
+3. Link to {related page} with anchor text "{suggested anchor}" — {why it helps}
+
+## Step 8: Image Optimization
 
 Images found: {count}
 Images with alt text: {count}/{total}
 Images with keyword in alt: {count}
+Images using WebP/AVIF format: {count}/{total}
+Images with explicit width/height attributes: {count}/{total}
+Images using `loading="lazy"`: {count}/{total}
 
-For each image missing alt text, suggest:
-- `alt="{descriptive text with keyword where natural}"`
+**Per-image checklist:**
 
-## Step 8: Schema Markup Check
+For each image found, assess:
+
+| Image | Alt Text | Format | Filename | Size Risk | Lazy Load |
+|-------|----------|--------|----------|-----------|-----------|
+| {img 1} | {present/missing/generic} | {jpg/png/webp/avif} | {descriptive Y/N} | {large/ok} | {Y/N} |
+
+**Alt text rules:**
+- Missing: suggest `alt="{descriptive phrase with keyword where natural}"`
+- Generic (e.g., `alt="image"`, `alt="photo"`): rewrite with context
+- Decorative images: use `alt=""` — do not describe them
+- Keyword in alt: use naturally in 1 image, avoid forcing it into every alt
+
+**File optimization rules:**
+- JPEG/PNG larger than 100 KB: flag for WebP conversion
+- WebP larger than 200 KB: flag for AVIF or compression
+- Preferred pipeline: original → WebP (primary) → AVIF (next-gen, optional) → `<picture>` element with fallback
+- Target: hero images < 200 KB, body images < 100 KB, thumbnails < 30 KB
+
+**Filename rules:**
+- Descriptive: `blue-running-shoes-mens.webp` not `IMG_4892.jpg`
+- Lowercase, hyphens only (no spaces, no underscores)
+- Include keyword in at least one filename where natural
+
+**Lazy loading rule:**
+- All images below the fold should have `loading="lazy"`
+- Hero/LCP image must NOT have `loading="lazy"` — it should load eagerly (or use `fetchpriority="high"`)
+
+## Step 9: Schema Markup
 
 Look for existing schema markup:
 ```bash
-grep -i "schema.org\|application/ld+json\|itemtype" {file} 2>/dev/null | head -10
+grep -i "schema.org\|application/ld+json\|itemtype" {file} 2>/dev/null | head -20
 ```
 
-Based on content type, recommend schema:
-- Blog post → `Article` schema
-- Product page → `Product` schema
-- FAQ section → `FAQPage` schema
-- How-to content → `HowTo` schema
+**Schema selection by content type:**
 
-Provide a basic schema snippet if missing.
+Identify the page type and apply the appropriate schema(s). Multiple schemas can coexist on one page.
 
-## Step 9: URL Structure (if URL provided)
+| Page Type | Recommended Schema | Rich Result Unlocked |
+|-----------|--------------------|----------------------|
+| Blog post / article | `Article` or `BlogPosting` | Author, date, headline |
+| FAQ section | `FAQPage` | Expandable Q&A in SERP |
+| How-to guide | `HowTo` | Step-by-step rich result |
+| Product page | `Product` + `Offer` + `AggregateRating` | Price, availability, stars |
+| Local business | `LocalBusiness` (or subtype) | Map pack, hours, phone |
+| Recipe | `Recipe` | Cook time, calories, rating |
+| Event | `Event` | Date, location in SERP |
+| Any page | `BreadcrumbList` | Breadcrumb trail in SERP |
+| Any page with reviews | `AggregateRating` | Star rating snippet |
 
-Check:
-- [ ] Keyword in URL slug
-- [ ] URL is short and readable
-- [ ] No unnecessary parameters or numbers
-- [ ] Lowercase, hyphens (not underscores)
+**Minimal schema snippets to provide when missing:**
 
-Suggest improved URL if needed.
+Article:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{title tag text}",
+  "author": { "@type": "Person", "name": "{author name}" },
+  "datePublished": "{YYYY-MM-DD}",
+  "dateModified": "{YYYY-MM-DD}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "{brand name}",
+    "logo": { "@type": "ImageObject", "url": "{logo URL}" }
+  },
+  "image": "{featured image URL}",
+  "description": "{meta description}"
+}
+```
 
-## Step 10: Compile Checklist
+FAQPage:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "{Question text}",
+      "acceptedAnswer": { "@type": "Answer", "text": "{Answer text}" }
+    }
+  ]
+}
+```
+
+HowTo:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "{title}",
+  "description": "{brief description}",
+  "totalTime": "PT{N}M",
+  "step": [
+    { "@type": "HowToStep", "name": "{Step 1 name}", "text": "{Step 1 instructions}" }
+  ]
+}
+```
+
+BreadcrumbList (add to every page):
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{homepage URL}" },
+    { "@type": "ListItem", "position": 2, "name": "{Category}", "item": "{category URL}" },
+    { "@type": "ListItem", "position": 3, "name": "{Page title}", "item": "{page URL}" }
+  ]
+}
+```
+
+Validate any existing or new schema at: `https://validator.schema.org/` or `https://search.google.com/test/rich-results`
+
+## Step 10: Core Web Vitals
+
+Core Web Vitals are Google ranking signals. Assess what is detectable from the page source; flag risks that require lab or field measurement.
+
+**Thresholds:**
+
+| Metric | Good | Needs Improvement | Poor |
+|--------|------|-------------------|------|
+| LCP (Largest Contentful Paint) | ≤ 2.5 s | 2.5–4.0 s | > 4.0 s |
+| INP (Interaction to Next Paint) | ≤ 200 ms | 200–500 ms | > 500 ms |
+| CLS (Cumulative Layout Shift) | ≤ 0.1 | 0.1–0.25 | > 0.25 |
+
+**LCP — common causes and fixes:**
+
+Check for LCP risk signals in the source:
+```bash
+grep -i "loading=\"lazy\"\|fetchpriority\|preload\|background-image" {file} 2>/dev/null
+```
+
+| LCP Risk | Fix |
+|----------|-----|
+| Hero image has `loading="lazy"` | Remove lazy; add `fetchpriority="high"` |
+| No `<link rel="preload">` for hero image | Add `<link rel="preload" as="image" href="{hero-url}">` in `<head>` |
+| Hero image is a CSS `background-image` | Move to `<img>` tag so browser can discover early |
+| Hero image is large (> 200 KB) | Compress + serve WebP/AVIF |
+| Render-blocking scripts before hero | Move `<script>` tags to end of `<body>` or add `defer`/`async` |
+| No server-side caching | Ensure static assets have `Cache-Control: max-age=31536000` |
+
+**INP — common causes and fixes:**
+
+INP replaces FID as of March 2024. It measures responsiveness to all interactions, not just the first.
+
+| INP Risk | Fix |
+|----------|-----|
+| Heavy JS on main thread | Code-split; defer non-critical JS |
+| Long tasks (> 50 ms) blocking thread | Break into smaller tasks with `scheduler.yield()` or `setTimeout` |
+| Third-party scripts (chat, analytics, ads) | Load async; use Partytown or facade patterns |
+| Unoptimized event handlers | Debounce/throttle input handlers |
+
+**CLS — common causes and fixes:**
+
+Check for CLS risk signals:
+```bash
+grep -i "width\|height\|aspect-ratio\|font-display\|@font-face" {file} 2>/dev/null | head -20
+```
+
+| CLS Risk | Fix |
+|----------|-----|
+| Images without explicit width/height | Add `width` and `height` attributes to every `<img>` |
+| Ads or embeds without reserved space | Set `min-height` on ad containers |
+| Web fonts causing FOUT/FOIT | Add `font-display: swap` to `@font-face` declarations |
+| Dynamically injected banners | Reserve space with CSS before injection |
+| Late-loading iframes | Set explicit dimensions on `<iframe>` |
+
+**CWV assessment for this page:**
+
+| Metric | Risk Signals Found | Estimated Impact |
+|--------|-------------------|-----------------|
+| LCP | {list signals or "none detected"} | {Low/Medium/High} |
+| INP | {list signals or "none detected"} | {Low/Medium/High} |
+| CLS | {list signals or "none detected"} | {Low/Medium/High} |
+
+Measurement tools: PageSpeed Insights (`pagespeed.web.dev`), Chrome DevTools > Lighthouse, CrUX Dashboard (field data).
+
+## Step 11: Mobile-First Check
+
+Google indexes the mobile version of pages. Fail any of these and rankings are at risk.
+
+```bash
+grep -i "viewport\|touch-action\|font-size\|min-height\|media" {file} 2>/dev/null | head -30
+```
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Viewport meta tag present | Pass/Fail | `<meta name="viewport" content="width=device-width, initial-scale=1">` |
+| No `user-scalable=no` in viewport | Pass/Fail | {pinch-zoom blocked Y/N} |
+| Body text ≥ 16 px | Pass/Fail | {base font size found} |
+| Tap targets ≥ 48 × 48 px | Pass/Fail | {small targets detected Y/N} |
+| No horizontal scroll (content wider than viewport) | Pass/Fail | {overflow detected Y/N} |
+| Mobile content parity (same content as desktop) | Pass/Fail | {hidden-via-CSS content detected Y/N} |
+| Interstitials/pop-ups (Google penalty risk) | Pass/Fail | {detected Y/N} |
+
+**Key fixes:**
+- Missing viewport: add `<meta name="viewport" content="width=device-width, initial-scale=1">` to `<head>`
+- Small tap targets: increase button/link padding so interactive area is at least 48 × 48 px; add `min-height: 48px`
+- Small text: set `html { font-size: 16px }` as baseline; never go below 12 px for any body text
+- Content hidden on mobile: avoid `display:none` on content that only appears on desktop — it won't be indexed
+- Intrusive interstitials: full-screen pop-ups before content loads can trigger a Google penalty; use banners instead
+
+## Step 12: Technical Quick Wins
+
+These fixes have high ROI and can be done without content changes.
+
+**Canonical tag:**
+```bash
+grep -i "canonical" {file} 2>/dev/null
+```
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| `<link rel="canonical">` present | Pass/Fail | {URL or missing} |
+| Canonical points to correct self-URL | Pass/Fail | {matches page URL Y/N} |
+| No conflicting canonicals (HTTP vs HTTPS, www vs non-www) | Pass/Fail | {assessment} |
+
+Fix: `<link rel="canonical" href="{correct page URL}">` in `<head>`.
+
+**301 redirects:**
+- Check if HTTP → HTTPS redirect is in place (if browse available, `$B goto "http://{domain}"` and confirm redirect)
+- Check if non-www → www (or vice versa) is consistent
+- Identify any redirect chains (A → B → C) and shorten to A → C
+- Flag any 302 (temporary) redirects that should be 301 (permanent)
+
+**XML sitemap:**
+```bash
+$B goto "{domain}/sitemap.xml"
+# confirm 200 response and this page URL is listed
+```
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Sitemap exists at /sitemap.xml | Pass/Fail | {found Y/N} |
+| This page URL included in sitemap | Pass/Fail | {found Y/N} |
+| Sitemap submitted to Google Search Console | Pass/Fail | {assumption — flag for user} |
+| `<lastmod>` dates are accurate | Pass/Fail | {assessment} |
+
+**robots.txt:**
+```bash
+$B goto "{domain}/robots.txt"
+```
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| robots.txt exists | Pass/Fail | {found Y/N} |
+| This page not blocked by `Disallow` | Pass/Fail | {blocked Y/N} |
+| Sitemap URL referenced in robots.txt | Pass/Fail | {found Y/N} |
+| No wildcard `Disallow: /` accidentally blocking all | Pass/Fail | {assessment} |
+
+**Page speed quick wins (no CWV tooling needed):**
+- [ ] Enable GZIP/Brotli compression on server
+- [ ] Set `Cache-Control: max-age=31536000, immutable` on static assets (JS, CSS, images)
+- [ ] Minify HTML, CSS, JS
+- [ ] Remove unused CSS (check with DevTools Coverage tab)
+- [ ] Preconnect to critical third-party origins: `<link rel="preconnect" href="{CDN or font domain}">`
+
+## Step 13: Compile Checklist
 
 Generate a prioritized fix list:
 
