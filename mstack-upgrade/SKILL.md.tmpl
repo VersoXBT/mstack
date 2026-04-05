@@ -119,7 +119,7 @@ If pull succeeded, re-run setup:
 ```bash
 INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
 cd "$INSTALL_DIR"
-bash setup/install.sh 2>/dev/null || echo "Setup script not found or failed"
+bash ./setup 2>/dev/null || echo "Setup script not found or failed"
 ```
 
 Check for errors in the setup output and report.
