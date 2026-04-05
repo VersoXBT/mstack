@@ -1,7 +1,7 @@
 ---
 name: m-ads
 preamble-tier: 3
-version: 1.0.0
+version: 1.1.0
 description: |
   Create ad campaigns for Google, Meta, or LinkedIn. Generates campaign structure,
   ad groups, headlines, descriptions, and audience targeting. Reads brand context
@@ -58,17 +58,23 @@ Based on brand.yaml audience and campaign goal, define targeting:
 
 **For Google Search:**
 - Target keywords (use brand.yaml keywords + campaign-specific)
-- Negative keywords
+- Negative keywords (see Negative Keywords section below)
 - Match types (broad, phrase, exact)
+- Audience layers: in-market segments, customer match, remarketing lists
 
 **For Meta:**
 - Demographics (age, location, interests)
 - Custom audiences (website visitors, email list)
-- Lookalike audiences
+- Lookalike audiences (1–3% for prospecting, 3–10% for scale)
+- Advantage+ audience signals: seed with your best custom audiences, let Meta optimize
+- Interest stacking vs. broad targeting: start broad with Advantage+ for new accounts
 
 **For LinkedIn:**
 - Job titles, industries, company size
 - Skills, groups, interests
+- Minimum audience size: 50,000 members (campaigns with smaller audiences won't deliver)
+- ABM targeting: upload account lists via Matched Audiences for account-based campaigns
+- Layering: combine job title + seniority + company size rather than using each alone
 
 Present targeting and get approval via AskUserQuestion.
 
@@ -91,50 +97,212 @@ Campaign: {campaign name}
     └── Ad 2: {headline focus}
 ```
 
+**Budget Allocation by Stage and Budget:**
+
+Under $500/mo (survival mode — pick one platform):
+- Google Search: 100% of budget, 1 campaign, 2–3 ad groups, exact + phrase match only
+- Meta: 100% of budget, 1 campaign, 1 ad set (Advantage+), test 2–3 creatives
+
+$500–$2,000/mo (foundation):
+- Google Search: 60% → brand keywords + 1–2 competitor keywords
+- Meta/LinkedIn: 40% → 1 prospecting campaign, 1 retargeting campaign (minimum $10/day per ad set)
+
+$2,000–$10,000/mo (growth):
+- Google Search: 40% → brand, non-brand, RLSA
+- Meta: 35% → prospecting (Advantage+), retargeting, lookalikes
+- LinkedIn (if B2B): 25% → sponsored content + lead gen forms
+- Always reserve 10–15% of budget for testing new creative/audiences
+
+$10,000+/mo (scale):
+- Diversify across all relevant platforms
+- Run full-funnel: awareness → consideration → conversion
+- Allocate 20% to testing; optimize winners into 80% of spend
+
 ## Step 3: Write Ad Copy
 
 For each ad, write platform-specific copy:
 
-**Google Search Ads:**
-- 3 headlines (30 chars each)
-- 2 descriptions (90 chars each)
-- Display URL path
-- Sitelink extensions (4)
-- Callout extensions (4)
+### Google Search Ads (Responsive Search Ads)
+
+**Character limits:**
+- Headlines 1–15: 30 characters each (spaces and punctuation count)
+- Descriptions 1–4: 90 characters each
+- Display URL path fields (2): 15 characters each
+
+**RSA best practices:**
+- Provide at minimum 15 headlines and 4 descriptions
+- Pin sparingly: only pin Headline 1 if brand name must appear; pinning reduces Google's ability to test combinations, lowering Ad Strength
+- Aim for "Excellent" Ad Strength: unique headlines, at least 1 headline with a keyword, variety in message themes
+- Use at least 3 of the following angles: price/offer, feature, benefit, social proof, CTA, urgency
+
+**Extensions (Assets):**
+- Sitelinks: 4–8, each with 25-char link text + 2 × 35-char descriptions
+- Callouts: 4–10, 25 chars each; highlight differentiators ("Free Trial", "No Setup Fee")
+- Structured snippets: list product features, service types, or brands (25 chars each value)
+- Call extension: add phone if calls are a conversion goal
+- Image extensions: 1200×628 or 1×1 ratio
+
+**Quality Score factors:**
+1. Expected CTR — is the ad relevant to the keyword?
+2. Ad relevance — does the headline contain or reflect the keyword?
+3. Landing page experience — fast load, relevant content, low bounce
+Improving QS lowers your cost-per-click and improves ad rank.
+
+**Copywriting formula per headline angle:**
+- PAS (Problem-Agitate-Solution): "Still Paying Too Much? | Prices Others Can't Match | Switch Today & Save"
+- AIDA (Attention-Interest-Desire-Action): lead with a bold stat or question, reinforce benefit, push CTA
+- Feature-Advantage-Benefit: Feature = what it is, Advantage = why it's better, Benefit = what user gains
+- Social proof: "Trusted by 10,000+ Teams | Rated 4.9★ | Join Free Today"
 
 **Meta Ads:**
-- Primary text (125 chars above fold)
-- Headline (40 chars)
-- Description (30 chars)
-- CTA button choice
-- Image/video guidance
+- Primary text: 125 characters appear above the "See More" fold (most users stop here); hard limit 1000 characters
+- Headline: 40 characters (appears below the image/video in feed)
+- Description (link description): 30 characters on mobile feed (often truncated or hidden)
+- CTA button choice: must match intent (Learn More for awareness, Sign Up/Get Quote for lead gen, Shop Now for e-commerce)
+
+**Image/video specs:**
+- Feed square: 1080×1080 px (1:1), minimum 600×600
+- Feed landscape: 1200×628 px (1.91:1)
+- Stories/Reels: 1080×1920 px (9:16), keep text out of top 14% and bottom 20%
+- Video: MP4, H.264, minimum 1080p, captions required (85% of videos watched without sound)
+- Safe text area: keep text within center 80% of image; Meta penalizes heavy-text images
+
+**Advantage+ audience signals:**
+- Upload your best-performing custom audience as the signal seed
+- Add interest categories and demographic overlays as signals, not hard filters
+- Let Meta expand beyond signals after 50+ conversions/week
+
+**Creative testing framework (test in this order):**
+1. Creative first: test 3–5 image/video concepts against the same copy and audience
+2. Copy second: once best creative found, test 2–3 primary text variations (hook differences)
+3. Audience third: test different audience signals or lookalike percentages with winning creative+copy
+4. Bidding last: test bid strategies (Cost Cap vs. Lowest Cost) only after creative and audience are stable
 
 **LinkedIn Ads:**
-- Intro text (150 chars)
-- Headline (70 chars)
-- Description (100 chars)
-- CTA choice
+- Sponsored content (single image): intro text 150 chars visible without "see more" (600 max), headline 70 chars, description 100 chars
+- Conversation ads: 60-char message body per CTA button (max 5 buttons), message text 500 chars
+- Lead gen forms: auto-populated from LinkedIn profile; limit to 3–4 fields for highest conversion rate
+- Message ads (InMail): subject 60 chars, body 1500 chars; sent from a real LinkedIn member profile for authenticity
+- Image spec (sponsored content): 1200×627 px (1.91:1); avoid text-heavy images
+- Video: 3 seconds to 30 minutes; first 3 seconds must hook; add captions
 
 Write all copy in the brand voice from brand.yaml. Avoid the brand's avoid list.
 
-For each ad group, write 2-3 ad variations for A/B testing.
+For each ad group, write 2–3 ad variations for A/B testing.
 
-## Step 4: Landing Page Alignment
+**Copywriting formula cheat sheet (apply per component):**
+
+| Formula | Use for | Example structure |
+|---------|---------|-------------------|
+| PAS | Search headlines, primary text hooks | Problem → Agitate pain → Solution |
+| AIDA | Full Meta ad copy | Attention hook → Interest (stats/story) → Desire (benefit) → Action (CTA) |
+| BAB (Before-After-Bridge) | Video scripts, primary text | Before (current pain) → After (dream outcome) → Bridge (your product) |
+| FAB (Feature-Advantage-Benefit) | Product callouts, LinkedIn descriptions | Feature: what it is → Advantage: why better → Benefit: what user gains |
+
+## Step 4: A/B Testing Plan
+
+**Test priority order (always test in this sequence):**
+1. Creative (image vs. image, video vs. static) — highest variance, fastest signal
+2. Copy (hook / primary text / headline) — second-highest impact
+3. Audience (different segments, lookalike %, interest signals)
+4. Bidding strategy (Cost Cap vs. Lowest Cost vs. Target CPA)
+
+**Statistical significance rules:**
+- Minimum 100 conversions per variant before declaring a winner (not just clicks)
+- Minimum 2 weeks of runtime to account for day-of-week variance
+- 95% confidence threshold for budget decisions; 90% acceptable for creative iteration
+- Do not pause the losing variant before significance is reached — premature pausing wastes learning
+- Google Ads: use the built-in "Drafts & Experiments" for search; Meta: use A/B Test tool in Ads Manager
+
+**Minimum budget per test cell:**
+- Google Search: $30–50/day per experiment arm (ensure 10+ conversions/day at campaign level)
+- Meta: $20–50/day per ad set; test 2–3 creatives in the same ad set (let delivery optimize)
+- LinkedIn: $50–100/day minimum per campaign; LinkedIn CPCs are high — expect longer test cycles
+
+**What to document per test:**
+- Hypothesis: "We believe [change] will improve [metric] because [reason]"
+- Control vs. variant: exact differences
+- Result: winner, lift %, confidence, and whether to roll out or iterate
+
+## Step 5: Negative Keywords (Google)
+
+**Why they matter:**
+Negative keywords prevent your ads from showing on irrelevant searches, reducing wasted spend and improving CTR. A 5–10% budget waste from missing negatives is common in new accounts.
+
+**Starter negative keyword list by category:**
+
+General (add to every campaign):
+- free, how to, tutorial, DIY, Reddit, YouTube, download, torrent, crack, cheap (if premium), jobs, careers, salary, resume
+
+B2B SaaS:
+- course, training, certification, student, university, open source, GitHub, template, example, demo (if not a CTA)
+
+E-commerce:
+- used, second hand, wholesale, bulk, aliexpress, Amazon (if not selling there), reviews
+
+Lead gen / services:
+- free consultation (if you charge), free estimate (if you charge), complaints, lawsuit, scam
+
+**Match types for negatives:**
+- Use exact match [negative keyword] for brand names you don't want blocked
+- Use phrase match "negative keyword" for topic exclusions
+- Build a shared negative keyword list in Google Ads and apply to all campaigns
+
+**Process:**
+- Week 1: Add starter negatives before launch
+- Weekly: Review Search Terms report; add irrelevant queries as negatives
+- Monthly: Review and prune over-broad negatives that may be blocking valid traffic
+
+## Step 6: Conversion Tracking
+
+**Events to track (minimum set):**
+- Macro conversions: purchase, lead form submit, demo booked, signup complete, call
+- Micro conversions: scroll depth (50%, 90%), video view (25%, 75%), pricing page visit, add-to-cart
+
+**Platform setup:**
+- Google Ads: import conversions from Google Analytics 4 (preferred) or use Google Ads tag; use enhanced conversions to improve match rates with hashed user data
+- Meta: Meta Pixel + Conversions API (server-side); CAPI is mandatory for iOS 14+ accuracy; use event deduplication via event_id
+- LinkedIn: Insight Tag for all pages; conversion events for form submits, key page visits
+
+**Attribution windows:**
+- Google default: 30-day click, 1-day view (change view-through to 0 for lead gen to avoid double-counting)
+- Meta default: 7-day click, 1-day view (reduce to 7-day click only when comparing to GA4)
+- LinkedIn default: 30-day click, 7-day view
+
+**UTM parameters (mandatory for every ad):**
+```
+utm_source={platform}       → google / meta / linkedin
+utm_medium=paid             → always "paid" for ads
+utm_campaign={campaign_name}
+utm_content={ad_variation}  → creative ID or description
+utm_term={keyword}          → Google only, use {keyword} dynamic insertion
+```
+- Build UTMs with a consistent naming convention before launch; retroactive fixes are lossy
+- Verify UTMs fire correctly in GA4 real-time view before scaling budget
+
+**Conversion deduplication:**
+- If using both platform pixels and GA4, set GA4 as the source of truth for reporting
+- For Google: use auto-tagging (gclid) + UTMs together; do not disable auto-tagging
+- For Meta: always set event_id in CAPI equal to the Pixel event_id to prevent double-counting
+
+## Step 7: Landing Page Alignment
 
 Check if the landing page matches the ad messaging:
 - Does the headline echo the ad headline?
 - Is the CTA consistent?
 - Does the page deliver on the ad's promise?
+- Does the page load in under 3 seconds? (every 1-second delay reduces conversions ~7%)
+- Is the conversion event firing on the thank-you page or confirmation state?
 
 If no landing page exists, suggest:
 > "Run `/m-landing` to create a landing page that matches these ads."
 
-## Step 5: Save Campaign
+## Step 8: Save Campaign
 
 Use AskUserQuestion:
 > "Where should I save the campaign document? (default: `campaigns/{platform}-{date}.md`)"
 
-Save the complete campaign document: targeting, structure, all ad copy, landing page notes.
+Save the complete campaign document: targeting, structure, all ad copy, negative keywords, UTM parameters, A/B test plan, and landing page notes.
 
 ## Completion
 
@@ -143,12 +311,15 @@ Report:
 - Campaign: {name}
 - Ad groups: {count}
 - Ad variations: {count}
+- Negative keywords added: {count}
+- Conversion events configured: {list}
 - File path: {path}
 
 Suggest next steps:
 - "Run `/m-landing` to create a matching landing page"
 - "Run `/m-report` to track campaign performance once it's live"
 - "Copy the ad copy into your {platform} dashboard to launch"
+- "Review the A/B test plan above — launch the winning creative test first"
 
 {{OPERATIONAL_LEARNING}}
 
