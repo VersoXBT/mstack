@@ -1,11 +1,12 @@
 ---
 name: m-learn
 preamble-tier: 1
-version: 1.0.0
+version: 2.0.0
 description: |
-  Manage marketing learnings. View all learnings, search by type or keyword, prune
-  old entries, and export. Uses mstack-learnings-search CLI. Simple utility for
-  reviewing and maintaining what mstack has learned about your marketing.
+  Manage marketing learnings. View, search, prune, export, and add entries.
+  Learnings are typed by marketing category (content, seo, social, ads, audience,
+  operational) and scored by confidence. Highlights high-confidence insights and
+  cross-project signals that should influence upcoming /m-write or /m-social runs.
 allowed-tools:
   - Bash
   - Read
@@ -25,7 +26,7 @@ PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 LEARNINGS_FILE="$PROJECT_DIR/learnings.jsonl"
 
 if [ -f "$LEARNINGS_FILE" ]; then
-  ENTRY_COUNT=$(grep -c "^##" "$LEARNINGS_FILE" 2>/dev/null || echo "0")
+  ENTRY_COUNT=$(wc -l < "$LEARNINGS_FILE" 2>/dev/null | tr -d ' ')
   echo "Learnings file found: $LEARNINGS_FILE"
   echo "Entries: $ENTRY_COUNT"
 else
@@ -35,13 +36,28 @@ fi
 
 Use AskUserQuestion:
 > "What would you like to do with your marketing learnings?
-> A) View all learnings
-> B) Search by keyword or type
-> C) Prune old or outdated entries
-> D) Export to a file
+> A) View all learnings (grouped by type, highest-confidence first)
+> B) Search by keyword or category
+> C) Prune old or low-confidence entries
+> D) Export to markdown (for team sharing or strategy docs)
 > E) Add a learning manually"
 
 STOP and wait.
+
+## Learning Categories
+
+Every learning belongs to one of these marketing-specific types:
+
+| Type | What it captures |
+|------|-----------------|
+| `content` | Topics, formats, lengths, CTAs that drive engagement or conversions |
+| `seo` | Ranking patterns, keyword clusters, algorithm changes, internal linking wins |
+| `social` | Engagement triggers, posting cadence, viral patterns per platform |
+| `ads` | Creative performance, audience segments, bidding insights, ROAS patterns |
+| `audience` | Behavioral patterns, preferences, objections, feedback signals |
+| `operational` | Tool quirks, API limits, workflow bottlenecks, process improvements |
+
+Confidence score: 1–5 (1 = anecdotal, 5 = replicated across multiple runs/campaigns).
 
 ## View All Learnings
 
@@ -53,10 +69,19 @@ If user chose A:
   echo "No learnings found."
 ```
 
-Display all entries. Summarize:
+Display entries grouped by type in this order: `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Within each group, sort highest confidence first.
+
+Summarize at the top:
 - Total entries: {count}
-- Entry types breakdown (if tagged): {type: count}
+- Breakdown: {type: count, e.g. content: 4, seo: 2, social: 6 ...}
 - Date range: {oldest to newest}
+- High-confidence items (score ≥ 4): {count} — list their one-line summaries
+
+Then highlight actionable signals:
+> **What to apply next run:**
+> - /m-write: {top content/seo insights that should influence the next piece}
+> - /m-social: {top social/audience insights that should influence the next post}
 
 ## Search Learnings
 
@@ -64,8 +89,9 @@ If user chose B:
 
 Use AskUserQuestion:
 > "What are you looking for?
-> - Type a keyword (e.g., 'Twitter', 'email', 'landing page')
-> - Or a type (e.g., 'what-worked', 'what-failed', 'audience-insight')"
+> - Keyword (e.g. 'LinkedIn', 'long-form', 'landing page', 'open rate')
+> - Category (e.g. 'content', 'seo', 'social', 'ads', 'audience', 'operational')
+> - Question (e.g. 'what content format works best', 'which channels drive signups', 'LinkedIn posting patterns that increased reach')"
 
 ```bash
 ~/.claude/skills/mstack/bin/mstack-learnings-search "{search term}" 2>/dev/null || \
@@ -73,7 +99,15 @@ Use AskUserQuestion:
   echo "No matches found."
 ```
 
-Display matching entries with context.
+Display matching entries with full context. After results, check the global learnings store for cross-project signals:
+
+```bash
+GLOBAL_LEARNINGS="${MSTACK_HOME:-$HOME/.mstack}/global/learnings.jsonl"
+grep -i "{search term}" "$GLOBAL_LEARNINGS" 2>/dev/null || true
+```
+
+If a cross-project match exists, surface it clearly:
+> **Cross-project signal:** In project {project-name}, {insight summary} — confidence {score}. This may apply here too.
 
 ## Prune Old Entries
 
@@ -83,27 +117,30 @@ If user chose C:
 cat "$LEARNINGS_FILE" 2>/dev/null
 ```
 
-Review entries and flag for pruning:
-- Entries older than 90 days that contradict newer learnings
-- Duplicate or near-duplicate insights
-- Learnings that no longer apply (old product state, deprecated channels)
+Review entries and flag for pruning using these criteria:
+- Confidence score below 3 with no reinforcement in 90+ days
+- Older than 6 months with no subsequent entry that confirmed or built on it
+- Directly contradicted by a newer, higher-confidence learning
+- Duplicate or near-duplicate of another entry (keep the higher-confidence one)
+- Tied to a deprecated channel, tool, or product state that no longer exists
 
 Present flagged entries to the user:
-> "I found {N} entries that may be outdated or redundant:
-> [list them]
+> "I found {N} entries that may be outdated, low-confidence, or redundant:
+>
+> [list each with: date, type, confidence, reason for flagging]
+>
 > Which should I remove? (comma-separated numbers, or 'all', or 'none')"
 
 STOP and wait for confirmation before removing anything.
 
 Remove approved entries:
 ```bash
-# Remove specific entries from learnings file
 # Back up first
 cp "$LEARNINGS_FILE" "${LEARNINGS_FILE}.bak"
-# Edit file to remove flagged entries
+# Remove approved lines — edit file to exclude flagged entries
 ```
 
-Report: "{N} entries removed. Backup saved to {path}.bak"
+Report: "{N} entries removed. {M} entries remain. Backup saved to {path}.bak"
 
 ## Export Learnings
 
@@ -111,13 +148,48 @@ If user chose D:
 
 Use AskUserQuestion:
 > "Where should I export the learnings?
-> A) Markdown file (default: `docs/learnings-export-{date}.md`)
+> A) Markdown file (default: `docs/learnings-export-{date}.md`) — clean format for sharing with team or pasting into strategy docs
 > B) Plain text
-> C) Tell me a path"
+> C) Custom path — tell me where"
 
+Generate the markdown export in this structure:
+
+```markdown
+# Marketing Learnings — {project name}
+Exported: {date} | Total entries: {count}
+
+## Key Insights (Confidence ≥ 4)
+{bullet list of highest-confidence learnings across all types}
+
+## By Category
+
+### Content
+{entries sorted by confidence desc}
+
+### SEO
+{entries sorted by confidence desc}
+
+### Social
+{entries sorted by confidence desc}
+
+### Ads
+{entries sorted by confidence desc}
+
+### Audience
+{entries sorted by confidence desc}
+
+### Operational
+{entries sorted by confidence desc}
+
+---
+*Generated by mstack /m-learn*
+```
+
+Write the file:
 ```bash
-cp "$LEARNINGS_FILE" "{export path}" 2>/dev/null || \
-  cat "$LEARNINGS_FILE" > "{export path}"
+cat > "{export path}" << 'EXPORT'
+{formatted markdown content}
+EXPORT
 echo "Exported to: {export path}"
 ```
 
@@ -127,19 +199,22 @@ If user chose E:
 
 Use AskUserQuestion:
 > "Describe the learning. Include:
-> 1. What you tried or observed
-> 2. The result or insight
-> 3. Type: what-worked / what-failed / audience-insight / channel-insight / other"
+> 1. What you tried or observed (be specific: channel, format, audience)
+> 2. The result or insight (include numbers if available)
+> 3. Category: content / seo / social / ads / audience / operational
+> 4. Confidence score 1–5 (1 = one-off observation, 5 = replicated multiple times)"
 
-Format and append to learnings file:
+Format and append:
 ```bash
-cat >> "$LEARNINGS_FILE" << 'EOF'
-## {date} — {type}
+cat >> "$LEARNINGS_FILE" << EOF
+## {date} — {type} — confidence:{score}
 {learning text}
 EOF
 ```
 
-Confirm: "Learning added to {path}"
+After appending, check if this learning reinforces or contradicts an existing entry. If it does, surface the related entry so the user can consider updating or pruning the older one.
+
+Confirm: "Learning added to {path} (type: {type}, confidence: {score})"
 
 ## Completion
 
@@ -147,5 +222,8 @@ Report:
 - Action taken: {action}
 - Entries processed: {count}
 - Learnings file: {path}
+- Next suggested action: {e.g. "Run /m-write — 3 high-confidence content insights are ready to apply" or "Run /m-social — LinkedIn posting pattern (confidence 4) not yet applied"}
+
+{{OPERATIONAL_LEARNING}}
 
 {{TELEMETRY}}
