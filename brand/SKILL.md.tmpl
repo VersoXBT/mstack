@@ -1,0 +1,187 @@
+---
+name: m-brand
+preamble-tier: 1
+version: 1.0.0
+description: |
+  Brand workshop — guided setup for your brand context. Defines voice, audience,
+  positioning, competitors, and channels. Creates brand.yaml that all mstack skills
+  reference for consistent messaging. Run once per project, update anytime.
+  Use when asked to "set up brand", "define brand voice", or "configure mstack".
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+# Brand Workshop
+
+## Setup
+
+Check if brand context already exists:
+
+```bash
+BRAND_EXISTS=$(~/.claude/skills/mstack/bin/mstack-brand exists)
+echo "BRAND_EXISTS: $BRAND_EXISTS"
+if [ "$BRAND_EXISTS" = "true" ]; then
+  echo "Current brand:"
+  ~/.claude/skills/mstack/bin/mstack-brand read
+fi
+```
+
+If brand exists, use AskUserQuestion:
+> "You already have a brand context configured. Do you want to:
+> A) Update it (guided walkthrough)
+> B) View it and make specific edits
+> C) Start fresh"
+
+If brand does not exist, proceed to Step 1.
+
+## Step 1: Core Identity
+
+Use AskUserQuestion:
+> "Let's set up your brand. What's the name of your product/company?"
+
+After they answer, ask:
+> "In one sentence, what does it do? (e.g., 'On-chain analytics platform for DeFi traders')"
+
+## Step 2: Target Audience
+
+Use AskUserQuestion:
+> "Who is your primary audience? Describe them in 1-2 sentences.
+> (e.g., 'DeFi developers who need real-time on-chain data for trading bots')"
+
+Then ask:
+> "What are their top 2-3 pain points?
+> (e.g., 'Slow data, fragmented tools, no alerts')"
+
+Then ask:
+> "Do you have a secondary audience? If so, describe them briefly. If not, say 'no'."
+
+## Step 3: Competitors
+
+Use AskUserQuestion:
+> "Name 2-4 competitors. For each, what's their main weakness?
+> Format: CompetitorName — weakness
+> (e.g., 'Dune — slow, query-based, not real-time')"
+
+## Step 4: Positioning
+
+Use AskUserQuestion:
+> "What makes you different from these competitors? One sentence.
+> (e.g., 'Real-time on-chain analytics built for developers, not analysts')"
+
+## Step 5: Brand Voice
+
+Use AskUserQuestion:
+> "How should your brand sound? Pick the closest match or describe your own:
+> A) Technical and precise — like Stripe's docs
+> B) Casual and friendly — like a smart friend explaining things
+> C) Bold and opinionated — like a founder's blog
+> D) Professional and authoritative — like McKinsey
+> E) Custom — describe it yourself"
+
+Then ask:
+> "Any words or phrases to AVOID in your content?
+> (e.g., 'no corporate buzzwords, no emojis, no exclamation marks')"
+
+Then ask:
+> "Paste 1-2 sentences that sound like your brand. This could be from your website, a tweet,
+> or just something you'd write. These become reference examples for AI-generated content."
+
+## Step 6: Channels
+
+Use AskUserQuestion:
+> "Which marketing channels are you actively using? (comma-separated)
+> e.g., Twitter/X, Blog, Discord, LinkedIn, Reddit, YouTube, Newsletter, TikTok"
+
+Then ask:
+> "Any channels you're planning to add? (comma-separated, or 'none')"
+
+## Step 7: Keywords (optional)
+
+Use AskUserQuestion:
+> "What are 3-5 keywords or phrases your audience searches for?
+> (e.g., 'on-chain analytics, DeFi dashboard, blockchain data API')
+> Say 'skip' if you're not sure — you can add these later with /m-keywords."
+
+## Step 8: URLs
+
+Use AskUserQuestion:
+> "Share any relevant URLs (website, social profiles, blog). One per line.
+> Say 'skip' if not ready."
+
+## Step 9: Generate brand.yaml
+
+Assemble all answers into brand.yaml format:
+
+```yaml
+name: "{name}"
+tagline: "{tagline}"
+voice:
+  tone: "{tone from step 5}"
+  personality: "{personality description}"
+  avoid: ["{avoid items}"]
+  examples:
+    - "{example sentence 1}"
+    - "{example sentence 2}"
+audience:
+  primary:
+    description: "{primary audience}"
+    pain_points: ["{pain 1}", "{pain 2}", "{pain 3}"]
+    channels: ["{channels}"]
+  secondary:
+    description: "{secondary audience or 'none'}"
+    pain_points: ["{pain points}"]
+    channels: ["{channels}"]
+positioning:
+  category: "{category}"
+  differentiator: "{differentiator}"
+  competitors:
+    - name: "{competitor 1}"
+      weakness: "{weakness}"
+    - name: "{competitor 2}"
+      weakness: "{weakness}"
+channels:
+  active: ["{active channels}"]
+  planned: ["{planned channels}"]
+keywords:
+  primary: ["{keywords}"]
+  secondary: []
+urls:
+  website: "{url}"
+```
+
+Present the generated YAML to the user. Use AskUserQuestion:
+> "Here's your brand context. Does this look right?
+> A) Yes, save it
+> B) I want to change something"
+
+If B, ask what to change, update, and re-present.
+
+## Step 10: Save
+
+Write the approved YAML to brand.yaml:
+
+```bash
+~/.claude/skills/mstack/bin/mstack-brand write << 'BRAND_EOF'
+{the approved yaml content}
+BRAND_EOF
+```
+
+## Completion
+
+Report:
+- Brand context saved to `~/.mstack/projects/{slug}/brand.yaml`
+- Fields configured: voice, audience, positioning, competitors, channels
+
+Suggest next steps:
+- "Run `/m-strategy` to build a marketing strategy based on this brand context"
+- "Run `/m-competitive` for a deeper competitor analysis"
+- "Run `/m-write` to start creating content in your brand voice"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
