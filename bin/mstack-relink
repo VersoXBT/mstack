@@ -6,15 +6,15 @@
 #
 # Env overrides (for testing):
 #   MSTACK_STATE_DIR   — override ~/.mstack state directory
-#   GSTACK_INSTALL_DIR — override mstack install directory
-#   GSTACK_SKILLS_DIR  — override target skills directory
+#   MSTACK_INSTALL_DIR — override mstack install directory
+#   MSTACK_SKILLS_DIR  — override target skills directory
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GSTACK_CONFIG="${SCRIPT_DIR}/mstack-config"
+MSTACK_CONFIG="${SCRIPT_DIR}/mstack-config"
 
 # Detect install dir
-INSTALL_DIR="${GSTACK_INSTALL_DIR:-}"
+INSTALL_DIR="${MSTACK_INSTALL_DIR:-}"
 if [ -z "$INSTALL_DIR" ]; then
   if [ -d "$HOME/.claude/skills/mstack" ]; then
     INSTALL_DIR="$HOME/.claude/skills/mstack"
@@ -30,11 +30,11 @@ if [ -z "$INSTALL_DIR" ] || [ ! -d "$INSTALL_DIR" ]; then
 fi
 
 # Detect target skills dir
-SKILLS_DIR="${GSTACK_SKILLS_DIR:-$(dirname "$INSTALL_DIR")}"
+SKILLS_DIR="${MSTACK_SKILLS_DIR:-$(dirname "$INSTALL_DIR")}"
 [ -d "$SKILLS_DIR" ] || mkdir -p "$SKILLS_DIR"
 
 # Read prefix setting
-PREFIX=$("$GSTACK_CONFIG" get skill_prefix 2>/dev/null || echo "false")
+PREFIX=$("$MSTACK_CONFIG" get skill_prefix 2>/dev/null || echo "false")
 
 # Helper: remove old skill entry (symlink or real directory with symlinked SKILL.md)
 _cleanup_skill_entry() {

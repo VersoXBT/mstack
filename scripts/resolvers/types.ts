@@ -27,9 +27,9 @@ function buildHostPaths(): Record<string, HostPaths> {
       paths[config.name] = {
         skillRoot: '$MSTACK_ROOT',
         localSkillRoot: config.localSkillRoot,
-        binDir: '$GSTACK_BIN',
-        browseDir: '$GSTACK_BROWSE',
-        designDir: '$GSTACK_DESIGN',
+        binDir: '$MSTACK_BIN',
+        browseDir: '$MSTACK_BROWSE',
+        designDir: '$MSTACK_DESIGN',
       };
     } else {
       const root = `~/${config.globalRoot}`;

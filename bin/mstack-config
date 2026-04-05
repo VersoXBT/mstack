@@ -15,7 +15,7 @@ CONFIG_FILE="$STATE_DIR/config.yaml"
 
 # Annotated header for new config files. Written once on first `set`.
 CONFIG_HEADER='# mstack configuration — edit freely, changes take effect on next skill run.
-# Docs: https://github.com/garrytan/gstack
+# Docs: https://github.com/VersoXBT/mstack
 #
 # ─── Behavior ────────────────────────────────────────────────────────
 # proactive: true           # Auto-invoke skills when your request matches one.
@@ -78,9 +78,9 @@ case "${1:-}" in
       echo "${KEY}: ${VALUE}" >> "$CONFIG_FILE"
     fi
     # Auto-relink skills when prefix setting changes (skip during setup to avoid recursive call)
-    if [ "$KEY" = "skill_prefix" ] && [ -z "${GSTACK_SETUP_RUNNING:-}" ]; then
-      GSTACK_RELINK="$(dirname "$0")/mstack-relink"
-      [ -x "$GSTACK_RELINK" ] && "$GSTACK_RELINK" || true
+    if [ "$KEY" = "skill_prefix" ] && [ -z "${MSTACK_SETUP_RUNNING:-}" ]; then
+      MSTACK_RELINK="$(dirname "$0")/mstack-relink"
+      [ -x "$MSTACK_RELINK" ] && "$MSTACK_RELINK" || true
     fi
     ;;
   list)

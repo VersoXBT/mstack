@@ -8,7 +8,7 @@
 #
 # Env overrides (for testing):
 #   MSTACK_DIR          — override auto-detected mstack root
-#   GSTACK_REMOTE_URL   — override remote VERSION URL
+#   MSTACK_REMOTE_URL   — override remote VERSION URL
 #   MSTACK_STATE_DIR    — override ~/.mstack state directory
 set -euo pipefail
 
@@ -18,7 +18,7 @@ CACHE_FILE="$STATE_DIR/last-update-check"
 MARKER_FILE="$STATE_DIR/just-upgraded-from"
 SNOOZE_FILE="$STATE_DIR/update-snoozed"
 VERSION_FILE="$MSTACK_DIR/VERSION"
-REMOTE_URL="${GSTACK_REMOTE_URL:-https://raw.githubusercontent.com/garrytan/gstack/main/VERSION}"
+REMOTE_URL="${MSTACK_REMOTE_URL:-https://raw.githubusercontent.com/VersoXBT/mstack/main/VERSION}"
 
 # ─── Force flag (busts cache + snooze for standalone /mstack-upgrade) ──
 if [ "${1:-}" = "--force" ]; then
@@ -161,11 +161,11 @@ mkdir -p "$STATE_DIR"
 # Fire Supabase install ping in background (parallel, non-blocking)
 # This logs an update check event for community health metrics via edge function.
 # If Supabase is not configured or telemetry is off, this is a no-op.
-if [ -z "${GSTACK_SUPABASE_URL:-}" ] && [ -f "$MSTACK_DIR/supabase/config.sh" ]; then
+if [ -z "${MSTACK_SUPABASE_URL:-}" ] && [ -f "$MSTACK_DIR/supabase/config.sh" ]; then
   . "$MSTACK_DIR/supabase/config.sh"
 fi
-_SUPA_URL="${GSTACK_SUPABASE_URL:-}"
-_SUPA_KEY="${GSTACK_SUPABASE_ANON_KEY:-}"
+_SUPA_URL="${MSTACK_SUPABASE_URL:-}"
+_SUPA_KEY="${MSTACK_SUPABASE_ANON_KEY:-}"
 # Respect telemetry opt-out — don't ping Supabase if user set telemetry: off
 _TEL_TIER="$("$MSTACK_DIR/bin/mstack-config" get telemetry 2>/dev/null || true)"
 if [ -n "$_SUPA_URL" ] && [ -n "$_SUPA_KEY" ] && [ "${_TEL_TIER:-off}" != "off" ]; then
