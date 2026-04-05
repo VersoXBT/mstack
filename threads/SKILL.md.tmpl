@@ -1,0 +1,199 @@
+---
+name: m-threads
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Twitter/X thread writer. Takes a topic or insight and generates a 6-12 tweet
+  thread: hook tweet, value tweets, engagement tweet, and CTA tweet. Follows brand
+  voice. Includes thread formatting advice and character counts.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for existing content that could fuel a thread:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*.md" -path "*/content/*" -o -name "*.md" -path "*/blog/*" 2>/dev/null | head -5
+```
+
+Parse the user's request. Determine:
+- Topic, insight, or existing content piece to base the thread on
+- Thread goal (educate, share a take, announce, build audience)
+
+If the topic is not clear, use AskUserQuestion:
+> "What should this thread be about?
+> A) A specific topic or concept — tell me what
+> B) Based on a piece of content I already wrote — share the file path
+> C) A take or opinion from your space
+> D) Announcing a product feature or update"
+
+Then ask:
+> "What's the core insight or main point you want readers to walk away with?"
+
+STOP and wait.
+
+## Step 1: Structure the Thread
+
+Determine thread length based on topic depth:
+- 6-7 tweets: tight insight, one main argument
+- 8-10 tweets: process or framework, step-by-step
+- 11-12 tweets: full breakdown, multiple angles
+
+Plan the structure before writing:
+
+```
+Tweet 1: Hook — make them stop scrolling
+Tweet 2: Context — why this matters or the problem
+Tweet 3-{N-2}: Value — the actual insight, step by step
+Tweet {N-1}: Engagement — question or call to action to reply
+Tweet {N}: CTA — where to go next
+```
+
+## Step 2: Write the Hook Tweet
+
+The hook is everything. Rules:
+- Make a claim, not an announcement
+- Use a specific number when possible ("7 things", "3 years of data", "1 mistake")
+- Contrarian angle if you can back it up
+- Curiosity gap: hint at the insight without giving it away
+- End with "🧵" or "(thread)" to signal there's more
+
+Write 3 hook options:
+
+**Option A — Specific claim:**
+```
+{hook tweet A}
+
+🧵
+```
+{char count}/280
+
+**Option B — Contrarian:**
+```
+{hook tweet B}
+
+🧵
+```
+{char count}/280
+
+**Option C — Direct value:**
+```
+{hook tweet C}
+
+🧵
+```
+{char count}/280
+
+Use AskUserQuestion:
+> "Which hook lands best? (A, B, or C) Or tell me what to change."
+
+STOP and wait.
+
+## Step 3: Write the Full Thread
+
+Using the approved hook, write the complete thread:
+
+---
+
+**Tweet 1 (Hook):**
+```
+{approved hook}
+```
+{char count}/280
+
+**Tweet 2 (Context/Setup):**
+```
+{why this matters, the situation, or the problem being solved}
+```
+{char count}/280
+
+**Tweet 3 (Point 1 or Step 1):**
+```
+{first insight — concrete, specific, not vague}
+```
+{char count}/280
+
+[Continue for each value tweet...]
+
+**Tweet {N-1} (Engagement):**
+```
+{question to drive replies or a relatable moment}
+```
+{char count}/280
+
+**Tweet {N} (CTA):**
+```
+{natural next step — not salesy}
+{link if relevant}
+```
+{char count}/280
+
+---
+
+Thread rules applied:
+- Each tweet works as a standalone (makes sense without the previous one)
+- No tweet starts with "So" or "Now" as filler
+- Specific examples over vague claims in every value tweet
+- Numbers and data used where available
+- No emojis unless brand.yaml allows them
+
+## Step 4: Threading Format Advice
+
+Add formatting notes:
+
+**For each tweet, note:**
+- Add tweet number at the end if the thread is long (e.g., "3/12")
+- Images: suggest where a screenshot, chart, or graphic would increase engagement
+- Quote tweet: if you're building on or responding to someone else's content
+
+**Recommended media placements:**
+- Tweet {N}: add a chart or table here
+- Tweet {N}: screenshot of your product/tool here
+
+## Step 5: Review
+
+Present the complete thread. Use AskUserQuestion:
+> "Here's the full thread ({N} tweets). What would you like to change?
+> A) Rewrite a specific tweet (tell me which number)
+> B) Adjust the tone
+> C) Make it shorter or longer
+> D) Looks good — save it"
+
+STOP and wait.
+
+## Step 6: Save
+
+Use AskUserQuestion:
+> "Where should I save this thread? (default: `social/thread-{topic-slug}-{date}.md`)"
+
+Save the thread with tweet numbers, character counts, and media suggestions.
+
+## Completion
+
+Report:
+- Thread length: {N} tweets
+- Hook type: {type used}
+- Topic: {topic}
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-social` to create single-post versions for LinkedIn, Reddit, and Instagram"
+- "Run `/m-calendar` to schedule this thread in your content calendar"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

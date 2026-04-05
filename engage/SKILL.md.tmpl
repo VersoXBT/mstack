@@ -1,0 +1,174 @@
+---
+name: m-engage
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Community engagement responses. Takes platform context — Reddit thread, Twitter
+  reply, Discord question — and generates authentic, helpful responses. Not
+  promotional. Tone-calibrated per platform. Advises when to engage vs. create.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check brand context for voice and avoid-list:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+```
+
+Parse the user's request. Determine:
+- Platform (Reddit, Twitter/X, Discord, LinkedIn, HackerNews, other)
+- The context: what was said, what thread or conversation this is in
+- Whether a URL or pasted text was provided
+
+If context is not provided, use AskUserQuestion:
+> "Share the context for this engagement. Paste:
+> 1. The platform (Reddit, Twitter, Discord, etc.)
+> 2. The original post or question
+> 3. Any existing replies (so I don't repeat what's been said)
+> 4. What you want to achieve with your response"
+
+STOP and wait.
+
+## Step 1: Assess the Context
+
+Read the provided context carefully. Determine:
+
+**What type of content is this?**
+- A question seeking advice or recommendations
+- A complaint or negative experience
+- A general discussion thread
+- A direct mention of your brand or product
+- A conversation where you can add genuine value
+
+**Who is the audience?**
+- What community is this? (tech founders, marketers, DeFi traders, etc.)
+- What do they value in responses here?
+- What would get your response downvoted or dismissed?
+
+**What's the right move?**
+- Respond with expertise (add value without promoting)
+- Respond to a direct question (answer honestly, mention your product only if genuinely relevant)
+- Skip it (if your only contribution would be promotional)
+
+Present the assessment:
+> "Platform: {platform}
+> Thread type: {type}
+> Recommended approach: {respond with expertise / respond to direct question / skip with reason}
+>
+> Should I proceed?"
+
+Use AskUserQuestion if the right approach is unclear.
+
+## Step 2: Write the Response
+
+Apply platform-specific rules:
+
+**Reddit:**
+- Lead with genuine value — answer the question or add to the discussion
+- Personal experience ("We dealt with this at our company...") beats generic advice
+- Only mention your product if it's the honest, specific answer to what was asked
+- If you mention your product: disclose the connection ("I work on X, which does this — not the only solution but worth checking")
+- No marketing language. Reddit users are highly allergic to promotional writing.
+- Match the subreddit's tone (r/entrepreneur is different from r/programming)
+
+**Twitter/X:**
+- Short, direct, adds to the conversation
+- No filler, no "Great question!"
+- Opinionated if you have an opinion — vague responses get ignored
+- If replying to criticism: acknowledge, don't defend
+
+**Discord:**
+- Match the community's energy and expertise level
+- If it's a technical question, be technical
+- If it's a casual community, be casual
+- Links to docs or resources are welcome; pitches are not
+
+**LinkedIn:**
+- More formal than Twitter, more personal than a press release
+- Adding to a professional conversation: share a specific insight
+- Avoid pure validation ("This is so true!") — add a perspective
+
+**HackerNews:**
+- Extremely high bar — factual, specific, substantive
+- Never promotional — instant downvote
+- Cite sources when making claims
+- Admit uncertainty when you're not sure
+
+Write the response:
+
+```
+{Response text}
+```
+
+Check against brand voice:
+- Matches tone setting from brand.yaml
+- No items from avoid list
+- No AI vocabulary ("crucial", "leverage", "in today's digital landscape")
+- Sounds like a real person, not a brand
+
+## Step 3: Self-Check
+
+Before presenting, verify:
+
+- [ ] Does this response give value even if the reader never visits our site?
+- [ ] Is any product mention genuinely the most helpful answer, not a plug?
+- [ ] Does it read like a human wrote it?
+- [ ] Does it match the platform's norms?
+- [ ] Would this response make the reader want to learn more about us?
+
+If any check fails, revise.
+
+## Step 4: Variants
+
+For important threads, write 2 variations:
+
+**Option A — {approach description}:**
+```
+{variant A}
+```
+
+**Option B — {approach description}:**
+```
+{variant B}
+```
+
+Use AskUserQuestion:
+> "Here's the response draft. Which version (A or B), or what would you change?"
+
+STOP and wait.
+
+## Step 5: Engagement Strategy Note
+
+Based on the thread analyzed, provide a brief strategic note:
+
+- **When to engage here again**: reply to replies? or let it breathe?
+- **Upvoting other helpful responses**: if there are good answers, upvoting them builds goodwill
+- **Follow-up opportunity**: is there a full content piece worth writing on this topic?
+- **Signal**: does this thread reveal a pain point or question worth addressing in your own content?
+
+## Completion
+
+Report:
+- Platform: {platform}
+- Thread type: {type}
+- Response length: {words}
+- Strategic note: {one-line takeaway}
+
+Suggest next steps:
+- "Run `/m-write` if this thread revealed a topic worth a full post"
+- "Run `/m-social` to create proactive content about this topic"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

@@ -1,0 +1,204 @@
+---
+name: m-social
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Social post creation. Takes a topic or content to promote and generates
+  platform-specific posts: Twitter/X, LinkedIn, Reddit, and Instagram. Respects
+  each platform's culture and character limits. Includes posting time suggestions.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for brand context and existing social content:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*social*" -o -name "*.md" -path "*/posts/*" 2>/dev/null | head -5
+```
+
+Parse the user's request. Determine:
+- What to post about (topic, announcement, content piece, feature, insight)
+- Which platforms (all by default, or specific ones)
+
+If the topic is unclear, use AskUserQuestion:
+> "What's this post about?
+> A) Promoting a piece of content (blog, guide, video)
+> B) Announcing a product update or launch
+> C) Sharing a take or insight from your space
+> D) Something else — describe it"
+
+Then ask:
+> "Which platforms?
+> A) All platforms (Twitter/X, LinkedIn, Reddit, Instagram)
+> B) Specific ones — tell me which"
+
+STOP and wait.
+
+## Step 1: Understand the Content
+
+If the user is promoting existing content, read it:
+```bash
+cat {content file path} 2>/dev/null | head -50
+```
+
+Extract:
+- Core insight or main point
+- Key stats, quotes, or specific facts
+- CTA and destination URL
+- Target audience segment
+
+If it's an announcement or original take, work from the user's description.
+
+## Step 2: Write Twitter/X Post
+
+**Format rules:**
+- Under 280 characters for standalone post
+- Hook in the first line (curiosity, contrarian claim, specific number, or call-out)
+- One clear idea — not a summary of everything
+- No hashtag spam (0-2 max, only if genuinely relevant)
+- End with a link or a question to drive replies
+
+Write 2-3 variations:
+
+**Option A — Curiosity hook:**
+```
+{tweet option A}
+```
+{char count}/280
+
+**Option B — Insight/take:**
+```
+{tweet option B}
+```
+{char count}/280
+
+**Option C — Direct announcement (if applicable):**
+```
+{tweet option C}
+```
+{char count}/280
+
+**Thread hook (if this deserves a thread):**
+```
+{hook tweet that makes people want to read more}
+```
+→ If you want the full thread, run `/m-threads`
+
+**Best time to post:** Tuesday-Thursday, 9am-11am or 5pm-7pm in your main audience timezone.
+
+## Step 3: Write LinkedIn Post
+
+**Format rules:**
+- Up to 1,300 characters (LinkedIn cuts off at 3 lines without "see more")
+- First 2 lines must earn the click to expand
+- Professional but not stiff — insight-forward
+- Line breaks every 1-2 sentences (easy to scan on mobile)
+- End with 1 question to drive comments or a specific takeaway
+- 3-5 hashtags at the end
+
+```
+{LinkedIn post — full text}
+
+#{hashtag} #{hashtag} #{hashtag}
+```
+
+{char count}/1,300
+
+**Best time to post:** Tuesday-Thursday, 7am-9am or 12pm-1pm.
+
+## Step 4: Write Reddit Post
+
+**Format rules:**
+- Community-first: lead with value, not promotion
+- No hard sell — Reddit users reject promotional framing immediately
+- Personal experience and specifics beat generic advice
+- Ask questions, share what you learned
+- Include a disclosure if linking to your own product
+
+Identify the most relevant subreddits based on topic and brand.yaml audience:
+- Primary: r/{subreddit 1} — why this community
+- Secondary: r/{subreddit 2} — why this community
+
+**Post title:**
+```
+{Reddit post title — specific, no clickbait, often a question or finding}
+```
+
+**Post body:**
+```
+{Reddit post body — personal framing, value-first, disclosure if linking own product}
+```
+
+**Best time to post:** Weekdays 9am-12pm EST for most tech communities.
+
+## Step 5: Write Instagram Caption
+
+**Format rules:**
+- Hook in first line (before the "more" cut)
+- Storytelling or strong visual reference
+- Hashtags at the end or in first comment (10-15 relevant ones)
+- CTA: "link in bio" if driving traffic
+
+```
+{Instagram caption — first line hook}
+
+{body — 2-4 paragraphs max}
+
+{CTA}
+
+.
+.
+.
+
+#{hashtag} #{hashtag} #{hashtag} #{hashtag} #{hashtag}
+#{hashtag} #{hashtag} #{hashtag} #{hashtag} #{hashtag}
+```
+
+**Best time to post:** Tuesday-Friday, 11am-1pm or 7pm-9pm.
+
+## Step 6: Review and Finalize
+
+Present all posts. Use AskUserQuestion:
+> "Here are the social posts. What would you like to change?
+> A) Adjust a specific platform's post
+> B) Make the tone more {casual/bold/formal}
+> C) They look good — save them"
+
+STOP and wait.
+
+## Step 7: Save
+
+Use AskUserQuestion:
+> "Where should I save these posts? (default: `social/{topic-slug}-{date}.md`)"
+
+Save all approved posts in a single file with platform sections.
+
+## Completion
+
+Report:
+- Platforms covered: {list}
+- Posts created: {count}
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-threads` to write a full Twitter thread on this topic"
+- "Run `/m-calendar` to schedule these posts in a content calendar"
+- "Run `/m-repurpose` if you have more content to convert"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
