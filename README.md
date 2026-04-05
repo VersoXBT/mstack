@@ -12,22 +12,24 @@ mstack turns Claude Code into a **marketing department** — a strategist who bu
 
 **Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Git](https://git-scm.com/)
 
-```bash
-git clone --single-branch --depth 1 https://github.com/VersoXBT/mstack.git ~/.claude/skills/mstack
-cd ~/.claude/skills/mstack && ./setup
-```
+### Step 1: Install on your machine
+
+Open Claude Code and paste this. Claude does the rest.
+
+> Install mstack: run **`git clone --single-branch --depth 1 https://github.com/VersoXBT/mstack.git ~/.claude/skills/mstack && cd ~/.claude/skills/mstack && ./setup`** then add an "mstack" section to CLAUDE.md that says to use mstack skills for all marketing tasks and lists the available skills: /m-brand, /m-competitive, /m-positioning, /m-icp, /m-strategy, /m-audit, /m-keywords, /m-brief, /m-write, /m-edit, /m-seo, /m-social, /m-threads, /m-engage, /m-ads, /m-landing, /m-repurpose, /m-calendar, /m-report, /m-learn, /m-upgrade.
 
 No compiled binaries. No dependencies to install. Pure skill templates.
 
-### Add to your project (optional)
+### Step 2: Add to your project so teammates get it (optional)
 
-```bash
-cp -Rf ~/.claude/skills/mstack .claude/skills/mstack
-rm -rf .claude/skills/mstack/.git
-cd .claude/skills/mstack && ./setup
-```
+> Add mstack to this project: run **`cp -Rf ~/.claude/skills/mstack .claude/skills/mstack && rm -rf .claude/skills/mstack/.git && cd .claude/skills/mstack && ./setup`** then add an "mstack" section to this project's CLAUDE.md that says to use mstack skills for all marketing tasks, lists the available skills: /m-brand, /m-competitive, /m-positioning, /m-icp, /m-strategy, /m-audit, /m-keywords, /m-brief, /m-write, /m-edit, /m-seo, /m-social, /m-threads, /m-engage, /m-ads, /m-landing, /m-repurpose, /m-calendar, /m-report, /m-learn, /m-upgrade, and tells Claude that if mstack skills aren't working, run `cd .claude/skills/mstack && ./setup` to register skills.
 
-Teammates get mstack when they clone the repo.
+Real files get committed to your repo (not a submodule), so `git clone` just works. Everything lives inside `.claude/`. Nothing touches your PATH or runs in the background.
+
+> **Contributing or need full history?** The commands above use `--depth 1` for a fast install. If you plan to contribute or need full git history, do a full clone instead:
+> ```bash
+> git clone https://github.com/VersoXBT/mstack.git ~/.claude/skills/mstack
+> ```
 
 ### Other AI agents
 
