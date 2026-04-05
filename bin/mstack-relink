@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-# gstack-relink — re-create skill symlinks based on skill_prefix config
+# mstack-relink — re-create skill symlinks based on skill_prefix config
 #
 # Usage:
-#   gstack-relink
+#   mstack-relink
 #
 # Env overrides (for testing):
-#   GSTACK_STATE_DIR   — override ~/.gstack state directory
-#   GSTACK_INSTALL_DIR — override gstack install directory
+#   MSTACK_STATE_DIR   — override ~/.mstack state directory
+#   GSTACK_INSTALL_DIR — override mstack install directory
 #   GSTACK_SKILLS_DIR  — override target skills directory
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GSTACK_CONFIG="${SCRIPT_DIR}/gstack-config"
+GSTACK_CONFIG="${SCRIPT_DIR}/mstack-config"
 
 # Detect install dir
 INSTALL_DIR="${GSTACK_INSTALL_DIR:-}"
 if [ -z "$INSTALL_DIR" ]; then
-  if [ -d "$HOME/.claude/skills/gstack" ]; then
-    INSTALL_DIR="$HOME/.claude/skills/gstack"
+  if [ -d "$HOME/.claude/skills/mstack" ]; then
+    INSTALL_DIR="$HOME/.claude/skills/mstack"
   elif [ -d "${SCRIPT_DIR}/.." ] && [ -f "${SCRIPT_DIR}/../setup" ]; then
     INSTALL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
   fi
 fi
 
 if [ -z "$INSTALL_DIR" ] || [ ! -d "$INSTALL_DIR" ]; then
-  echo "Error: gstack install directory not found." >&2
-  echo "Run: cd ~/.claude/skills/gstack && ./setup" >&2
+  echo "Error: mstack install directory not found." >&2
+  echo "Run: cd ~/.claude/skills/mstack && ./setup" >&2
   exit 1
 fi
 
@@ -56,19 +56,19 @@ for skill_dir in "$INSTALL_DIR"/*/; do
   [ -f "$skill_dir/SKILL.md" ] || continue
 
   if [ "$PREFIX" = "true" ]; then
-    # Don't double-prefix directories already named gstack-*
+    # Don't double-prefix directories already named mstack-*
     case "$skill" in
-      gstack-*) link_name="$skill" ;;
-      *)        link_name="gstack-$skill" ;;
+      mstack-*) link_name="$skill" ;;
+      *)        link_name="mstack-$skill" ;;
     esac
     # Remove old flat entry if it exists (and isn't the same as the new link)
     [ "$link_name" != "$skill" ] && _cleanup_skill_entry "$SKILLS_DIR/$skill"
   else
     link_name="$skill"
-    # Don't remove gstack-* dirs that are their real name (e.g., gstack-upgrade)
+    # Don't remove mstack-* dirs that are their real name (e.g., mstack-upgrade)
     case "$skill" in
-      gstack-*) ;; # Already the real name, no old prefixed link to clean
-      *)        _cleanup_skill_entry "$SKILLS_DIR/gstack-$skill" ;;
+      mstack-*) ;; # Already the real name, no old prefixed link to clean
+      *)        _cleanup_skill_entry "$SKILLS_DIR/mstack-$skill" ;;
     esac
   fi
   target="$SKILLS_DIR/$link_name"
@@ -81,10 +81,10 @@ for skill_dir in "$INSTALL_DIR"/*/; do
 done
 
 # Patch SKILL.md name: fields to match prefix setting
-"$INSTALL_DIR/bin/gstack-patch-names" "$INSTALL_DIR" "$PREFIX"
+"$INSTALL_DIR/bin/mstack-patch-names" "$INSTALL_DIR" "$PREFIX"
 
 if [ "$PREFIX" = "true" ]; then
-  echo "Relinked $SKILL_COUNT skills as gstack-*"
+  echo "Relinked $SKILL_COUNT skills as mstack-*"
 else
   echo "Relinked $SKILL_COUNT skills as flat names"
 fi

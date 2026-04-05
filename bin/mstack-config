@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# gstack-config — read/write ~/.gstack/config.yaml
+# mstack-config — read/write ~/.mstack/config.yaml
 #
 # Usage:
-#   gstack-config get <key>          — read a config value
-#   gstack-config set <key> <value>  — write a config value
-#   gstack-config list               — show all config
+#   mstack-config get <key>          — read a config value
+#   mstack-config set <key> <value>  — write a config value
+#   mstack-config list               — show all config
 #
 # Env overrides (for testing):
-#   GSTACK_STATE_DIR  — override ~/.gstack state directory
+#   MSTACK_STATE_DIR  — override ~/.mstack state directory
 set -euo pipefail
 
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+STATE_DIR="${MSTACK_STATE_DIR:-$HOME/.mstack}"
 CONFIG_FILE="$STATE_DIR/config.yaml"
 
 # Annotated header for new config files. Written once on first `set`.
-CONFIG_HEADER='# gstack configuration — edit freely, changes take effect on next skill run.
+CONFIG_HEADER='# mstack configuration — edit freely, changes take effect on next skill run.
 # Docs: https://github.com/garrytan/gstack
 #
 # ─── Behavior ────────────────────────────────────────────────────────
@@ -35,19 +35,19 @@ CONFIG_HEADER='# gstack configuration — edit freely, changes take effect on ne
 # update_check: true        # false = suppress version check notifications
 #
 # ─── Skill naming ────────────────────────────────────────────────────
-# skill_prefix: false       # true = namespace skills as /gstack-qa, /gstack-ship
+# skill_prefix: false       # true = namespace skills as /mstack-qa, /mstack-ship
 #                           # false = short names /qa, /ship
 #
 # ─── Advanced ────────────────────────────────────────────────────────
 # codex_reviews: enabled    # disabled = skip Codex adversarial reviews in /ship
-# gstack_contributor: false # true = file field reports when gstack misbehaves
+# mstack_contributor: false # true = file field reports when mstack misbehaves
 # skip_eng_review: false    # true = skip eng review gate in /ship (not recommended)
 #
 '
 
 case "${1:-}" in
   get)
-    KEY="${2:?Usage: gstack-config get <key>}"
+    KEY="${2:?Usage: mstack-config get <key>}"
     # Validate key (alphanumeric + underscore only)
     if ! printf '%s' "$KEY" | grep -qE '^[a-zA-Z0-9_]+$'; then
       echo "Error: key must contain only alphanumeric characters and underscores" >&2
@@ -56,8 +56,8 @@ case "${1:-}" in
     grep -E "^${KEY}:" "$CONFIG_FILE" 2>/dev/null | tail -1 | awk '{print $2}' | tr -d '[:space:]' || true
     ;;
   set)
-    KEY="${2:?Usage: gstack-config set <key> <value>}"
-    VALUE="${3:?Usage: gstack-config set <key> <value>}"
+    KEY="${2:?Usage: mstack-config set <key> <value>}"
+    VALUE="${3:?Usage: mstack-config set <key> <value>}"
     # Validate key (alphanumeric + underscore only)
     if ! printf '%s' "$KEY" | grep -qE '^[a-zA-Z0-9_]+$'; then
       echo "Error: key must contain only alphanumeric characters and underscores" >&2
@@ -79,7 +79,7 @@ case "${1:-}" in
     fi
     # Auto-relink skills when prefix setting changes (skip during setup to avoid recursive call)
     if [ "$KEY" = "skill_prefix" ] && [ -z "${GSTACK_SETUP_RUNNING:-}" ]; then
-      GSTACK_RELINK="$(dirname "$0")/gstack-relink"
+      GSTACK_RELINK="$(dirname "$0")/mstack-relink"
       [ -x "$GSTACK_RELINK" ] && "$GSTACK_RELINK" || true
     fi
     ;;
@@ -87,7 +87,7 @@ case "${1:-}" in
     cat "$CONFIG_FILE" 2>/dev/null || true
     ;;
   *)
-    echo "Usage: gstack-config {get|set|list} [key] [value]"
+    echo "Usage: mstack-config {get|set|list} [key] [value]"
     exit 1
     ;;
 esac

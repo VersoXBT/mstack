@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gstack-update-check — periodic version check for all skills.
+# mstack-update-check — periodic version check for all skills.
 #
 # Output (one line, or nothing):
 #   JUST_UPGRADED <old> <new>       — marker found from recent upgrade
@@ -7,39 +7,39 @@
 #   (nothing)                       — up to date, snoozed, disabled, or check skipped
 #
 # Env overrides (for testing):
-#   GSTACK_DIR          — override auto-detected gstack root
+#   MSTACK_DIR          — override auto-detected mstack root
 #   GSTACK_REMOTE_URL   — override remote VERSION URL
-#   GSTACK_STATE_DIR    — override ~/.gstack state directory
+#   MSTACK_STATE_DIR    — override ~/.mstack state directory
 set -euo pipefail
 
-GSTACK_DIR="${GSTACK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+MSTACK_DIR="${MSTACK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+STATE_DIR="${MSTACK_STATE_DIR:-$HOME/.mstack}"
 CACHE_FILE="$STATE_DIR/last-update-check"
 MARKER_FILE="$STATE_DIR/just-upgraded-from"
 SNOOZE_FILE="$STATE_DIR/update-snoozed"
-VERSION_FILE="$GSTACK_DIR/VERSION"
+VERSION_FILE="$MSTACK_DIR/VERSION"
 REMOTE_URL="${GSTACK_REMOTE_URL:-https://raw.githubusercontent.com/garrytan/gstack/main/VERSION}"
 
-# ─── Force flag (busts cache + snooze for standalone /gstack-upgrade) ──
+# ─── Force flag (busts cache + snooze for standalone /mstack-upgrade) ──
 if [ "${1:-}" = "--force" ]; then
   rm -f "$CACHE_FILE"
   rm -f "$SNOOZE_FILE"
 fi
 
 # ─── Step 0: Check if updates are disabled ────────────────────
-_UC=$("$GSTACK_DIR/bin/gstack-config" get update_check 2>/dev/null || true)
+_UC=$("$MSTACK_DIR/bin/mstack-config" get update_check 2>/dev/null || true)
 if [ "$_UC" = "false" ]; then
   exit 0
 fi
 
 # ─── Migration: fix stale Codex descriptions (one-time) ───────
-# Existing installs may have .agents/skills/gstack/SKILL.md with oversized
+# Existing installs may have .agents/skills/mstack/SKILL.md with oversized
 # descriptions (>1024 chars) that Codex rejects. We can't regenerate from
 # the runtime root (no bun/scripts), so delete oversized files — the next
-# ./setup or /gstack-upgrade will regenerate them properly.
+# ./setup or /mstack-upgrade will regenerate them properly.
 # Marker file ensures this runs at most once per install.
 if [ ! -f "$STATE_DIR/.codex-desc-healed" ]; then
-  for _AGENTS_SKILL in "$GSTACK_DIR"/.agents/skills/*/SKILL.md; do
+  for _AGENTS_SKILL in "$MSTACK_DIR"/.agents/skills/*/SKILL.md; do
     [ -f "$_AGENTS_SKILL" ] || continue
     _DESC=$(awk '/^---$/{n++;next}n==1&&/^description:/{d=1;sub(/^description:\s*/,"");if(length>0)print;next}d&&/^  /{sub(/^  /,"");print;next}d{d=0}' "$_AGENTS_SKILL" | wc -c | tr -d ' ')
     if [ "${_DESC:-0}" -gt 1024 ]; then
@@ -161,13 +161,13 @@ mkdir -p "$STATE_DIR"
 # Fire Supabase install ping in background (parallel, non-blocking)
 # This logs an update check event for community health metrics via edge function.
 # If Supabase is not configured or telemetry is off, this is a no-op.
-if [ -z "${GSTACK_SUPABASE_URL:-}" ] && [ -f "$GSTACK_DIR/supabase/config.sh" ]; then
-  . "$GSTACK_DIR/supabase/config.sh"
+if [ -z "${GSTACK_SUPABASE_URL:-}" ] && [ -f "$MSTACK_DIR/supabase/config.sh" ]; then
+  . "$MSTACK_DIR/supabase/config.sh"
 fi
 _SUPA_URL="${GSTACK_SUPABASE_URL:-}"
 _SUPA_KEY="${GSTACK_SUPABASE_ANON_KEY:-}"
 # Respect telemetry opt-out — don't ping Supabase if user set telemetry: off
-_TEL_TIER="$("$GSTACK_DIR/bin/gstack-config" get telemetry 2>/dev/null || true)"
+_TEL_TIER="$("$MSTACK_DIR/bin/mstack-config" get telemetry 2>/dev/null || true)"
 if [ -n "$_SUPA_URL" ] && [ -n "$_SUPA_KEY" ] && [ "${_TEL_TIER:-off}" != "off" ]; then
   _OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
   curl -sf --max-time 5 \
@@ -202,7 +202,7 @@ if check_snooze "$REMOTE"; then
 fi
 
 # Log upgrade_prompted event (only on slow-path fetch, not cached replays)
-TEL_CMD="$GSTACK_DIR/bin/gstack-telemetry-log"
+TEL_CMD="$MSTACK_DIR/bin/mstack-telemetry-log"
 if [ -x "$TEL_CMD" ]; then
   "$TEL_CMD" --event-type upgrade_prompted --skill "" --duration 0 \
     --outcome success --session-id "update-$$-$(date +%s)" 2>/dev/null &

@@ -18,7 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_NAME="GStack Browser"
-BUNDLE_ID="com.gstack.browser"
+BUNDLE_ID="com.mstack.browser"
 VERSION=$(cat "$ROOT/VERSION" 2>/dev/null || echo "0.0.1")
 BUILD_DIR="$ROOT/dist"
 APP_DIR="$BUILD_DIR/$APP_NAME.app"
@@ -56,8 +56,8 @@ mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
 # Launcher script
-cp "$ROOT/scripts/app/gstack-browser" "$APP_DIR/Contents/MacOS/gstack-browser"
-chmod +x "$APP_DIR/Contents/MacOS/gstack-browser"
+cp "$ROOT/scripts/app/mstack-browser" "$APP_DIR/Contents/MacOS/mstack-browser"
+chmod +x "$APP_DIR/Contents/MacOS/mstack-browser"
 
 # Browse binary
 cp "$BUILD_DIR/browse-app" "$APP_DIR/Contents/Resources/browse"
@@ -136,7 +136,7 @@ cat > "$APP_DIR/Contents/Info.plist" << PLIST
   <key>CFBundleShortVersionString</key>
   <string>$VERSION</string>
   <key>CFBundleExecutable</key>
-  <string>gstack-browser</string>
+  <string>mstack-browser</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleSignature</key>
@@ -159,7 +159,7 @@ PLIST
 APP_SIZE=$(du -sh "$APP_DIR" | cut -f1)
 echo ""
 echo "  $APP_NAME.app: $APP_SIZE"
-echo "    Contents/MacOS/gstack-browser     (launcher)"
+echo "    Contents/MacOS/mstack-browser     (launcher)"
 echo "    Contents/Resources/browse          ($(du -sh "$APP_DIR/Contents/Resources/browse" | cut -f1))"
 echo "    Contents/Resources/extension/      ($(du -sh "$APP_DIR/Contents/Resources/extension" | cut -f1))"
 echo "    Contents/Resources/chromium/       ($(du -sh "$APP_DIR/Contents/Resources/chromium" | cut -f1))"

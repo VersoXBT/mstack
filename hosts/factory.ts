@@ -6,8 +6,8 @@ const factory: HostConfig = {
   cliCommand: 'droid',
   cliAliases: ['droid'],
 
-  globalRoot: '.factory/skills/gstack',
-  localSkillRoot: '.factory/skills/gstack',
+  globalRoot: '.factory/skills/mstack',
+  localSkillRoot: '.factory/skills/mstack',
   hostSubdir: '.factory',
   usesEnvVars: true,
 
@@ -29,9 +29,9 @@ const factory: HostConfig = {
   },
 
   pathRewrites: [
-    { from: '~/.claude/skills/gstack', to: '$GSTACK_ROOT' },
-    { from: '.claude/skills/gstack', to: '.factory/skills/gstack' },
-    { from: '.claude/skills/review', to: '.factory/skills/gstack/review' },
+    { from: '~/.claude/skills/mstack', to: '$MSTACK_ROOT' },
+    { from: '.claude/skills/mstack', to: '.factory/skills/mstack' },
+    { from: '.claude/skills/review', to: '.factory/skills/mstack/review' },
     { from: '.claude/skills', to: '.factory/skills' },
   ],
   toolRewrites: {
@@ -44,7 +44,7 @@ const factory: HostConfig = {
   },
 
   runtimeRoot: {
-    globalSymlinks: ['bin', 'browse/dist', 'browse/bin', 'gstack-upgrade', 'ETHOS.md'],
+    globalSymlinks: ['bin', 'browse/dist', 'browse/bin', 'mstack-upgrade', 'ETHOS.md'],
     globalFiles: {
       'review': ['checklist.md', 'TODOS-format.md'],
     },

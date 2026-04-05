@@ -1,13 +1,13 @@
 #!/bin/bash
-# GStack Browser launcher — starts browse server + headed Chromium with extension
+# MStack Browser launcher — starts browse server + headed Chromium with extension
 #
 # Works in two modes:
-#   1. Inside .app bundle: Contents/MacOS/gstack-browser → Resources are at ../Resources/
-#   2. Dev mode (run directly): uses global gstack install at ~/.claude/skills/gstack/
+#   1. Inside .app bundle: Contents/MacOS/mstack-browser → Resources are at ../Resources/
+#   2. Dev mode (run directly): uses global mstack install at ~/.claude/skills/mstack/
 #
 # Usage:
-#   open "GStack Browser.app"          # .app bundle mode
-#   scripts/app/gstack-browser         # dev mode (uses global gstack install)
+#   open "MStack Browser.app"          # .app bundle mode
+#   scripts/app/mstack-browser         # dev mode (uses global mstack install)
 
 set -euo pipefail
 
@@ -18,8 +18,8 @@ if [ -d "$SCRIPT_DIR/../Resources" ]; then
   # .app bundle mode — resources are alongside in the bundle
   DIR="$(cd "$SCRIPT_DIR/../Resources" && pwd)"
 else
-  # Dev mode — use global gstack install
-  DIR="$HOME/.claude/skills/gstack"
+  # Dev mode — use global mstack install
+  DIR="$HOME/.claude/skills/mstack"
 fi
 
 # Point Playwright at bundled Chromium (only in .app mode)
@@ -42,14 +42,14 @@ fi
 # Server script: bundled source first, then global install
 if [ -f "$DIR/src/server.ts" ]; then
   export BROWSE_SERVER_SCRIPT="$DIR/src/server.ts"
-elif [ -f "$HOME/.claude/skills/gstack/browse/src/server.ts" ]; then
-  export BROWSE_SERVER_SCRIPT="$HOME/.claude/skills/gstack/browse/src/server.ts"
+elif [ -f "$HOME/.claude/skills/mstack/browse/src/server.ts" ]; then
+  export BROWSE_SERVER_SCRIPT="$HOME/.claude/skills/mstack/browse/src/server.ts"
 fi
 
 # Browse binary: bundled .app first, then global install
 # Note: -x on a directory is true, so check -f (regular file) too
 BROWSE_BIN=""
-for candidate in "$DIR/browse" "$DIR/browse/dist/browse" "$HOME/.claude/skills/gstack/browse/dist/browse"; do
+for candidate in "$DIR/browse" "$DIR/browse/dist/browse" "$HOME/.claude/skills/mstack/browse/dist/browse"; do
   if [ -f "$candidate" ] && [ -x "$candidate" ]; then
     BROWSE_BIN="$candidate"
     break
@@ -57,15 +57,15 @@ for candidate in "$DIR/browse" "$DIR/browse/dist/browse" "$HOME/.claude/skills/g
 done
 
 if [ -z "$BROWSE_BIN" ]; then
-  echo "ERROR: browse binary not found. Run 'bun run build' in the gstack repo or reinstall GStack Browser."
+  echo "ERROR: browse binary not found. Run 'bun run build' in the mstack repo or reinstall MStack Browser."
   exit 1
 fi
 
 # Ensure profile directory
-mkdir -p ~/.gstack/chromium-profile
+mkdir -p ~/.mstack/chromium-profile
 
 # Project binding: use last-used project dir, default to home
-PROJECT_DIR=$(cat ~/.gstack/last-project 2>/dev/null || echo "$HOME")
+PROJECT_DIR=$(cat ~/.mstack/last-project 2>/dev/null || echo "$HOME")
 if [ ! -d "$PROJECT_DIR" ]; then
   PROJECT_DIR="$HOME"
 fi
