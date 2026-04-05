@@ -1,0 +1,155 @@
+---
+name: m-ads
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Create ad campaigns for Google, Meta, or LinkedIn. Generates campaign structure,
+  ad groups, headlines, descriptions, and audience targeting. Reads brand context
+  for messaging alignment. Use when asked to "create ads", "write ad copy",
+  "build a campaign", or "Google/Meta/LinkedIn ads".
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{API_KEYS}}
+
+{{LEARNINGS_SEARCH}}
+
+## Setup
+
+Use AskUserQuestion:
+> "What platform are you creating ads for?
+> A) Google Ads (Search)
+> B) Google Ads (Display)
+> C) Meta (Facebook/Instagram)
+> D) LinkedIn Ads
+> E) Multiple — I'll help with each"
+
+Then ask:
+> "What's the goal of this campaign?
+> A) Drive traffic to a landing page
+> B) Generate leads (signups, demos)
+> C) Brand awareness
+> D) App installs
+> E) Retargeting existing visitors"
+
+Then ask:
+> "What's the product/feature you're promoting? (1-2 sentences)"
+
+Then ask:
+> "What's your monthly budget range?
+> A) Under $500
+> B) $500 - $2,000
+> C) $2,000 - $10,000
+> D) $10,000+
+> E) Not sure yet"
+
+## Step 1: Audience Definition
+
+Based on brand.yaml audience and campaign goal, define targeting:
+
+**For Google Search:**
+- Target keywords (use brand.yaml keywords + campaign-specific)
+- Negative keywords
+- Match types (broad, phrase, exact)
+
+**For Meta:**
+- Demographics (age, location, interests)
+- Custom audiences (website visitors, email list)
+- Lookalike audiences
+
+**For LinkedIn:**
+- Job titles, industries, company size
+- Skills, groups, interests
+
+Present targeting and get approval via AskUserQuestion.
+
+STOP and wait.
+
+## Step 2: Campaign Structure
+
+Create the campaign hierarchy:
+
+```
+Campaign: {campaign name}
+├── Ad Group 1: {theme}
+│   ├── Ad 1: {headline focus}
+│   └── Ad 2: {headline focus}
+├── Ad Group 2: {theme}
+│   ├── Ad 1: {headline focus}
+│   └── Ad 2: {headline focus}
+└── Ad Group 3: {theme}
+    ├── Ad 1: {headline focus}
+    └── Ad 2: {headline focus}
+```
+
+## Step 3: Write Ad Copy
+
+For each ad, write platform-specific copy:
+
+**Google Search Ads:**
+- 3 headlines (30 chars each)
+- 2 descriptions (90 chars each)
+- Display URL path
+- Sitelink extensions (4)
+- Callout extensions (4)
+
+**Meta Ads:**
+- Primary text (125 chars above fold)
+- Headline (40 chars)
+- Description (30 chars)
+- CTA button choice
+- Image/video guidance
+
+**LinkedIn Ads:**
+- Intro text (150 chars)
+- Headline (70 chars)
+- Description (100 chars)
+- CTA choice
+
+Write all copy in the brand voice from brand.yaml. Avoid the brand's avoid list.
+
+For each ad group, write 2-3 ad variations for A/B testing.
+
+## Step 4: Landing Page Alignment
+
+Check if the landing page matches the ad messaging:
+- Does the headline echo the ad headline?
+- Is the CTA consistent?
+- Does the page deliver on the ad's promise?
+
+If no landing page exists, suggest:
+> "Run `/m-landing` to create a landing page that matches these ads."
+
+## Step 5: Save Campaign
+
+Use AskUserQuestion:
+> "Where should I save the campaign document? (default: `campaigns/{platform}-{date}.md`)"
+
+Save the complete campaign document: targeting, structure, all ad copy, landing page notes.
+
+## Completion
+
+Report:
+- Platform: {platform}
+- Campaign: {name}
+- Ad groups: {count}
+- Ad variations: {count}
+- File path: {path}
+
+Suggest next steps:
+- "Run `/m-landing` to create a matching landing page"
+- "Run `/m-report` to track campaign performance once it's live"
+- "Copy the ad copy into your {platform} dashboard to launch"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
