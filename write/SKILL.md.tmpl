@@ -1,7 +1,7 @@
 ---
 name: m-write
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Write marketing content in your brand voice. Blog posts, articles, landing pages,
   email copy. Reads brand context for tone, audience, and positioning. Produces
@@ -24,10 +24,11 @@ allowed-tools:
 ## Setup
 
 Parse the user's request. Determine:
-- **Content type**: blog post, article, landing page, email, or other
+- **Content type**: blog post, article, landing page, email, case study, or other
 - **Topic**: what to write about
 - **Target keyword**: if provided, or ask
-- **Word count**: if specified, or use defaults (blog: 1200-1800, landing: 600-1000, email: 300-500)
+- **Audience**: B2B technical, B2B executive, B2C consumer, or other — determines readability target
+- **Word count**: if specified, or use defaults (blog: 1200-1800, landing: 600-1000, email: 300-500, case study: 800-1200)
 - **Brief**: if the user ran /m-brief first, check for a brief file in the project
 
 If brand context is not configured and the preamble reported `BRAND: not configured`,
@@ -54,17 +55,19 @@ Analyze top 3-5 search results for:
 - Content depth and word count
 - Angles and gaps to exploit
 - Questions people ask (People Also Ask)
+- Featured snippet formats currently ranking (paragraph, list, table)
 
 If browse is not available, use WebSearch if available, or ask the user:
 > "Any reference articles or competitor content I should look at?"
 
 ## Step 2: Outline
 
-Present an outline before writing:
+Present an outline before writing. Apply the structure for the detected content type (see **Content Type Templates** below).
 
 ```
 Title: {title with target keyword}
 Meta description: {~155 chars}
+Hook formula: {chosen formula from Opening Hooks section}
 
 H2: {section 1}
   - {key point}
@@ -86,25 +89,146 @@ STOP and wait for approval.
 
 Write the full content following these rules:
 
-**Brand voice** (from brand.yaml):
-- Match the tone and personality
+### Brand Voice
+
+- Match the tone and personality from brand.yaml
 - Use the voice examples as reference
 - Avoid words/phrases in the avoid list
 
-**SEO basics:**
-- Target keyword in title, first paragraph, and 2-3 H2 headings
-- Meta description under 155 characters with keyword
-- Natural keyword usage (not stuffed)
+### SEO Integration
 
-**Writing quality:**
-- Short paragraphs (2-3 sentences max)
-- No AI vocabulary: never use "delve", "crucial", "robust", "comprehensive",
-  "landscape", "game-changer", "leverage", "utilize", "in today's world"
-- Active voice
-- Specific examples over vague claims
-- End with a clear CTA
+**Primary keyword placement:**
+- In the title (within first 60 characters)
+- In the first 100 words of body copy
+- In 1-2 H2 headings (naturally, not forced)
+- In the meta description
+- In the URL slug suggestion
 
-**Format:**
+**Semantic keyword variations:**
+- Identify 3-5 related terms and LSI keywords that co-occur with the primary keyword
+- Distribute them across the body without clustering
+- Never repeat the exact primary keyword phrase more than once every 200 words
+
+**Featured snippet optimization:**
+- For "how to" queries: use a numbered list immediately after an H2 that starts with "How to"
+- For "what is" queries: write a 40-60 word definition paragraph directly after the H2
+- For comparison queries: use a two-column table with clear headers
+
+**FAQ schema opportunities:**
+- If the article answers 3+ distinct questions, add an "FAQ" H2 near the bottom
+- Format each question as H3, answer in 1-2 sentences
+- Keep answers self-contained so they work as featured snippets
+
+### Writing Quality Rules
+
+**Show, don't tell:**
+- Replace vague claims with concrete evidence: not "our platform is fast" but "our platform processes 10,000 requests per second"
+- Replace abstract benefits with specific outcomes: not "saves time" but "cuts reporting from 4 hours to 20 minutes"
+- Replace generic praise with measurable proof: not "trusted by industry leaders" but "used by 3 of the top 5 US banks"
+
+**Specificity over generality:**
+- Name the exact problem, not a category of problems
+- Cite real numbers, dates, or studies when available
+- Describe the reader's situation precisely: who they are, what they're trying to do, what's blocking them
+
+**Strong verbs, active voice:**
+- Replace weak verb phrases: not "is able to handle" but "handles"; not "provides the ability to" but "lets you"
+- Default to subject-verb-object order
+- Passive voice is acceptable only when the actor is unknown or irrelevant
+
+**Paragraph and sentence rhythm:**
+- Short paragraphs: 2-3 sentences for body copy, 1 sentence for emphasis
+- Vary sentence length: mix short punchy sentences (under 12 words) with longer explanatory ones (20-30 words)
+- Never stack three long sentences in a row — break the rhythm
+
+**AI vocabulary blacklist** — never use these words or phrases:
+- delve, crucial, robust, comprehensive, landscape, game-changer
+- leverage (as a verb), utilize, in today's world, in today's fast-paced world
+- it's important to note, it goes without saying, needless to say
+- revolutionize, disruptive, cutting-edge, bleeding-edge, state-of-the-art
+- holistic, synergy, paradigm shift, seamlessly, effortlessly
+- empower (when used vaguely), unlock (when used metaphorically for features)
+- dive into, delve into, explore the realm of
+- at the end of the day, moving forward, going forward
+- journey (as a metaphor for product usage or customer experience)
+
+### Opening Hooks
+
+Choose one formula and write it before the first H2. The hook must appear in the first 2 sentences.
+
+1. **Startling stat**: Lead with a number that challenges assumptions.
+   Example: "73% of B2B buyers read three or more pieces of content before talking to sales — yet most companies publish content no one searches for."
+
+2. **Contrarian take**: Disagree with the accepted wisdom in the space.
+   Example: "Everyone says you need a content calendar. Here's why ours was the worst thing we ever built."
+
+3. **Specific story**: Open mid-scene with a named character facing a real problem.
+   Example: "In January 2024, Sarah's team spent 40 hours building a report that sat unread in 12 inboxes."
+
+4. **Sharp question**: Ask the one question the reader is already asking themselves.
+   Example: "Why does your landing page convert at 1.2% when your competitor's converts at 4.8%?"
+
+5. **Bold claim**: State the main thesis as a strong, defensible assertion — then prove it.
+   Example: "Cold email is not dead. Bad cold email is dead. The difference is specificity."
+
+6. **Imagine if...**: Put the reader inside the desired end state.
+   Example: "Imagine closing your laptop at 5 pm knowing every lead from today's campaign is already qualified and in your CRM."
+
+### Readability Targets by Audience
+
+After writing, calibrate sentence and word complexity to the target audience:
+
+- **B2B technical** (developers, data scientists, engineers): Flesch-Kincaid grade level 10-12. Technical terms acceptable. Sentences can be longer. Precision beats simplicity.
+- **B2B executive** (VPs, C-suite): Grade level 8-10. Short sentences. Business outcomes over technical details. Data-driven.
+- **B2C consumer** (general public): Grade level 6-8. Short words, short sentences, conversational tone. Avoid jargon entirely.
+- **SMB owner**: Grade level 7-9. Plain language. Practical, action-oriented. Skeptical of hype.
+
+Practical checks:
+- Reading ease target (Flesch score): B2C 60-70, B2B executive 50-60, B2B technical 40-50
+- Aim for at least 30% of sentences under 15 words
+- No word should be 4+ syllables unless it is the precise technical term
+
+### Content Type Templates
+
+Apply the matching structure for the content type identified in Setup.
+
+**Blog post** (inform + build authority):
+1. **Hook** — one of the 6 formulas above
+2. **Setup** — define the problem or context in 2-3 sentences
+3. **TL;DR / Key Takeaways** — 3-5 bullet points for scanners
+4. **Teach** — body sections that deliver the promised value, ordered from most to least important
+5. **Proof** — a data point, case example, or quote that validates the main claim
+6. **CTA** — one clear next action (read related post, download resource, start trial)
+
+**Landing page** (convert visitors):
+1. **Hero** — headline with primary keyword + single-sentence value prop; no jargon
+2. **Pain** — describe the problem in the reader's own language; make them feel understood
+3. **Solution** — introduce the product/service as the specific answer to that specific pain
+4. **Proof** — 2-3 concrete results (customer quote + metric, not just a logo wall)
+5. **CTA** — one button, imperative verb, low friction ("Start free", not "Submit")
+- No section longer than 150 words
+- Every H2 should be a benefit statement, not a feature label
+
+**Email** (drive a single action):
+1. **Subject line** — under 50 characters; curiosity gap or direct benefit; no clickbait
+2. **Preview text** — 85-100 characters; extends the subject, not a repeat of it
+3. **Body** — 150-300 words max; one idea, one ask
+   - Open with the reader's situation, not a company announcement
+   - 2-3 short paragraphs; no walls of text
+   - Bold the single most important sentence
+4. **CTA** — one link or button; plain-text fallback in parentheses
+5. **PS** — optional; restate the offer or add urgency; readers often jump to PS first
+
+**Case study** (build credibility with prospects):
+1. **Situation** — who the customer is, their industry, their scale; name them if permitted
+2. **Task** — the specific challenge or goal they faced before using your product
+3. **Action** — what they did with your product; be specific about features and workflow
+4. **Result** — quantified outcome with timeframe ("reduced churn by 18% in 90 days")
+- Lead with the result in the title and opening sentence
+- Use pull quotes from the customer throughout
+- End with a CTA that mirrors the reader's situation ("If you're also dealing with X...")
+
+**Format rules (all types):**
 - Start with frontmatter (title, meta, date, author)
 - Use H2 for main sections, H3 for subsections
 - Include a TL;DR or key takeaway at the top for blog posts
@@ -114,14 +238,20 @@ Save to the file path the user specifies, or use AskUserQuestion:
 
 ## Step 4: Self-Edit
 
-Review the draft against brand voice. Check:
-1. Does it match the tone from brand.yaml?
-2. Any AI vocabulary that slipped through? (check the avoid list above)
-3. Are all paragraphs under 4 sentences?
-4. Is the CTA clear and specific?
-5. Does the opening hook grab attention in the first sentence?
+Review the draft against brand voice and the rules above. Check each item:
 
-Fix issues inline without asking. This is a quality pass, not a rewrite.
+1. **Brand voice**: Does the tone match brand.yaml? Read one paragraph aloud — does it sound like the brand?
+2. **AI vocabulary**: Scan for every word on the blacklist. Replace each one with a specific, concrete alternative.
+3. **Hook**: Does the first sentence create tension, curiosity, or recognition within 2 sentences?
+4. **Specificity**: Are there any claims without evidence? Replace each vague claim with a number, name, or example.
+5. **Active voice**: Flag every passive construction. Rewrite unless the passive is genuinely the better choice.
+6. **Paragraph rhythm**: Are any three consecutive sentences all long (20+ words)? Break the pattern.
+7. **Sentence length variation**: Check that at least 30% of sentences are under 15 words.
+8. **CTA clarity**: Is the call to action a single, specific action with an imperative verb?
+9. **SEO check**: Confirm primary keyword appears in title, first 100 words, and at least one H2. Confirm meta description is under 155 characters.
+10. **Flesch target**: Estimate grade level. Is it within range for the declared audience?
+
+Fix issues inline without asking. This is a quality pass, not a rewrite. If more than 20% of the draft needs to change, flag it and ask the user before rewriting.
 
 ## Completion
 
@@ -129,6 +259,7 @@ Report:
 - Content type and title
 - Word count
 - Target keyword
+- Flesch-Kincaid grade level estimate
 - File path where saved
 
 Suggest next steps:
