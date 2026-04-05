@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# mstack-brand — read/write brand context
+set -euo pipefail
+
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || SLUG="unknown"
+MSTACK_HOME="${MSTACK_HOME:-$HOME/.mstack}"
+BRAND_DIR="$MSTACK_HOME/projects/${SLUG}"
+BRAND_FILE="$BRAND_DIR/brand.yaml"
+
+case "${1:-read}" in
+  read)
+    if [ -f "$BRAND_FILE" ]; then
+      cat "$BRAND_FILE"
+    else
+      echo "NO_BRAND"
+    fi
+    ;;
+  write)
+    mkdir -p "$BRAND_DIR"
+    cat > "$BRAND_FILE"
+    echo "Brand context saved to $BRAND_FILE"
+    ;;
+  path)
+    echo "$BRAND_FILE"
+    ;;
+  exists)
+    [ -f "$BRAND_FILE" ] && echo "true" || echo "false"
+    ;;
+  *)
+    echo "Usage: mstack-brand [read|write|path|exists]"
+    echo "  read   — output brand.yaml (or NO_BRAND)"
+    echo "  write  — write stdin to brand.yaml"
+    echo "  path   — print brand.yaml path"
+    echo "  exists — print true/false"
+    exit 1
+    ;;
+esac
