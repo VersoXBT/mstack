@@ -1,11 +1,14 @@
 ---
 name: m-audit
 preamble-tier: 4
-version: 1.0.0
+version: 1.1.0
 description: |
-  Full marketing audit orchestrator. Checks SEO, content quality, social presence,
-  brand consistency, and competitor comparison. Produces a scored audit report with
-  prioritized fixes. Uses browse if available. Run before building strategy.
+  Full marketing audit orchestrator. Checks SEO (Core Web Vitals, mobile-first, internal
+  linking, cannibalization), content quality (E-E-A-T signals, freshness, thin content),
+  social presence (engagement benchmarks, growth velocity, posting consistency), brand
+  consistency (visual, messaging, tone drift), and competitor comparison. Produces a
+  1–10 scored audit report with an impact × effort prioritization matrix and industry
+  benchmarks. Uses browse if available. Run before building strategy.
 allowed-tools:
   - Bash
   - Read
@@ -492,7 +495,8 @@ If brand context is missing, use AskUserQuestion:
 > 1. Your website URL
 > 2. Your main social profiles (Twitter, LinkedIn, etc.)
 > 3. Your top 2 competitors' websites
-> 4. Your target audience (one sentence)"
+> 4. Your target audience (one sentence)
+> 5. Your industry/niche (for benchmark comparisons)"
 
 Otherwise, ask only what's missing from brand.yaml:
 > "I have your brand context. To run the full audit, I also need:
@@ -505,6 +509,29 @@ Otherwise, ask only what's missing from brand.yaml:
 
 STOP and wait for response.
 
+---
+
+## Scoring Rubric (apply to every section)
+
+All dimensions are scored **1–10**. Use these anchors consistently:
+
+| Score | Meaning |
+|-------|---------|
+| 1–2 | Critical failure — actively hurting performance, needs immediate fix |
+| 3–4 | Below baseline — missing key elements, noticeable gaps vs. industry norm |
+| 5–6 | Functional but average — meets minimum bar, room for meaningful improvement |
+| 7–8 | Good — above industry average, only optimisation gaps remain |
+| 9–10 | Best-in-class — sets the standard for the niche |
+
+Convert checklist pass/fail counts to a 1–10 score within each section:
+- 90–100% items pass → 9–10
+- 75–89% → 7–8
+- 55–74% → 5–6
+- 35–54% → 3–4
+- 0–34% → 1–2
+
+---
+
 ## Step 1: Website & On-Page SEO Audit
 
 If browse is available:
@@ -514,33 +541,65 @@ $B text
 $B links
 ```
 
+### 1a. Technical Basics
+
 Check and score each item (Pass / Partial / Fail):
 
-**Technical basics**
-- [ ] Page loads in under 3 seconds
-- [ ] Mobile-friendly layout
-- [ ] HTTPS active
-- [ ] No broken links on homepage
+**Core Web Vitals** *(industry benchmarks: LCP < 2.5 s = good; FID/INP < 100 ms = good; CLS < 0.1 = good)*
+- [ ] LCP (Largest Contentful Paint) ≤ 2.5 seconds
+- [ ] INP (Interaction to Next Paint) ≤ 200 ms (or FID ≤ 100 ms for older data)
+- [ ] CLS (Cumulative Layout Shift) ≤ 0.1
+- [ ] TTFB (Time to First Byte) ≤ 800 ms
 
-**On-page SEO**
-- [ ] Title tag present and under 60 chars
-- [ ] Meta description present and under 155 chars
-- [ ] H1 tag on every page (one per page)
-- [ ] H2/H3 structure logical
-- [ ] Target keyword in title and first paragraph
-- [ ] Image alt text present
+**Mobile-First Signals**
+- [ ] Viewport meta tag present
+- [ ] No horizontal scroll on 375 px viewport
+- [ ] Tap targets ≥ 48 px apart
+- [ ] Font size ≥ 16 px body text (no zoom required to read)
+- [ ] Mobile page speed ≥ 50 on PageSpeed Insights (benchmark: top quartile = 75+)
 
-**Content quality**
+**Infrastructure**
+- [ ] HTTPS active with valid certificate
+- [ ] No broken links on homepage (0 = pass, 1–3 = partial, 4+ = fail)
+- [ ] Canonical tags present on key pages
+- [ ] robots.txt accessible and not blocking key sections
+- [ ] XML sitemap exists and submitted
+
+### 1b. On-Page SEO
+
+- [ ] Title tag present and 40–60 chars (benchmark: 57-char average for top-10 pages)
+- [ ] Meta description present and 120–155 chars
+- [ ] Exactly one H1 per page
+- [ ] H2/H3 hierarchy logical and keyword-rich
+- [ ] Target keyword appears in title, H1, and first 100 words
+- [ ] Image alt text present on all non-decorative images
+- [ ] Schema markup present (Article, Organization, Product, or FAQ as relevant)
+
+### 1c. Internal Linking & Cannibalization
+
+- [ ] Each key page receives at least 2 internal links from other pages
+- [ ] No two pages target the same primary keyword (cannibalization check)
+- [ ] Pillar pages link to cluster content and vice versa
+- [ ] Anchor text is descriptive (not "click here")
+
+If browse is available, sample 3–5 internal pages:
+```bash
+$B goto "{key page URL}"
+$B links
+```
+
+Flag any keyword pairs where two URLs share >70% content overlap as cannibalization candidates.
+
+### 1d. Content Quality (Homepage)
+
 - [ ] Homepage headline clear (visitor understands what you do in 5 seconds)
 - [ ] Value proposition above the fold
 - [ ] CTA visible without scrolling
 - [ ] Social proof present (testimonials, logos, metrics)
 
-If browse is not available, ask user:
-> "Please share your website URL. I'll guide you through a manual checklist if
-> browse isn't available in this session."
+**Section score: {X}/10** *(benchmark: SaaS median ~6, e-commerce ~5, B2B services ~5.5)*
 
-Score the section: {X}/12 points
+---
 
 ## Step 2: Content Audit
 
@@ -551,11 +610,7 @@ find . -name "*.md" -path "*/content/*" -o -name "*.md" -path "*/blog/*" 2>/dev/
 find . -name "*.md" 2>/dev/null | grep -i "post\|article\|blog" | head -20
 ```
 
-If content files are found, analyze a sample (up to 10 most recent):
-- Word count distribution
-- SEO basics applied (title, meta, H2s)
-- Brand voice consistency
-- CTA present in each piece
+If content files are found, analyze a sample (up to 10 most recent).
 
 If browse is available, check the live blog:
 ```bash
@@ -563,21 +618,62 @@ $B goto "{blog URL}"
 $B text
 ```
 
-Check and score:
-**Content presence**
+### 2a. Content Presence & Cadence
+
 - [ ] Blog or content section exists
-- [ ] 5+ published pieces
-- [ ] Published in last 30 days (active cadence)
+- [ ] 5+ published pieces total
+- [ ] Published at least once in the last 30 days (active cadence)
 - [ ] Consistent topic focus matching audience needs
+- [ ] Content calendar or consistent publishing schedule evident
 
-**Content quality**
-- [ ] Articles over 800 words (depth signals)
-- [ ] Internal linking between articles
-- [ ] External links to credible sources
+**Cadence benchmark:** B2B median = 4 posts/month; top-quartile = 12+/month. Note where brand falls.
+
+### 2b. Content Quality & Depth
+
+- [ ] Articles average 1,200+ words for informational intent (benchmark: top-10 Google results average ~1,447 words for competitive terms)
+- [ ] No thin content pages (< 300 words on indexable URLs)
+- [ ] Internal linking between articles (each article links to ≥ 2 related pieces)
+- [ ] External links to credible, authoritative sources (at least 1 per article)
 - [ ] Meta descriptions on blog posts
-- [ ] Social share buttons or links
+- [ ] Social share buttons or links present
 
-Score the section: {X}/9 points
+### 2c. E-E-A-T Signals (Experience, Expertise, Authoritativeness, Trustworthiness)
+
+Google's quality rater guidelines weight these heavily for YMYL and competitive content.
+
+**Experience**
+- [ ] Author bylines present on articles
+- [ ] Author bio includes first-hand experience relevant to topic
+- [ ] Case studies, data, or original research cited
+
+**Expertise**
+- [ ] Author credentials or role stated
+- [ ] Technical depth appropriate for target audience
+- [ ] Jargon used correctly and explained when needed
+
+**Authoritativeness**
+- [ ] Brand cited or linked to from third-party sources (check: does brand appear in Wikipedia, major publications, or industry sites?)
+- [ ] Guest posts or quotes from recognized experts
+- [ ] Awards, press mentions, or accreditations referenced
+
+**Trustworthiness**
+- [ ] About page exists with real team info
+- [ ] Contact details (email, address, or support link) visible
+- [ ] Privacy policy and terms present
+- [ ] HTTPS active (already checked in Step 1)
+- [ ] Reviews or testimonials with verifiable sources
+
+### 2d. Content Freshness
+
+For each of the 5 most recent articles, note:
+- Date published vs. date of last substantive update
+- Whether time-sensitive claims (statistics, product versions, regulations) have been refreshed
+
+Flag articles > 18 months old with no update as "staleness risk." Benchmark: Google prefers freshness for news, trends, and YMYL; evergreen content can hold rankings longer if authoritative.
+
+**Section score: {X}/10** *(benchmark: content-led companies average 7+; most SMBs score 3–5)*
+
+---
 
 ## Step 3: Social Media Audit
 
@@ -589,36 +685,100 @@ $B goto "{social profile URL}"
 $B text
 ```
 
-Check and score per channel:
-- [ ] Bio/about section complete
-- [ ] Profile and cover images present
-- [ ] Website link in bio
-- [ ] Posted in last 7 days
-- [ ] Engagement visible (likes, replies, comments)
-- [ ] Content matches brand voice
+### 3a. Profile Completeness (per channel)
 
-Score per channel. Aggregate: {X}/{max} points
+- [ ] Bio/about section complete and keyword-rich
+- [ ] Profile and cover images present and on-brand
+- [ ] Website link in bio
+- [ ] Contact or booking info present (where platform supports it)
+- [ ] Pinned post or featured content present
+
+### 3b. Posting Consistency
+
+Record the last 10 post dates and calculate average gap.
+
+**Consistency benchmarks by platform:**
+| Platform | Recommended frequency | Penalty threshold |
+|----------|-----------------------|-------------------|
+| Twitter/X | 1–3×/day | < 3×/week signals inactivity |
+| LinkedIn | 1×/day (weekdays) | < 2×/week |
+| Instagram | 4–7×/week (feed) | < 3×/week |
+| Facebook | 1×/day | < 3×/week |
+| TikTok | 1–3×/day | < 5×/week |
+
+- [ ] Posting frequency meets or exceeds platform benchmark
+- [ ] No gap > 14 days in the last 90 days
+
+### 3c. Engagement Rate Benchmarks
+
+Calculate: (Likes + Comments + Shares) / Followers × 100 for the last 10 posts.
+
+**Industry engagement rate benchmarks (2024):**
+| Platform | Low | Average | Good | Top-quartile |
+|----------|-----|---------|------|--------------|
+| Instagram | < 0.5% | 1–3% | 3–6% | > 6% |
+| Twitter/X | < 0.3% | 0.5–1% | 1–3% | > 3% |
+| LinkedIn | < 0.5% | 1–2% | 2–5% | > 5% |
+| Facebook | < 0.1% | 0.2–0.5% | 0.5–1% | > 1% |
+| TikTok | < 3% | 5–9% | 9–15% | > 15% |
+
+- [ ] Engagement rate meets or exceeds platform average benchmark
+- [ ] Reply/comment rate > 0 (brand responds to audience)
+
+### 3d. Audience Growth Velocity
+
+If follower count history is accessible:
+- Calculate month-over-month follower growth rate.
+- **Benchmark:** 2–5% MoM is healthy for established accounts; > 10% MoM = strong growth signal; < 1% = stagnant.
+
+- [ ] Follower count growing (positive MoM trend)
+- [ ] Growth rate ≥ 2% MoM over last 3 months
+
+### 3e. Content Match
+
+- [ ] Content matches brand voice setting from brand.yaml
+- [ ] Mix of content types (educational, promotional, entertainment) — benchmark: 70/20/10 rule
+- [ ] Hashtag strategy evident and consistent
+
+**Score per channel (1–10), then average for overall section score.**
+
+**Section score: {X}/10** *(benchmark: most brands score 4–6; top performers 8+)*
+
+---
 
 ## Step 4: Brand Consistency Audit
 
-Compare all touchpoints against brand.yaml:
+Compare all touchpoints against brand.yaml.
 
-**Voice consistency**
-- [ ] Website copy matches brand voice setting
-- [ ] Social posts match brand voice
-- [ ] Same avoid-list respected across channels
+### 4a. Voice & Tone Consistency
 
-**Visual consistency** (if images visible via browse)
-- [ ] Consistent color usage
-- [ ] Consistent logo usage
-- [ ] Consistent typography patterns
+Pull sample copy from website, 5 social posts, and any email or ad copy found:
 
-**Messaging consistency**
-- [ ] Same positioning statement across channels
-- [ ] Same value propositions reinforced
-- [ ] No conflicting claims between channels
+- [ ] Website copy matches brand voice setting (formal/casual/playful/authoritative)
+- [ ] Social posts match brand voice — no tone drift between channels
+- [ ] Avoid-list words/phrases from brand.yaml not present in any sampled copy
+- [ ] Reading level consistent (use Flesch–Kincaid score if measurable; benchmark: B2B = grade 10–12, consumer = grade 7–9)
 
-Score: {X}/9 points
+**Tone drift detection:** Rank sampled copy on a 1–5 formality scale. If spread > 2 points across channels, flag as "tone drift."
+
+### 4b. Visual Consistency (if images visible via browse)
+
+- [ ] Primary brand color used consistently across website, social headers, and ads
+- [ ] Logo displayed at correct proportions (no stretching or unofficial variants)
+- [ ] Consistent font families visible across web properties
+- [ ] Image style consistent (photography vs. illustration vs. mixed — should not switch randomly)
+- [ ] No off-brand stock imagery (generic, low-quality, or mismatched aesthetic)
+
+### 4c. Messaging Consistency
+
+- [ ] Same positioning statement or tagline across website homepage, LinkedIn "About," and Twitter/X bio
+- [ ] Core value propositions appear on both website and social bios
+- [ ] No conflicting claims between channels (e.g., pricing, feature availability, target audience)
+- [ ] Key differentiators stated clearly and consistently
+
+**Section score: {X}/10** *(benchmark: most SMBs score 4–6; enterprise brands typically 7–9)*
+
+---
 
 ## Step 5: Competitor Comparison
 
@@ -633,48 +793,87 @@ $B goto "{competitor 1 URL}"
 $B text
 ```
 
-Compare:
-- SEO: estimated traffic signals, content depth
-- Content: cadence, topics, quality
-- Social: following, engagement, channels
-- Website: clarity, conversion elements
+Compare on each dimension from Steps 1–4. For each competitor, record:
 
-Note where your brand is ahead, behind, or equal.
+| Dimension | Your Brand | Competitor 1 | Competitor 2 |
+|-----------|-----------|--------------|--------------|
+| SEO score | {X}/10 | {X}/10 | {X}/10 |
+| Content score | {X}/10 | {X}/10 | {X}/10 |
+| Social score | {X}/10 | {X}/10 | {X}/10 |
+| Brand consistency | {X}/10 | {X}/10 | {X}/10 |
+
+Note where your brand is ahead, equal, or behind — and by how much.
+
+---
 
 ## Step 6: Generate Audit Report
 
-Build the scored audit report:
+Build the scored audit report with the prioritization matrix:
 
 ```
 # Marketing Audit — {Brand Name} — {Date}
 
-## Overall Score: {X}/{max} points
+## Overall Score: {weighted average}/10
 
-| Category | Score | Status |
-|----------|-------|--------|
-| Website & SEO | {X}/12 | {Pass/Needs Work/Fail} |
-| Content | {X}/9 | {Pass/Needs Work/Fail} |
-| Social Media | {X}/18 | {Pass/Needs Work/Fail} |
-| Brand Consistency | {X}/9 | {Pass/Needs Work/Fail} |
+| Category | Score | vs. Industry Avg | Status |
+|----------|-------|-----------------|--------|
+| Website & SEO | {X}/10 | {+/- vs benchmark} | {Excellent/Good/Needs Work/Critical} |
+| Content | {X}/10 | {+/- vs benchmark} | {Excellent/Good/Needs Work/Critical} |
+| Social Media | {X}/10 | {+/- vs benchmark} | {Excellent/Good/Needs Work/Critical} |
+| Brand Consistency | {X}/10 | {+/- vs benchmark} | {Excellent/Good/Needs Work/Critical} |
 
-## Priority Fixes
+Status thresholds: 8–10 = Excellent, 6–7 = Good, 4–5 = Needs Work, 1–3 = Critical
 
-### Critical (fix this week)
-1. {Issue} — {specific action} — Impact: High
-2. {Issue} — {specific action} — Impact: High
+---
 
-### Important (fix this month)
-1. {Issue} — {specific action} — Impact: Medium
-2. {Issue} — {specific action} — Impact: Medium
+## Priority Matrix
 
-### Nice to Have (backlog)
-1. {Issue} — {specific action} — Impact: Low
+All findings are ranked by **Impact (1–5) × Effort (1–5 inverse: 5 = low effort, 1 = high effort)**.
+Priority score = Impact × Effort. Higher = fix first.
+
+| # | Finding | Impact | Effort | Priority Score | Category |
+|---|---------|--------|--------|----------------|---------|
+| 1 | {Issue} | {1–5} | {1–5} | {score} | {SEO/Content/Social/Brand} |
+| 2 | {Issue} | {1–5} | {1–5} | {score} | {SEO/Content/Social/Brand} |
+| … | … | … | … | … | … |
+
+### Tier 1 — Fix This Week (Priority Score ≥ 15)
+1. {Issue} — {specific action} — Expected outcome: {metric improvement}
+2. {Issue} — {specific action} — Expected outcome: {metric improvement}
+
+### Tier 2 — Fix This Month (Priority Score 8–14)
+1. {Issue} — {specific action} — Expected outcome: {metric improvement}
+2. {Issue} — {specific action} — Expected outcome: {metric improvement}
+
+### Tier 3 — Backlog (Priority Score ≤ 7)
+1. {Issue} — {specific action} — Expected outcome: {metric improvement}
+
+---
 
 ## Section Details
-{Full details per section above}
+
+### SEO Details
+{Full checklist results from Step 1 — highlight any Core Web Vitals failures, cannibalization pairs, and mobile issues}
+
+### Content Details
+{Full checklist results from Step 2 — highlight E-E-A-T gaps, thin content URLs, stale articles}
+
+### Social Details
+{Full checklist results from Step 3 — include engagement rate table per channel vs. benchmark}
+
+### Brand Consistency Details
+{Full checklist results from Step 4 — include tone drift rating and any visual inconsistencies found}
+
+### Competitor Comparison
+{Comparison table from Step 5 — call out your biggest gaps and advantages}
+
+---
 
 ## What's Working
-{Positive findings}
+{Positive findings — be specific, cite scores that are at or above benchmark}
+
+## Industry Context
+{Summarize which benchmarks were used and where the brand sits relative to them}
 ```
 
 Use AskUserQuestion:
@@ -692,8 +891,8 @@ Save the full report.
 ## Completion
 
 Report:
-- Overall score: {X}/{max}
-- Critical fixes: {count}
+- Overall score: {X}/10
+- Critical fixes (Tier 1): {count}
 - File saved to: {path}
 
 Suggest next steps:

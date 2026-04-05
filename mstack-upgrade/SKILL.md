@@ -1,11 +1,13 @@
 ---
 name: m-upgrade
 preamble-tier: 1
-version: 1.0.0
+version: 1.1.0
 description: |
-  Self-update for mstack. Detects install location, checks current version, fetches
-  the latest from git, compares versions, and offers to upgrade. Run when asked to
-  "update mstack", "upgrade mstack", or "get latest mstack".
+  Self-update for mstack. Detects vendored vs global install, checks current and
+  remote versions, shows a changelog preview, backs up config before upgrading,
+  applies the upgrade, verifies skills registered, and provides rollback instructions
+  if anything breaks. Run when asked to "update mstack", "upgrade mstack", or
+  "get latest mstack".
 allowed-tools:
   - Bash
   - Read
@@ -275,131 +277,303 @@ Then write a `## MSTACK REVIEW REPORT` section to the end of the plan file:
 file you are allowed to edit in plan mode. The plan file review report is part of the
 plan's living status.
 
-## Setup
+## Setup: Detect Install Location
 
-Detect the mstack install location:
+Detect whether mstack is vendored (project-local) or globally installed, and
+capture the working directory so every later step uses the same path.
 
 ```bash
-# Find where mstack is installed
-MSTACK_SKILL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/mstack"
-if [ -d "$MSTACK_SKILL_DIR" ]; then
-  echo "INSTALL_DIR: $MSTACK_SKILL_DIR"
+# Vendored install takes priority over global
+VENDORED_DIR="$(pwd)/.claude/skills/mstack"
+GLOBAL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/mstack"
+
+if [ -d "$VENDORED_DIR/.git" ]; then
+  INSTALL_DIR="$VENDORED_DIR"
+  INSTALL_TYPE="vendored"
+elif [ -d "$GLOBAL_DIR/.git" ]; then
+  INSTALL_DIR="$GLOBAL_DIR"
+  INSTALL_TYPE="global"
 else
-  # Fallback: search common locations
-  for d in "$HOME/.claude/skills/mstack" "$HOME/.config/claude/skills/mstack"; do
-    [ -d "$d" ] && echo "INSTALL_DIR: $d" && break
+  # Broader fallback search
+  for candidate in \
+    "$HOME/.claude/skills/mstack" \
+    "$HOME/.config/claude/skills/mstack"; do
+    if [ -d "$candidate/.git" ]; then
+      INSTALL_DIR="$candidate"
+      INSTALL_TYPE="global"
+      break
+    fi
   done
 fi
+
+if [ -z "$INSTALL_DIR" ]; then
+  echo "ERROR: mstack not found. Expected vendored at .claude/skills/mstack or global at $GLOBAL_DIR"
+  exit 1
+fi
+
+echo "INSTALL_TYPE: $INSTALL_TYPE"
+echo "INSTALL_DIR:  $INSTALL_DIR"
 ```
 
-## Step 1: Check Current Version
+Report the install type and directory to the user before proceeding.
+
+## Step 1: Read Current Version
 
 ```bash
-INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
+# Read local VERSION file first; fall back to package.json
+if [ -f "$INSTALL_DIR/VERSION" ]; then
+  LOCAL_VERSION=$(cat "$INSTALL_DIR/VERSION" | tr -d '[:space:]')
+else
+  LOCAL_VERSION=$(grep '"version"' "$INSTALL_DIR/package.json" 2>/dev/null \
+    | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+fi
 
-# Get current version from package.json
-CURRENT_VERSION=$(cat "$INSTALL_DIR/package.json" 2>/dev/null | \
-  grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
-echo "Current version: ${CURRENT_VERSION:-unknown}"
+echo "Local version:  ${LOCAL_VERSION:-unknown}"
 
-# Check git status
-cd "$INSTALL_DIR" && git log --oneline -1 2>/dev/null || echo "Git not available"
-cd "$INSTALL_DIR" && git remote get-url origin 2>/dev/null || echo "No remote configured"
+# Show git context
+cd "$INSTALL_DIR"
+git log --oneline -1 2>/dev/null || echo "(no git history)"
+git remote get-url origin 2>/dev/null || echo "(no remote configured)"
 ```
 
-Report the current version and install location.
-
-## Step 2: Fetch Latest
+## Step 2: Fetch Remote Version
 
 ```bash
-INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
 cd "$INSTALL_DIR"
 
-# Check for updates without applying them
-git fetch origin 2>/dev/null
+# Fetch without applying changes
+git fetch origin 2>&1
+
+# Count commits between HEAD and remote main
 BEHIND=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo "0")
-LATEST_TAG=$(git describe --tags origin/main 2>/dev/null || echo "unknown")
+
+# Read VERSION from the remote tip
+REMOTE_VERSION=$(git show origin/main:VERSION 2>/dev/null | tr -d '[:space:]')
+if [ -z "$REMOTE_VERSION" ]; then
+  # Fallback: parse version from remote package.json
+  REMOTE_VERSION=$(git show origin/main:package.json 2>/dev/null \
+    | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+fi
+
+echo "Local version:  ${LOCAL_VERSION:-unknown}"
+echo "Remote version: ${REMOTE_VERSION:-unknown}"
 echo "Commits behind: $BEHIND"
-echo "Latest version: $LATEST_TAG"
 ```
 
-## Step 3: Compare and Decide
+## Step 3: Compare Versions and Preview Changelog
 
-If already up to date (`BEHIND=0`):
-> "mstack is already up to date. You're on version {current}."
+If `BEHIND=0`:
+> "mstack is already up to date (v{local_version}). Nothing to do."
 
-Stop here. Nothing to do.
+Stop here.
 
-If updates are available:
+If updates are available, show a detailed changelog preview:
 
-Show what's new:
 ```bash
 cd "$INSTALL_DIR"
-git log HEAD..origin/main --oneline 2>/dev/null | head -20
+
+echo "=== Changelog: HEAD..origin/main ==="
+git log HEAD..origin/main --oneline 2>/dev/null | head -30
+
+echo ""
+echo "=== Changed files ==="
+git diff --name-status HEAD..origin/main 2>/dev/null | head -40
+
+echo ""
+echo "=== Diff summary ==="
+git diff --stat HEAD..origin/main 2>/dev/null | tail -5
 ```
 
-Use AskUserQuestion:
-> "mstack has {N} new commits since your version {current}.
-> Latest: {latest version}
+Present the changelog clearly, then use AskUserQuestion:
+
+> "mstack update available: v{local_version} → v{remote_version} ({N} commits)
 >
 > Changes:
 > {commit list}
 >
-> Upgrade now?
-> A) Yes — pull latest and re-run setup
-> B) No — stay on current version"
+> Files changed: {diff summary}
+>
+> How would you like to proceed?
+> A) Upgrade — backup config, pull latest, re-run setup, verify skills
+> B) Skip — stay on v{local_version}"
 
-STOP and wait.
+STOP and wait for the user's answer.
 
-## Step 4: Apply Upgrade
+## Step 4: Backup Before Upgrade
 
-If user chose A:
+If user chose A, back up the current config and any brand contexts before
+touching the repository:
 
 ```bash
-INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
+BACKUP_DIR="$HOME/.mstack/backups/pre-upgrade-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+# Backup main config
+if [ -f "$HOME/.mstack/config.yaml" ]; then
+  cp "$HOME/.mstack/config.yaml" "$BACKUP_DIR/config.yaml"
+  echo "Backed up config.yaml → $BACKUP_DIR/config.yaml"
+else
+  echo "No config.yaml found at ~/.mstack/config.yaml — skipping"
+fi
+
+# Backup brand contexts directory if it exists
+if [ -d "$HOME/.mstack/brands" ]; then
+  cp -r "$HOME/.mstack/brands" "$BACKUP_DIR/brands"
+  echo "Backed up brands/ → $BACKUP_DIR/brands/"
+fi
+
+# Record the pre-upgrade git ref so rollback is easy
+cd "$INSTALL_DIR"
+PRE_UPGRADE_REF=$(git rev-parse HEAD)
+echo "$PRE_UPGRADE_REF" > "$BACKUP_DIR/pre-upgrade-ref.txt"
+echo "Pre-upgrade commit: $PRE_UPGRADE_REF"
+echo "Backup complete: $BACKUP_DIR"
+```
+
+## Step 5: Apply Upgrade
+
+```bash
 cd "$INSTALL_DIR"
 
-# Stash any local changes
-git stash 2>/dev/null
+# Stash any local modifications so the pull is clean
+git stash push -m "pre-upgrade stash $(date +%Y%m%d-%H%M%S)" 2>/dev/null
 
-# Pull latest
-git pull origin main 2>/dev/null
+# Preview the exact diff before applying
+echo "=== Final diff preview (HEAD..origin/main) ==="
+git diff HEAD..origin/main --stat 2>/dev/null
+
+# Pull
+git pull origin main 2>&1
 PULL_STATUS=$?
 
-if [ $PULL_STATUS -eq 0 ]; then
-  echo "PULL: success"
-  NEW_VERSION=$(cat package.json 2>/dev/null | \
-    grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
-  echo "New version: $NEW_VERSION"
+if [ $PULL_STATUS -ne 0 ]; then
+  echo "ERROR: git pull failed (exit $PULL_STATUS). Rollback instructions below."
+  echo "To revert: cd $INSTALL_DIR && git reset --hard $PRE_UPGRADE_REF"
+  exit 1
+fi
+
+# Read new version
+if [ -f "VERSION" ]; then
+  NEW_VERSION=$(cat VERSION | tr -d '[:space:]')
 else
-  echo "PULL: failed — see error above"
+  NEW_VERSION=$(grep '"version"' package.json 2>/dev/null \
+    | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+fi
+
+echo "Upgraded: ${LOCAL_VERSION:-unknown} → ${NEW_VERSION:-unknown}"
+```
+
+Re-run setup to regenerate skills:
+
+```bash
+cd "$INSTALL_DIR"
+
+if [ -x "./setup" ]; then
+  bash ./setup 2>&1
+  SETUP_STATUS=$?
+  [ $SETUP_STATUS -eq 0 ] && echo "Setup: success" || echo "Setup: failed (exit $SETUP_STATUS)"
+elif [ -x "./install.sh" ]; then
+  bash ./install.sh 2>&1
+else
+  echo "No setup script found — skills may need manual registration"
 fi
 ```
 
-If pull succeeded, re-run setup:
+## Step 6: Post-Upgrade Verification
+
+Verify the upgrade landed correctly:
+
 ```bash
-INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
 cd "$INSTALL_DIR"
-bash ./setup 2>/dev/null || echo "Setup script not found or failed"
+
+echo "=== Version check ==="
+if [ -f "VERSION" ]; then
+  echo "VERSION file: $(cat VERSION | tr -d '[:space:]')"
+fi
+
+echo ""
+echo "=== Git status ==="
+git log --oneline -3 2>/dev/null
+git status --short 2>/dev/null
+
+echo ""
+echo "=== Skill count ==="
+# Count registered skills in both install locations
+GLOBAL_COUNT=$(ls "$HOME/.claude/skills/" 2>/dev/null | wc -l | tr -d ' ')
+VENDORED_COUNT=$(ls "$(pwd)/.claude/skills/" 2>/dev/null | wc -l | tr -d ' ')
+echo "Global skills:   $GLOBAL_COUNT"
+echo "Vendored skills: $VENDORED_COUNT"
+
+echo ""
+echo "=== Config survived? ==="
+if [ -f "$HOME/.mstack/config.yaml" ]; then
+  echo "config.yaml: present ($(wc -l < "$HOME/.mstack/config.yaml") lines)"
+else
+  echo "config.yaml: MISSING — restore from $BACKUP_DIR/config.yaml"
+fi
+
+echo ""
+echo "=== Test suite ==="
+if command -v bun >/dev/null 2>&1 && [ -f "package.json" ] && \
+   grep -q '"test"' package.json 2>/dev/null; then
+  bun test 2>&1 | tail -20
+  TEST_STATUS=$?
+  [ $TEST_STATUS -eq 0 ] && echo "Tests: PASSED" || echo "Tests: FAILED (exit $TEST_STATUS)"
+else
+  echo "Tests: skipped (bun not available or no test script)"
+fi
 ```
 
-Check for errors in the setup output and report.
+## Step 7: Rollback (if verification fails)
+
+If any verification step fails, provide these rollback instructions:
+
+```bash
+# Rollback to the pre-upgrade commit
+cd "$INSTALL_DIR"
+
+# Read the saved ref
+PRE_UPGRADE_REF=$(cat "$HOME/.mstack/backups/pre-upgrade-$(ls -t "$HOME/.mstack/backups/" | head -1)/pre-upgrade-ref.txt" 2>/dev/null)
+
+if [ -n "$PRE_UPGRADE_REF" ]; then
+  echo "Rolling back to: $PRE_UPGRADE_REF"
+  git reset --hard "$PRE_UPGRADE_REF"
+  echo "Rollback complete"
+else
+  echo "Ref file not found — use: git reflog | head -20"
+  echo "Then: git reset --hard <commit-hash>"
+fi
+
+# Restore config if missing
+if [ ! -f "$HOME/.mstack/config.yaml" ] && [ -n "$BACKUP_DIR" ]; then
+  cp "$BACKUP_DIR/config.yaml" "$HOME/.mstack/config.yaml" 2>/dev/null \
+    && echo "Config restored from backup"
+fi
+
+# Re-run setup after rollback
+bash ./setup 2>&1 || echo "Setup failed after rollback — check manually"
+```
 
 ## Completion
 
-If upgrade succeeded:
-- Previous version: {old version}
-- New version: {new version}
+**Upgrade succeeded:**
+- Install type: {vendored|global}
+- Previous version: v{old_version}
+- New version: v{new_version}
+- Backup saved: ~/.mstack/backups/pre-upgrade-{timestamp}/
 - Setup: complete
-- Skills updated: all skills regenerated
+- Skills registered: {count}
+- Tests: passed|skipped
 
-If already up to date:
-- Version: {version}
+**Already up to date:**
+- Version: v{version}
 - Status: up to date
 
-If upgrade failed:
-- Error: {error message}
-- Suggestion: "Try running `cd {install dir} && git pull` manually"
+**Upgrade failed — rollback applied:**
+- Error: {error_message}
+- Rolled back to: {pre_upgrade_ref}
+- Config: restored|intact
+- Manual recovery: `cd {install_dir} && git reflog | head -20`
 
 ## Preamble (run first)
 

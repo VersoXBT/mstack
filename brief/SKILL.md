@@ -1,11 +1,14 @@
 ---
 name: m-brief
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Content brief creation. Takes a keyword or topic and generates a full brief:
-  target keyword, search intent, title, meta description, H2/H3 outline, word count,
-  audience segment, CTA, internal links, and competitor content to beat.
+  target keyword, secondary keywords, search intent, title, meta description,
+  H2/H3 outline with key points per section, word count, audience segment,
+  content angle/hook, CTA, internal linking strategy, SERP analysis (featured
+  snippets, PAA, format dominance), competitor content to beat, unique
+  differentiation angle, content format recommendation, and success metrics.
 allowed-tools:
   - Bash
   - Read
@@ -452,6 +455,33 @@ Note:
 - Common headings and subheadings in top results
 - "People Also Ask" questions — these become H2/H3 opportunities
 
+### SERP Feature Analysis
+
+Beyond the standard blue links, explicitly identify:
+
+**Featured Snippet (Position 0)**
+- Does one exist? If yes: what format is it (paragraph, numbered list, table, code block)?
+- Which URL holds it and what text triggers it?
+- How to win it: match the exact format (if it's a numbered list, structure the answer as a numbered list under a heading that mirrors the query); keep the answer under 50 words; place it directly under the first relevant H2
+
+**People Also Ask (PAA)**
+- List every PAA question visible on the SERP
+- Each PAA question that aligns with the topic becomes a candidate H2 or H3
+- Answering 3+ PAA questions signals topical authority and expands featured-snippet opportunities
+
+**Video Results**
+- Are video carousels present? If yes, is the topic better served by a video companion piece?
+- Note the thumbnail text and titles of video results — they reveal the angle users prefer visually
+
+**Knowledge Panel / Sitelinks**
+- Is there a knowledge panel? Note what entity it describes — avoid duplicating thin definitions already satisfied by the panel; go deeper with application, comparison, or nuance
+
+**Image Pack / Shopping Results**
+- Presence of an image pack suggests visual content (diagrams, screenshots, infographics) belongs in this piece
+
+**Estimated Result Count & Competitiveness Signal**
+- Note the total result count Google reports; >10M results = competitive; <500K = low-competition opportunity
+
 ## Step 2: Analyze Competitor Content
 
 If browse is available, look at the top 2-3 results:
@@ -467,6 +497,37 @@ For each competitor piece, note:
 - What they miss or get wrong
 - Opportunities to be more specific, more current, or more useful
 
+### Differentiation Strategy
+
+When 50 articles already cover the topic, winning requires a reason to exist beyond "also covers this keyword." Apply at least one of these differentiation levers:
+
+**Original Data / Research**
+- Can we run an experiment, survey, or scrape that produces a statistic no one else has?
+- Example: "We analyzed 200 DeFi dashboards — here's what actually affects retention"
+
+**Contrarian or Underrepresented Take**
+- Identify the consensus position held by all top-ranking articles
+- Argue the opposite or add a meaningful caveat most writers omit
+- Example: if everyone says "use X framework," explain the scenario where it fails
+
+**Recency Advantage**
+- Note the publication dates of top results; if most are 18+ months old, freshness alone can win
+- Include a "Last updated" timestamp and section covering changes in the past 12 months
+
+**Expert Quotes / Primary Sources**
+- One attributed quote from a practitioner or researcher that competitors lack
+- Cite primary documentation, whitepapers, or GitHub issues rather than paraphrasing other blogs
+
+**Specificity / Niche Angle**
+- General articles rank for general keywords; niche articles rank for niche + general with less competition
+- Example: narrow "DeFi analytics" to "DeFi analytics for portfolio managers running >$1M"
+
+**Format Superiority**
+- Add an interactive element, comparison table, downloadable checklist, or video walkthrough that all competitors lack
+- Tables rank well in featured snippets and reduce bounce rate
+
+Select the 1-2 levers most feasible for this piece and document them in the brief under "Unique Angle."
+
 ## Step 3: Build the Brief
 
 Generate the complete content brief:
@@ -478,75 +539,153 @@ Generate the complete content brief:
 
 ## Target Keyword
 Primary: {keyword}
-Secondary: {2-3 related keywords}
-LSI terms: {semantic variations}
+Secondary: {2-3 related keywords with estimated monthly search volume if known}
+LSI / Semantic terms: {semantic variations and co-occurring terms found in top results}
+Long-tail variants: {2-3 question-form or modifier variants worth covering as H3s}
 
 ## Search Intent
 {Informational / Commercial / Transactional / Navigational}
 Reason: {why this keyword has this intent based on SERP}
+Funnel stage: {Awareness / Consideration / Decision}
+
+## SERP Snapshot
+Featured snippet: {exists / does not exist — if exists: format and current holder}
+Featured snippet win strategy: {specific format, word count, and placement to target it}
+PAA questions to answer:
+  1. {question}
+  2. {question}
+  3. {question}
+Video results present: {yes/no — if yes, note angle}
+Image pack present: {yes/no — if yes, include visuals}
+Estimated result count: {number — competitiveness signal}
+Format dominating page 1: {listicle / how-to / comparison / landing page / docs / mixed}
+
+## Content Format Recommendation
+Recommended format: {listicle / how-to guide / comparison / case study / opinion piece / hybrid}
+Reason: {match format to dominant SERP format and intent, or explain why diverging format wins}
+
+Format-specific guidance:
+- Listicle: number items in H2s; keep each item 80-150 words; lead with the best item
+- How-to guide: numbered steps in H2s; include prerequisites; add a troubleshooting H2 at the end
+- Comparison: use a summary table at the top; dedicate one H2 per option; end with a recommendation
+- Case study: problem → approach → result structure; include real numbers; quote the subject
+- Opinion piece: state the position in the intro; steelman opposing view; back claims with data
 
 ## Audience
 Persona: {name from ICP or description}
-Where they are in the funnel: {Awareness / Consideration / Decision}
-What they know already: {assumed knowledge level}
-What they want to walk away with: {specific outcome}
+Knowledge level: {beginner / intermediate / advanced — assumed going in}
+What they already know: {specific assumed knowledge}
+What they want to walk away with: {specific outcome or decision they can make}
+Pain point this piece resolves: {the friction or uncertainty they have before reading}
+
+## Content Angle / Hook
+Unique angle: {the one thing this piece does that no competitor does — see differentiation levers above}
+Hook options for the intro:
+  A) Surprising stat: {stat or data point}
+  B) Contrarian claim: {the consensus view and why it is incomplete}
+  C) Specific scenario: {a relatable situation the reader is already in}
 
 ## Recommended Title
-Primary: {SEO-optimized title with keyword near the front}
-Alt 1: {variation}
-Alt 2: {variation}
+Primary: {SEO-optimized title with keyword near the front, under 60 characters}
+Alt 1: {variation emphasizing the unique angle}
+Alt 2: {variation targeting a long-tail variant}
 
 ## Meta Description
-{Under 155 chars, includes keyword, clear benefit statement}
+{Under 155 chars, includes primary keyword, states the unique benefit, includes a soft CTA}
 
 ## Word Count Target
 {range, e.g., 1,400-1,800 words}
-Reason: {based on competitor content length + depth needed}
+Reason: {based on competitor content length, depth of topic, and featured snippet opportunity}
+Note: {if a featured snippet is the goal, a concise 1,200-word piece can outperform a 3,000-word one}
 
 ## Content Structure
 
 H1: {final title}
 
 **Intro** (100-150 words)
-- Hook: {specific question, stat, or contrarian claim}
-- State the problem
-- Preview the solution
+- Hook: {chosen hook from options above — stat, contrarian claim, or scenario}
+- State the problem or question precisely
+- Promise: what the reader will be able to do or decide after reading
+- Do NOT bury the lead — answer the main question within the first 100 words if informational
 
-H2: {Section 1 — addresses most common intent}
+H2: {Section 1 — directly addresses the primary search intent}
   H3: {Subsection if needed}
   H3: {Subsection if needed}
-  Key points: {bullet list of what to cover}
+  Key points:
+    - {specific claim or fact to cover}
+    - {specific claim or fact to cover}
+  Featured snippet target: {yes/no — if yes, place a direct 40-50 word answer immediately under this H2}
 
-H2: {Section 2}
-  Key points: {bullet list}
+H2: {Section 2 — addresses top PAA question #1}
+  Key points:
+    - {specific claim or fact to cover}
+    - {specific claim or fact to cover}
 
-H2: {Section 3}
-  Key points: {bullet list}
+H2: {Section 3 — addresses top PAA question #2 or a common objection}
+  Key points:
+    - {specific claim or fact to cover}
+    - {specific claim or fact to cover}
 
-H2: {Section 4 — optional, for longer pieces}
-  Key points: {bullet list}
+H2: {Section 4 — unique angle / differentiating section not found in competitors}
+  Key points:
+    - {original data, contrarian take, or expert insight}
+    - {specific claim or fact to cover}
+
+H2: {Section 5 — optional, for longer pieces or comparison table}
+  Key points:
+    - {specific claim or fact to cover}
 
 **Conclusion** (100-150 words)
-- Recap key insight
-- CTA: {specific next action}
+- Recap the single most important insight (not a list of everything covered)
+- Bridge to next step: what should the reader do right now?
+- CTA: {specific next action — see CTA section below}
 
 ## CTA
-Primary: {specific CTA text and destination}
-Secondary: {alternative for readers not ready to convert}
+Primary: {specific CTA text and destination URL or page name}
+  — Best for: readers at Decision stage, or those who consumed the full piece
+Secondary: {alternative CTA for readers not ready to convert — e.g., related guide, newsletter signup}
+  — Best for: readers at Awareness or Consideration stage
 
-## Internal Links
+## Internal Linking Strategy
+
+### Links FROM this piece TO existing content
 Suggest linking to:
-- {existing content piece 1}: anchor text "{text}"
-- {existing content piece 2}: anchor text "{text}"
+- {existing content piece 1 — topic relevance reason}: anchor text "{text}", placement: {H2 or section}
+- {existing content piece 2 — topic relevance reason}: anchor text "{text}", placement: {H2 or section}
+- {existing content piece 3}: anchor text "{text}", placement: {conclusion / CTA block}
+
+### Links TO this piece FROM existing content
+After publishing, add an inbound link from:
+- {high-authority existing page}: update the paragraph about {related topic} to link here
+- {existing piece with overlapping audience}: add a callout block or "Related reading" line
+- {category or pillar page}: add this piece to the related articles list
+
+Rationale: Internal links pass authority from established pages and improve crawl depth.
+New pieces should receive at least 2 inbound links from existing content on day one.
 
 ## Competitor Content to Beat
-1. {URL} — weakness: {what to do better}
-2. {URL} — weakness: {what to do better}
+1. {URL} — published: {date} — word count: ~{N} — weakness: {what to do better}
+2. {URL} — published: {date} — word count: ~{N} — weakness: {what to do better}
+3. {URL} — published: {date} — word count: ~{N} — weakness: {what to do better}
+
+## Unique Angle Summary
+Differentiation lever(s) selected: {lever name from Step 2}
+Execution: {one sentence on how we apply this lever in this specific piece}
+The one thing a reader gets here they cannot get from any competitor: {state it plainly}
+
+## Success Metrics
+Target SERP position: {e.g., top 3 for primary keyword within 6 months}
+Estimated monthly traffic at target position: {rough estimate based on search volume × CTR}
+Primary conversion goal: {e.g., trial signup, demo request, newsletter subscribe}
+Secondary goal: {e.g., time on page >3 min, scroll depth >75%}
+Review checkpoint: {e.g., "Revisit ranking and update content at 3-month mark if not in top 5"}
 
 ## Notes for Writer
-- {specific voice note from brand.yaml}
-- {specific angle or unique insight to include}
-- {data point or example to reference if known}
+- {specific voice note from brand.yaml — tone, vocabulary, level of formality}
+- {specific angle or unique insight to include — from differentiation strategy above}
+- {data point, case study, or example to reference if known}
+- Avoid: {common filler phrases, hedging language, or clichés found in competitors}
+- Tables and structured lists are preferred over dense paragraphs for scannability
 ```
 
 ---
@@ -556,7 +695,8 @@ Present the brief. Use AskUserQuestion:
 > A) The outline structure
 > B) The CTA or audience
 > C) The word count target
-> D) Looks good — save it"
+> D) The unique angle or differentiation strategy
+> E) Looks good — save it"
 
 STOP and wait.
 
@@ -572,8 +712,11 @@ Save the brief document.
 Report:
 - Keyword: {keyword}
 - Intent: {intent type}
+- Format recommendation: {recommended format}
 - Word count target: {range}
 - Outline: {number} sections
+- Featured snippet opportunity: {yes/no}
+- Unique angle: {one-line summary}
 - File saved to: {path}
 
 Suggest next steps:

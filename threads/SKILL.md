@@ -1,11 +1,12 @@
 ---
 name: m-threads
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Twitter/X thread writer. Takes a topic or insight and generates a 6-12 tweet
-  thread: hook tweet, value tweets, engagement tweet, and CTA tweet. Follows brand
-  voice. Includes thread formatting advice and character counts.
+  thread: hook tweet, context tweet, value tweets, engagement tweet, and CTA tweet.
+  Follows brand voice. Uses proven hook formulas, tweet-level craft rules, and
+  engagement mechanics. Includes character counts and media placement suggestions.
 allowed-tools:
   - Bash
   - Read
@@ -411,35 +412,59 @@ Then ask:
 
 STOP and wait.
 
-## Step 1: Structure the Thread
+## Step 1: Thread Architecture
 
-Determine thread length based on topic depth:
-- 6-7 tweets: tight insight, one main argument
-- 8-10 tweets: process or framework, step-by-step
-- 11-12 tweets: full breakdown, multiple angles
-
-Plan the structure before writing:
+Every tweet in the thread has a specific job. Define these positions before writing a single word:
 
 ```
-Tweet 1: Hook — make them stop scrolling
-Tweet 2: Context — why this matters or the problem
-Tweet 3-{N-2}: Value — the actual insight, step by step
-Tweet {N-1}: Engagement — question or call to action to reply
-Tweet {N}: CTA — where to go next
+Tweet 1 — HOOK: Stop the scroll. Make a claim or create tension. No payoff yet.
+Tweet 2 — CONTEXT: Why this matters now. The stakes. The gap between where readers
+           are and where they want to be.
+Tweets 3 to {N-2} — VALUE: The meat. One concrete idea per tweet. Each tweet
+                    must stand alone if screenshotted.
+Tweet {N-1} — ENGAGEMENT: Invite a reply. Ask a question with a real answer.
+              Or present a relatable moment that makes people tag someone.
+Tweet {N} — CTA: The natural next step. Not salesy. One link maximum.
 ```
+
+**Thread length by goal:**
+- 6-7 tweets: single sharp insight or hot take — tighter = stronger
+- 8-10 tweets: framework, process, or step-by-step breakdown
+- 11-12 tweets: full multi-angle breakdown where every tweet adds genuinely new value
+- Default to shorter. Cut any tweet that doesn't add new information.
+
+**Why people share threads:**
+- Retweet: the content makes the sharer look smart or informed
+- Reply: the content provokes a real opinion or personal experience
+- Bookmark: the thread is reference material worth saving
+- Design for at least two of these three.
 
 ## Step 2: Write the Hook Tweet
 
-The hook is everything. Rules:
-- Make a claim, not an announcement
-- Use a specific number when possible ("7 things", "3 years of data", "1 mistake")
-- Contrarian angle if you can back it up
-- Curiosity gap: hint at the insight without giving it away
-- End with "🧵" or "(thread)" to signal there's more
+The hook is the only tweet the algorithm guarantees will be seen. Rules:
 
-Write 3 hook options:
+- Open with tension, a claim, or a number — not a warm-up sentence
+- The first word is the most important word in the thread. Make it count.
+- Use a specific number when possible ("7 mistakes", "3 years of data", "1 counterintuitive fact")
+- Never start with "I", "So", "As", or "Have you ever"
+- End with a line break + "🧵" or "(thread)" on its own line to signal continuation
 
-**Option A — Specific claim:**
+**Hook formula library — choose the one that fits the topic:**
+
+| Formula | Pattern | When to use |
+|---|---|---|
+| Contrarian | "Most [people/experts] think X. They're wrong." | You have data or experience that flips conventional wisdom |
+| Stat bomb | "[Surprising number] + implication." | You have a striking data point that reframes the topic |
+| Bold prediction | "In [timeframe], [thing] will [outcome]. Here's why." | Forward-looking take you can defend |
+| Curiosity gap | "I spent [time/effort] studying [X]. Here's what nobody talks about." | Deep research or hard-won experience |
+| Personal story | "[Specific moment]. That changed how I think about [X]." | Authentic experience that generalizes |
+| List tease | "[N] things I wish I knew about [X] before [Y]." | Listicle format, pairs well with step-by-step threads |
+| Hot take | "[Claim that will make some people nod and others disagree]" | Polarizing but defensible opinion |
+| Confession | "I used to [wrong belief/behavior]. Then [what changed]." | Vulnerability + lesson learned |
+
+Write 3 hook options using different formulas:
+
+**Option A — [formula name]:**
 ```
 {hook tweet A}
 
@@ -447,7 +472,7 @@ Write 3 hook options:
 ```
 {char count}/280
 
-**Option B — Contrarian:**
+**Option B — [formula name]:**
 ```
 {hook tweet B}
 
@@ -455,7 +480,7 @@ Write 3 hook options:
 ```
 {char count}/280
 
-**Option C — Direct value:**
+**Option C — [formula name]:**
 ```
 {hook tweet C}
 
@@ -470,7 +495,16 @@ STOP and wait.
 
 ## Step 3: Write the Full Thread
 
-Using the approved hook, write the complete thread:
+Using the approved hook, write the complete thread applying these tweet-level craft rules:
+
+**Per-tweet rules:**
+- Each tweet must make sense if read in isolation — no "as I mentioned above"
+- One idea per tweet. If you're tempted to put two ideas in one tweet, split it.
+- Use line breaks for rhythm. A wall of text loses readers mid-tweet.
+- First word of each value tweet should anchor the point ("Most...", "The fix:", "Example:", "Here's the data:")
+- Specific beats vague in every value tweet: "$47K lost" beats "significant money lost"
+- Numbers, names, and examples make tweets screenshot-worthy
+- Never start a tweet with "So", "Now", "And", or "Also"
 
 ---
 
@@ -480,63 +514,77 @@ Using the approved hook, write the complete thread:
 ```
 {char count}/280
 
-**Tweet 2 (Context/Setup):**
+**Tweet 2 (Context — why this matters, the stakes, or the problem):**
 ```
-{why this matters, the situation, or the problem being solved}
+{1-3 sentences. What is the gap? What does the reader risk missing?}
 ```
 {char count}/280
 
 **Tweet 3 (Point 1 or Step 1):**
 ```
-{first insight — concrete, specific, not vague}
+{first insight — concrete and specific, not vague}
 ```
 {char count}/280
 
-[Continue for each value tweet...]
+[Continue for each value tweet. Each one: one idea, specific example or data, standalone.]
 
 **Tweet {N-1} (Engagement):**
 ```
-{question to drive replies or a relatable moment}
+{question that has a real answer people want to share, or a relatable moment that
+makes people tag someone. Avoid yes/no questions.}
 ```
 {char count}/280
 
 **Tweet {N} (CTA):**
 ```
-{natural next step — not salesy}
-{link if relevant}
+{natural next step framed as a benefit, not a command}
+{link on its own line if applicable}
 ```
 {char count}/280
+
+**Self-reply (link distribution):**
+```
+If linking to a resource, write a self-reply as the first reply to Tweet {N}.
+The algorithm deprioritizes links in main thread tweets but does not suppress self-replies.
+Format: [1-line description of what's at the link] → {link}
+```
 
 ---
 
 Thread rules applied:
-- Each tweet works as a standalone (makes sense without the previous one)
-- No tweet starts with "So" or "Now" as filler
+- Each tweet works as a standalone
+- No tweet starts with filler words
 - Specific examples over vague claims in every value tweet
 - Numbers and data used where available
 - No emojis unless brand.yaml allows them
 
-## Step 4: Threading Format Advice
+## Step 4: Visual Elements
 
-Add formatting notes:
+Suggest media placements that increase engagement or clarity. Images added to tweets
+increase impressions. Use them for: data that is hard to read as prose, before/after
+comparisons, product screenshots, and social proof.
 
-**For each tweet, note:**
-- Add tweet number at the end if the thread is long (e.g., "3/12")
-- Images: suggest where a screenshot, chart, or graphic would increase engagement
-- Quote tweet: if you're building on or responding to someone else's content
+**For each tweet where visuals would help, note:**
+- Tweet number and tweet number label at the end if thread is long (e.g. "3/10")
+- Image type: chart, table, screenshot, diagram, or side-by-side comparison
+- What the image should show (be specific enough that a designer could execute it)
 
 **Recommended media placements:**
-- Tweet {N}: add a chart or table here
-- Tweet {N}: screenshot of your product/tool here
+- Tweet {N}: [image type] showing [what]
+- Tweet {N}: [image type] showing [what]
+
+Rule: suggest visuals only where they genuinely add information the tweet text cannot.
+Do not suggest decorative images.
 
 ## Step 5: Review
 
 Present the complete thread. Use AskUserQuestion:
-> "Here's the full thread ({N} tweets). What would you like to change?
+> "Here's the full thread ({N} tweets, ~{total char estimate} characters). What would you like to change?
 > A) Rewrite a specific tweet (tell me which number)
 > B) Adjust the tone
-> C) Make it shorter or longer
-> D) Looks good — save it"
+> C) Make it shorter — I'll cut the lowest-value tweets
+> D) Make it longer — tell me which point to expand
+> E) Looks good — save it"
 
 STOP and wait.
 
@@ -545,13 +593,18 @@ STOP and wait.
 Use AskUserQuestion:
 > "Where should I save this thread? (default: `social/thread-{topic-slug}-{date}.md`)"
 
-Save the thread with tweet numbers, character counts, and media suggestions.
+Save the thread with:
+- Tweet numbers and character counts
+- Hook formula used (for future reference)
+- Media placement suggestions inline
+- Self-reply content if applicable
 
 ## Completion
 
 Report:
 - Thread length: {N} tweets
-- Hook type: {type used}
+- Hook formula used: {formula name}
+- Engagement mechanic: {retweet / reply / bookmark — which was designed for}
 - Topic: {topic}
 - File saved to: {path}
 

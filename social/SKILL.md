@@ -1,11 +1,12 @@
 ---
 name: m-social
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Social post creation. Takes a topic or content to promote and generates
   platform-specific posts: Twitter/X, LinkedIn, Reddit, and Instagram. Respects
-  each platform's culture and character limits. Includes posting time suggestions.
+  each platform's algorithm signals, character limits, culture, and optimal
+  posting times. Includes engagement hooks and content adaptation per platform.
 allowed-tools:
   - Bash
   - Read
@@ -424,18 +425,36 @@ Extract:
 - Core insight or main point
 - Key stats, quotes, or specific facts
 - CTA and destination URL
-- Target audience segment
+- Target audience segment (B2B professionals, B2C consumers, developer/technical, general)
 
 If it's an announcement or original take, work from the user's description.
 
+**Adaptation principle:** The same topic requires completely different execution per platform.
+A stat that works as a punchy tweet needs to become a story on LinkedIn, a genuine question on Reddit,
+and a visual hook on Instagram. Never copy-paste across platforms.
+
 ## Step 2: Write Twitter/X Post
 
-**Format rules:**
-- Under 280 characters for standalone post
-- Hook in the first line (curiosity, contrarian claim, specific number, or call-out)
-- One clear idea — not a summary of everything
-- No hashtag spam (0-2 max, only if genuinely relevant)
-- End with a link or a question to drive replies
+**Character limits:**
+- Hard limit: 280 characters per tweet
+- URLs count as 23 characters regardless of actual length
+- Images/cards add visual weight but don't consume character budget
+
+**Algorithm signals Twitter/X rewards:**
+- Replies > retweets > likes (replies are the highest engagement signal)
+- Early engagement velocity in the first 30 minutes is critical — post when your audience is online
+- Dwell time on the tweet (longer replies and quote tweets help)
+- Avoid link-only tweets — the algorithm suppresses external links; embed the link after the hook text
+- Accounts that reply to comments on their own tweets get boosted
+
+**Hook formulas for Twitter/X:**
+- **Contrarian claim:** "Everyone says X. Here's why that's wrong:"
+- **Specific number:** "3 years building this. Here's what I learned:"
+- **Direct call-out:** "If you're still doing X in 2025, read this."
+- **Curiosity gap:** "We did X and the result surprised us:"
+- **Hot take:** "Unpopular opinion: [take]" (triggers replies)
+
+**Hashtag strategy:** 0-2 max. Only add if the hashtag has active community traffic. Never pad.
 
 Write 2-3 variations:
 
@@ -463,36 +482,86 @@ Write 2-3 variations:
 ```
 → If you want the full thread, run `/m-threads`
 
-**Best time to post:** Tuesday-Thursday, 9am-11am or 5pm-7pm in your main audience timezone.
+**Best time to post:**
+- B2B audience: Tuesday–Thursday, 8am–10am or 5pm–6pm in their timezone
+- B2C / consumer: Tuesday–Thursday, 12pm–1pm or 7pm–9pm
+- Developer/technical: Wednesday–Thursday, 10am–12pm
+- Avoid Friday afternoon and weekends for B2B; Saturday morning works for B2C
 
 ## Step 3: Write LinkedIn Post
 
-**Format rules:**
-- Up to 1,300 characters (LinkedIn cuts off at 3 lines without "see more")
-- First 2 lines must earn the click to expand
-- Professional but not stiff — insight-forward
-- Line breaks every 1-2 sentences (easy to scan on mobile)
-- End with 1 question to drive comments or a specific takeaway
-- 3-5 hashtags at the end
+**Character limits:**
+- Feed limit: 3,000 characters
+- First fold (before "see more"): ~700 characters / approximately 3 lines on desktop
+- The first fold is your only chance to earn the expand click — treat it as a standalone hook
+
+**Algorithm signals LinkedIn rewards:**
+- **Dwell time** is the #1 signal — write posts people stop and read fully
+- **Comments** weighted much higher than likes or shares
+- **Saves** signal high-value content (how-to, frameworks, lists)
+- Native content outperforms external links — if linking out, put the link in the first comment
+- Consistent posting (3–4x/week) trains the algorithm to distribute your content
+- Polls and documents (carousels) get extra reach
+
+**Hook formulas for LinkedIn:**
+- **Pattern interrupt:** Start with a short, counterintuitive line that breaks the scroll
+  - "I almost quit. Then this happened."
+  - "We lost $40k. Here's the email I sent my team."
+- **Specific result:** "In 6 months, we went from 0 to 12,000 users. Here's the exact playbook:"
+- **Vulnerability + lesson:** "I made a mistake that cost us 3 months. I'm sharing it so you don't."
+- **List setup:** "5 things I wish I knew before building a B2B SaaS:"
+- **Question that reframes:** "What if your retention problem is actually a positioning problem?"
+
+**Engagement triggers to close the post:**
+- "What's your experience with X?"
+- "Agree or disagree — leave a comment."
+- "What would you add to this list?"
+- "Tag someone who needs to read this."
+
+**Hashtag strategy:** 3–5 hashtags at the end. Mix one broad (#marketing), one niche (#b2bsaas),
+and one community tag (#founder). No more than 5 — LinkedIn penalizes hashtag stuffing.
 
 ```
-{LinkedIn post — full text}
+{First fold — hook line + 1-2 setup lines, max ~700 chars before "see more"}
+
+{Body — insight, story, or list with line breaks every 1-2 sentences for mobile readability}
+
+{Closing question or CTA}
 
 #{hashtag} #{hashtag} #{hashtag}
 ```
 
-{char count}/1,300
+{char count}/3,000 ({first-fold char count}/700 before fold)
 
-**Best time to post:** Tuesday-Thursday, 7am-9am or 12pm-1pm.
+**Best time to post:**
+- B2B audience: Tuesday–Thursday, 7am–9am or 12pm–1pm
+- B2C / consumer: Monday–Wednesday, 10am–12pm
+- Posting at 7am catches people before their day starts; 12pm catches the lunch scroll
 
 ## Step 4: Write Reddit Post
 
-**Format rules:**
-- Community-first: lead with value, not promotion
-- No hard sell — Reddit users reject promotional framing immediately
-- Personal experience and specifics beat generic advice
-- Ask questions, share what you learned
-- Include a disclosure if linking to your own product
+**Character limits:**
+- Title: 300 characters max (aim for under 200 — shorter titles perform better)
+- Body: 40,000 characters max (but 200–600 words is the sweet spot for engagement)
+
+**Algorithm signals Reddit rewards:**
+- **Upvote velocity in the first hour** determines front-page potential for the subreddit
+- **Comment depth** (replies to replies) signals a healthy discussion — ask questions that spark debate
+- **Authenticity** — Reddit has exceptional spam detection; promotional framing kills posts instantly
+- Posts with personal experience ("I built X" / "We tried X and here's what happened") outperform generic advice
+- Flairs matter — use the correct post flair for the subreddit to avoid removal
+
+**Hook formulas for Reddit:**
+- **Genuine question:** "Has anyone else found that X actually doesn't work? Here's what happened to us:"
+- **Show your work:** "I spent 3 months testing X. Here are the actual numbers:"
+- **Discussion opener:** "Curious what people here think about X — I've seen both sides argued"
+- **Resource share:** "I wrote up what I learned about X — sharing in case it helps others"
+- **Confession:** "Made a mistake with X. Posting so others don't repeat it."
+
+**What to avoid:**
+- Never lead with your product name or a promotional CTA
+- Never say "check out my X" in the title
+- Always disclose affiliation: "I built this" or "(I'm affiliated with this)" in the body
 
 Identify the most relevant subreddits based on topic and brand.yaml audience:
 - Primary: r/{subreddit 1} — why this community
@@ -500,28 +569,58 @@ Identify the most relevant subreddits based on topic and brand.yaml audience:
 
 **Post title:**
 ```
-{Reddit post title — specific, no clickbait, often a question or finding}
+{Reddit post title — specific, authentic, often a question or concrete finding, under 200 chars}
 ```
+{char count}/300
 
 **Post body:**
 ```
-{Reddit post body — personal framing, value-first, disclosure if linking own product}
+{Reddit post body — personal framing, value-first, actual details and numbers, disclosure if linking own product}
 ```
+{word count} words
 
-**Best time to post:** Weekdays 9am-12pm EST for most tech communities.
+**Hashtag strategy:** None. Reddit uses no hashtags. Do not include any.
+
+**Best time to post:**
+- Most tech/startup subreddits: Monday–Wednesday, 9am–12pm EST
+- Gaming/consumer communities: weekends, 10am–2pm EST
+- Post when moderators are active — avoid 3am–6am EST when automod flags are slower to clear
 
 ## Step 5: Write Instagram Caption
 
-**Format rules:**
-- Hook in first line (before the "more" cut)
-- Storytelling or strong visual reference
-- Hashtags at the end or in first comment (10-15 relevant ones)
-- CTA: "link in bio" if driving traffic
+**Character limits:**
+- Total caption limit: 2,200 characters
+- First fold (before "more" button): ~125 characters / 1-2 lines
+- The first 125 characters are the only thing visible in feed without tapping — make them count
+
+**Algorithm signals Instagram rewards:**
+- **Saves** are the highest-value action (signals evergreen content worth returning to)
+- **Shares to Stories** heavily weighted
+- **Comments** weighted more than likes — ask a genuine question to drive them
+- **Watch time** on Reels (if video accompanies the post)
+- Carousel posts get extra impressions because swiping signals engagement
+- Posting consistently (4–7x/week) matters more than posting perfectly once
+
+**Hook formulas for Instagram:**
+- **Relatable frustration:** "When you realize X is the problem all along 👇"
+- **Bold claim:** "This one thing changed how we think about X."
+- **Curiosity tease:** "Nobody talks about this side of X:"
+- **Direct address:** "If you're building X, this is for you."
+- **Story opening:** "Two years ago I had no idea how to X."
+
+**Hashtag strategy:**
+- Use 10–15 hashtags (more reduces reach; under 5 wastes discovery potential)
+- Mix tiers: 2–3 large (1M+ posts, e.g. #marketing), 5–7 medium (100K–500K posts, e.g. #contentmarketing),
+  3–5 niche (under 50K posts, e.g. #b2bcontentmarketing)
+- Place hashtags after line-break dots or in the first comment to keep caption clean
+- Research hashtags specific to your brand's niche rather than generic volume hashtags
+
+**CTA options:** "Link in bio" / "Save this for later" / "Tag someone who needs this" / "Drop your answer below"
 
 ```
-{Instagram caption — first line hook}
+{First fold — hook, max ~125 chars}
 
-{body — 2-4 paragraphs max}
+{Body — story, insight, or visual walkthrough, 2-4 short paragraphs}
 
 {CTA}
 
@@ -529,11 +628,16 @@ Identify the most relevant subreddits based on topic and brand.yaml audience:
 .
 .
 
-#{hashtag} #{hashtag} #{hashtag} #{hashtag} #{hashtag}
-#{hashtag} #{hashtag} #{hashtag} #{hashtag} #{hashtag}
+#{niche hashtag} #{niche hashtag} #{medium hashtag} #{medium hashtag} #{medium hashtag}
+#{medium hashtag} #{large hashtag} #{large hashtag} #{niche hashtag} #{niche hashtag}
 ```
 
-**Best time to post:** Tuesday-Friday, 11am-1pm or 7pm-9pm.
+{caption char count}/2,200 ({first-fold char count}/125 before fold)
+
+**Best time to post:**
+- B2B / professional: Tuesday–Thursday, 8am–10am or 12pm–2pm
+- B2C / lifestyle: Tuesday–Friday, 11am–1pm or 7pm–9pm
+- Reels: any day, post when your audience is most active (check Insights)
 
 ## Step 6: Review and Finalize
 

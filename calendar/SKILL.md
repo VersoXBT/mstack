@@ -1,11 +1,12 @@
 ---
 name: m-calendar
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Content calendar planning. Takes a strategy doc or channel list with frequency
   and generates a monthly calendar: date, channel, content type, topic, and status.
-  Includes theme weeks, recurring series, and seasonal hooks. Exports markdown table.
+  Applies 70/20/10 content mix, content pillars, theme weeks, seasonal hooks,
+  pipeline stage tracking, buffer content slots, and CSV export for Notion/Airtable.
 allowed-tools:
   - Bash
   - Read
@@ -413,11 +414,24 @@ If not provided, use AskUserQuestion:
 Then ask:
 > "What's your publishing frequency per channel?
 > Examples: 'Twitter: daily, Blog: 2x/month, LinkedIn: 3x/week, Reddit: weekly'
-> Or say 'suggest it' and I'll recommend based on your channel list."
+> Or say 'suggest it' and I'll recommend based on your channel list and team size."
 
 STOP and wait.
 
 ## Step 1: Define the Calendar Framework
+
+### Realistic cadence by channel and team size
+
+Use these benchmarks as guardrails before computing total pieces:
+
+| Channel | Solo / small team | Mid-size team | Large team |
+|---------|-------------------|---------------|------------|
+| Blog / long-form | 2x / month | 4x / month | 8x / month |
+| LinkedIn | 3x / week | 5x / week | Daily |
+| Twitter / X | 3-5x / week | Daily | 2-3x / day |
+| Email newsletter | Biweekly | Weekly | Weekly |
+| YouTube / video | 2x / month | 4x / month | Weekly |
+| Podcast | 2x / month | Weekly | Weekly |
 
 Based on the channels and frequency provided:
 
@@ -429,29 +443,104 @@ If the total seems too high, flag it:
 > "That's {N} pieces in a month. For a team starting out, I'd suggest starting with
 > {lower number} to maintain quality. Want to adjust the frequency?"
 
-Define content mix:
-- Evergreen (timeless educational) vs. timely (news, product updates, seasonal)
-- Content types per channel (threads, articles, social posts, newsletter, etc.)
+### Content mix: 70/20/10 rule
+
+Every calendar should follow this split to balance proven reach with exploration:
+
+- **70% Proven topics** — formats and subjects with demonstrated traction: how-to guides, tutorials, industry news commentary, case studies, customer stories. Low risk, consistent engagement.
+- **20% Experimental topics** — new angles, emerging trends, untested formats (short video, interactive polls, long threads on new subtopics). Higher variance, potential breakout.
+- **10% Brand / culture** — behind-the-scenes, team spotlights, product announcements, company values. Builds identity without overselling.
+
+For social-heavy calendars, also apply the **4-1-1 rule** per channel:
+- 4 posts that educate or entertain the audience (no pitch)
+- 1 soft promotion (useful resource, free tool, case study)
+- 1 direct promotion (product, trial, offer)
+
+Label each calendar row with its mix category: `proven`, `experimental`, or `brand`.
+
+### Content pillars
+
+3-5 recurring themes anchored to positioning. Every piece maps to exactly one pillar — this prevents random topic drift and builds topical authority over time.
+
+If a strategy doc was found, derive pillars from it. Otherwise, suggest defaults:
+- **Pillar 1**: {Core problem your product solves — e.g., "Time savings for operators"}
+- **Pillar 2**: {Industry expertise signal — e.g., "Market trends and analysis"}
+- **Pillar 3**: {Social proof — e.g., "Customer outcomes and case studies"}
+- **Pillar 4**: {Product education — e.g., "How-to and feature deep-dives"}
+- **Pillar 5** *(optional)*: {Culture / team — e.g., "Behind the build"}
+
+Add a `Pillar` column to every calendar row.
 
 ## Step 2: Identify Themes and Series
 
 A calendar with random topics burns out quickly. Build structure:
 
-**Weekly themes** (if strategy doc exists, derive from there):
-- Week 1: {theme — e.g., "Audience pain points"}
-- Week 2: {theme — e.g., "Product/solution spotlight"}
-- Week 3: {theme — e.g., "Social proof / case studies"}
-- Week 4: {theme — e.g., "Industry insights / thought leadership"}
+### Weekly themes (theme weeks)
 
-**Recurring series** (high-value formats that get scheduled regularly):
+Group related content within a single week to signal authority on one subject. The compounding effect: when an audience sees 4-5 pieces on the same topic across different channels in one week, they associate the brand with that subject far more strongly than isolated posts would achieve. Search and social algorithms also reward topical clustering.
+
+- Week 1: {theme — e.g., "Audience pain points"} → all channels reinforce this angle
+- Week 2: {theme — e.g., "Product/solution spotlight"} → demos, case studies, feature posts
+- Week 3: {theme — e.g., "Social proof / case studies"} → testimonials, metrics, stories
+- Week 4: {theme — e.g., "Industry insights / thought leadership"} → data, takes, trends
+
+**Named theme weeks** (use when a topic warrants full immersion):
+- "SEO Week" — all content ties to search: keyword posts, on-page tips, tool reviews, a deep-dive blog post anchor
+- "Customer Stories Week" — every channel features a customer voice: quote posts, case study blog, LinkedIn story, email feature
+- "Launch Week" — coordinate across channels for a product release: teaser → reveal → tutorial → social proof → follow-up
+
+### Recurring series
+
+High-value formats scheduled at fixed intervals build audience habits:
 - {Series name}: {description, e.g., "Weekly tip thread every Tuesday"}
-- {Series name}: {description, e.g., "Monthly deep-dive blog post"}
+- {Series name}: {description, e.g., "Monthly deep-dive blog post, first Monday"}
+- {Series name}: {description, e.g., "Biweekly email case study, alternating Thursdays"}
 
-**Seasonal hooks** for {month}:
-- {Relevant event, holiday, or industry moment in this month}
-- {Relevant event 2}
+### Seasonal hooks for {month}
 
-## Step 3: Generate the Calendar
+Build a relevance calendar by mapping content to external moments:
+
+**Industry events:**
+- {Relevant conference, product cycle, or earnings season in this month}
+
+**Holidays and awareness months:**
+- {Relevant holiday or awareness month — e.g., "Mental Health Awareness Month (May)"}
+
+**Product launch windows:**
+- {Flag any planned releases or milestones that should anchor calendar content}
+
+**Always-on seasonal anchors to check:**
+- Q1: New Year planning content, annual predictions
+- Q2: Mid-year reviews, spring campaign hooks
+- Q3: Back-to-school, budget planning previews
+- Q4: Year-end roundups, holiday campaigns, next-year outlook
+
+## Step 3: Define the Content Pipeline
+
+Track every piece through six stages. A slot without a stage is invisible to the team.
+
+| Stage | Definition | Owner |
+|-------|------------|-------|
+| `idea` | Topic identified, not yet briefed | Strategist |
+| `brief` | Brief written, ready for writer | Strategist |
+| `draft` | First draft in progress | Writer |
+| `edit` | Draft complete, in review | Editor |
+| `publish` | Approved, scheduled or live | Publisher |
+| `repurpose` | Published piece being adapted for other channels | Repurposing lead |
+
+Use `Status` column in the calendar to track current stage. On first generation, all pieces start at `idea` or `brief` depending on whether a brief already exists.
+
+### Buffer content
+
+Always maintain **2 weeks of pre-written evergreen content** as a backup reserve. Mark these rows with `[BUFFER]` in the Topic column. Buffer slots:
+- Are fully written and approved before the calendar month begins
+- Cover evergreen topics that don't expire (tutorials, reference guides, FAQ posts)
+- Get published only if a scheduled piece is delayed or pulled
+- Rotate and replenish after use
+
+Flag at least 4 buffer slots in the calendar (enough for ~2 weeks across primary channels).
+
+## Step 4: Generate the Calendar
 
 Build a complete monthly calendar table:
 
@@ -461,14 +550,17 @@ Build a complete monthly calendar table:
 ## Summary
 Total pieces: {N}
 Channels: {list}
+Content mix: ~{N_proven} proven (70%), ~{N_experimental} experimental (20%), ~{N_brand} brand (10%)
+Content pillars: {pillar list}
 Theme structure: {week themes}
+Buffer slots: {N_buffer} evergreen pieces held in reserve
 
 ## Calendar
 
-| Date | Day | Channel | Content Type | Topic | Theme | Status |
-|------|-----|---------|-------------|-------|-------|--------|
-| {date} | {Mon} | {channel} | {type} | {topic} | {theme} | Draft |
-| {date} | {Tue} | {channel} | {type} | {topic} | {theme} | Draft |
+| Date | Day | Channel | Content Type | Topic | Theme | Pillar | Mix | Pipeline | Status |
+|------|-----|---------|-------------|-------|-------|--------|-----|----------|--------|
+| {date} | {Mon} | {channel} | {type} | {topic} | {theme} | {pillar} | proven/exp/brand | idea/brief/draft | Draft |
+| {date} | {Tue} | {channel} | {type} | {topic} | {theme} | {pillar} | proven/exp/brand | idea/brief/draft | Draft |
 ...
 ```
 
@@ -476,8 +568,10 @@ Rules for filling topics:
 - Use specific, concrete topics (not "{channel} post")
 - Pull from existing briefs, strategy doc, or keyword research if available
 - Interleave content types to avoid repetition (not 3 blog posts in a row)
+- Maintain 70/20/10 mix across the full month, not just week by week
 - Leave some slots as "{theme} — topic TBD" for flexibility
 - Flag any slot that needs a content brief or research
+- Mark buffer slots with `[BUFFER]` — these are reserve pieces, not scheduled
 
 **Content that needs a brief:**
 - {date}: {topic} → Run `/m-brief` before writing
@@ -485,42 +579,58 @@ Rules for filling topics:
 **Content that can be repurposed:**
 - {date}: {topic} → Can be repurposed from {source piece}
 
-## Step 4: Review
+## Step 5: Review
 
 Present the full calendar. Use AskUserQuestion:
-> "Here's the {month} content calendar ({N} pieces). What would you like to change?
+> "Here's the {month} content calendar ({N} pieces across {channels}).
+> Content mix: {N_proven} proven, {N_experimental} experimental, {N_brand} brand.
+> Buffer: {N_buffer} evergreen pieces in reserve.
+> What would you like to change?
 > A) Adjust the topic for a specific date (tell me which)
-> B) Change the theme structure
-> C) Reduce or increase frequency
-> D) Looks good — save it"
+> B) Change the theme structure or pillars
+> C) Adjust the content mix ratios
+> D) Reduce or increase frequency
+> E) Looks good — save it"
 
 STOP and wait.
 
-## Step 5: Save
+## Step 6: Save
 
 Use AskUserQuestion:
 > "Where should I save the calendar? (default: `docs/calendar-{month-year}.md`)"
 
 Save the calendar as a markdown file with the full table.
 
-Optionally offer CSV export:
-> "Want a CSV version too? You can import it into Notion, Airtable, or Google Sheets."
+### CSV export
 
-If yes, generate CSV:
+Generate a CSV file for importing into Notion, Airtable, or Google Sheets:
+
 ```
-Date,Day,Channel,Content Type,Topic,Theme,Status
+Date,Day,Channel,Content Type,Topic,Theme,Pillar,Mix,Pipeline,Status
 {row}
 {row}
 ```
+
+CSV formatting rules:
+- Wrap any field containing commas in double quotes: `"Topic, with comma"`
+- Use ISO dates (YYYY-MM-DD) for reliable sorting in spreadsheet tools
+- Pipeline and Status use the exact stage names from Step 3
+- Mix values: `proven`, `experimental`, or `brand` — no variants
+- Buffer rows include `[BUFFER]` in the Topic field so they can be filtered easily
+
+Save CSV to: `docs/calendar-{month-year}.csv`
 
 ## Completion
 
 Report:
 - Month: {month}
 - Total pieces: {N}
+- Content mix: {N_proven} proven / {N_experimental} experimental / {N_brand} brand
 - Channels covered: {list}
+- Content pillars: {list}
 - Theme weeks: {list}
-- File saved to: {path}
+- Buffer slots: {N_buffer} evergreen pieces reserved
+- Files saved to: {md_path}, {csv_path}
 
 Suggest next steps:
 - "Run `/m-brief` to create briefs for the blog posts in this calendar"

@@ -1,11 +1,13 @@
 ---
 name: m-repurpose
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
-  Content atomization. Takes one piece of content and generates 5-8 derivatives:
-  tweets, LinkedIn post, Reddit post, email teaser, and short summary. Adapts tone
-  per platform. Includes scheduling suggestions for a full week of posts.
+  Content atomization. Takes one pillar piece (blog post, video, long-form essay) and
+  generates 8-12 derivatives using the content pyramid model: social posts, pull quotes,
+  data callouts, email teaser, community questions, and a short video script. Adapts tone
+  AND angle per platform — not just reformatting. Includes a 1-2 week drip schedule with
+  peak-time slots, UTM tracking per platform, and evergreen rotation flags.
 allowed-tools:
   - Bash
   - Read
@@ -385,6 +387,26 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Content Pyramid Model
+
+Every piece of content has one pillar and many derivatives. The pillar is the authoritative,
+long-form source. Derivatives are not copies — they are re-angles: the same insight reframed
+for a different audience context, intent, and platform norm.
+
+```
+PILLAR (1x)
+  Blog post / Video / Long-form essay / Podcast episode
+       ↓
+SECONDARY DERIVATIVES (3-5x)
+  LinkedIn post · Twitter thread · Reddit post · Email teaser · Short video script
+       ↓
+ATOMIC DERIVATIVES (3-5x)
+  Pull quote graphic · Data callout · Key takeaways · Community question · Summary
+```
+
+Each derivative must stand alone. If a reader needs the source to understand the derivative,
+rewrite the derivative. The link back to the source is a bonus, not a crutch.
+
 ## Setup
 
 Check for source content:
@@ -403,8 +425,13 @@ If not provided, use AskUserQuestion:
 
 Then ask:
 > "Which platforms do you want content for?
-> A) All (Twitter/X, LinkedIn, Reddit, Email, Summary)
+> A) All (Twitter/X, LinkedIn, Reddit, Email, Pull Quote, Data Callout, Key Takeaways, Community Question, Short Video Script)
 > B) Specific ones — tell me which"
+
+Then ask:
+> "Is this content evergreen (true in 6-12 months) or date-sensitive (news, announcement, launch)?
+> A) Evergreen — flag for quarterly re-share rotation
+> B) Date-sensitive — one-pass only, no rotation flag"
 
 STOP and wait.
 
@@ -414,33 +441,49 @@ Read the source content and extract:
 
 1. **Core argument or insight**: the main point in one sentence
 2. **Supporting points**: 3-5 distinct ideas or facts
-3. **Most quotable moment**: the sentence with the most punch
-4. **Best statistic or specific detail**: numbers and specifics repurpose best
-5. **The hook**: what made you write this in the first place
+3. **Most quotable moment**: the sentence with the most punch — visual-ready, self-contained
+4. **Best statistic or specific detail**: numbers and specifics repurpose best; note exact source
+5. **The hook**: what motivated this piece — the tension, problem, or observation
+6. **Evergreen flag**: mark as `EVERGREEN` or `DATE-SENSITIVE` based on user's answer above
+7. **UTM base slug**: derive from title, e.g. `pillar-slug` (used to build per-platform UTM params)
 
 Summarize internally. Do not ask the user — proceed to Step 2.
 
 ## Step 2: Generate Derivatives
 
-Generate all derivatives. Each adapts the source content for its platform's norms.
+Generate all requested derivatives. Each adapts not just the format but the angle and framing
+for its platform. Same insight, different entry point.
+
+**Platform framing guide:**
+- **LinkedIn**: Professional lesson. What did you learn? What should your industry know? Tone: reflective, authoritative, first-person.
+- **Twitter/X**: Punchy take. What is the sharpest, most defensible version of this idea? Tone: direct, opinionated, skimmable.
+- **Reddit**: Discussion starter. What question does this content answer that the community already has? Tone: authentic, non-promotional, value-first.
+- **Email**: Personal angle. Write to one person. What would you tell a colleague over coffee? Tone: warm, direct, curiosity-driving.
+- **Pull Quote / Graphic**: Must work with zero context. 1-2 sentences max. Visual-first.
+- **Data Callout**: One number, one line of context. Infographic-ready.
+- **Short Video Script**: Hook (5s) + core insight (30s) + CTA (5s). For Reels/Shorts/TikTok.
+
+**UTM convention:** append `?utm_source={platform}&utm_medium=social&utm_campaign={pillar-slug}` to all links.
 
 ---
 
-### Twitter/X — Standalone Tweet 1 (Core insight)
+### Twitter/X — Tweet 1 (Core insight)
 ```
-{tweet using the core argument, under 280 chars}
-```
-{char count}/280
-
-### Twitter/X — Standalone Tweet 2 (Quotable moment)
-```
-{tweet using the most quotable line or stat, under 280 chars}
+{tweet using the core argument, punchy and self-contained, under 280 chars}
 ```
 {char count}/280
+Link: `{source URL}?utm_source=twitter&utm_medium=social&utm_campaign={pillar-slug}`
 
-### Twitter/X — Standalone Tweet 3 (Contrarian angle or question)
+### Twitter/X — Tweet 2 (Quotable moment or stat)
 ```
-{tweet that invites debate or reflection, under 280 chars}
+{tweet using the most quotable line or stat — works without context, under 280 chars}
+```
+{char count}/280
+Link: `{source URL}?utm_source=twitter&utm_medium=social&utm_campaign={pillar-slug}`
+
+### Twitter/X — Tweet 3 (Contrarian angle or open question)
+```
+{tweet that invites debate or reflection — takes a position, under 280 chars}
 ```
 {char count}/280
 → For a full thread, run `/m-threads`
@@ -449,78 +492,161 @@ Generate all derivatives. Each adapts the source content for its platform's norm
 
 ### LinkedIn Post
 ```
-{First 2 lines — must earn the "see more" click}
+{First 2 lines — specific claim or story beat that earns the "see more" click}
 
-{Body — expanded insight, professional framing, 1-2 supporting points}
+{Body — expanded insight with professional framing. 1-2 supporting points.
+Draw the lesson explicitly. What should someone in this industry do differently?}
 
-{1 takeaway sentence}
+{One concrete takeaway sentence}
 
-{Question to drive comments or final reflection}
+{Question that invites comment — not rhetorical, genuinely answerable}
 
 #{hashtag} #{hashtag} #{hashtag}
 ```
 {char count}/1,300
+Link: `{source URL}?utm_source=linkedin&utm_medium=social&utm_campaign={pillar-slug}`
 
 ---
 
 ### Reddit Post
 **Suggested subreddits:** r/{subreddit 1}, r/{subreddit 2}
 
-**Title:** `{Reddit title — specific, value-first, no clickbait}`
+**Title:** `{Reddit title — specific, value-first, answers a question the community already has}`
 
 **Body:**
 ```
-{Authentic framing — what you learned or observed, personal angle.
-Lead with value. Mention your product/blog only if essential and with disclosure.}
+{Authentic framing — what you observed, tested, or learned. Lead with the value.
+No hype. If you link to the source, disclose it ("I wrote about this in more detail here: [link]").
+End with a genuine question to open discussion.}
 ```
+Link (if included): `{source URL}?utm_source=reddit&utm_medium=social&utm_campaign={pillar-slug}`
 
 ---
 
-### Email Teaser (for newsletter or drip)
+### Email Teaser (newsletter or drip)
 **Subject line options:**
-1. `{subject line 1 — curiosity-driven}`
-2. `{subject line 2 — outcome-driven}`
-3. `{subject line 3 — question}`
+1. `{subject line 1 — curiosity-driven, hints at the insight}`
+2. `{subject line 2 — outcome-driven, names the benefit}`
+3. `{subject line 3 — question that the reader already wants answered}`
 
 **Body:**
 ```
-{50-100 word teaser that makes the reader want to click to the full piece.
-Hint at the insight, don't give it all away.
-CTA: "Read the full {post/guide/breakdown}" → {link placeholder}}
+{50-100 words. Personal tone — write to one person.
+Hint at the core insight without giving it away. Create tension.
+CTA: "Read the full {post/guide/breakdown}" → {source URL}?utm_source=email&utm_medium=newsletter&utm_campaign={pillar-slug}}
 ```
 
 ---
 
-### Short Summary (for docs, Notion, or pinned post)
+### Pull Quote (for graphic / social image)
 ```
-{3-5 sentence summary of the key points. Dense. No filler.
-Suitable for linking in a Discord pinned message, README, or FAQ.}
+"{Most quotable sentence from the source — max 2 lines, no jargon, works with zero context}"
+— {Author name or brand}
 ```
+Usage: Canva / Figma card, Instagram post, Pinterest pin. No link needed — watermark with brand handle.
 
 ---
 
-## Step 3: Scheduling Suggestions
+### Data Callout (for infographic or stat card)
+```
+Stat: {exact number or percentage}
+Context: {one sentence explaining what it means and why it matters}
+Source: {source URL}
+```
+Usage: infographic panel, LinkedIn carousel slide, Twitter image post.
 
-Based on the content and platforms, suggest a posting schedule:
+---
+
+### Key Takeaways (for email, docs, or pinned post)
+```
+{Title of source}
+
+Key takeaways:
+1. {Takeaway 1 — actionable, 1 sentence}
+2. {Takeaway 2 — actionable, 1 sentence}
+3. {Takeaway 3 — actionable, 1 sentence}
+{optional 4th if content warrants}
+
+Full piece: {source URL}?utm_source=summary&utm_medium=organic&utm_campaign={pillar-slug}
+```
+Usage: Discord pinned message, Notion page, README, newsletter footer.
+
+---
+
+### Community Question (for Slack, Discord, or forum)
+```
+{Open-ended question that the source content answers, but framed as a genuine ask.
+Do not paste the answer — let the community respond first.
+After discussion, you can share the link as a follow-up.}
+```
+Note: post the link only after 2-3 replies to avoid appearing promotional.
+
+---
+
+### Short Video Script (Reels / Shorts / TikTok — ~40 seconds)
+```
+HOOK (0-5s):
+{One sentence that stops the scroll. State the tension or counterintuitive claim.}
+
+CORE (5-35s):
+{3-4 punchy sentences delivering the main insight. Each sentence = one visual cut.
+No filler. Every sentence must add information.}
+
+CTA (35-40s):
+{Direct ask: "Link in bio" / "Full breakdown at [brand]" / "Save this if you..."}
+```
+Voiceover tone: {conversational / authoritative — match brand voice from brand.yaml}
+
+---
+
+## Step 3: Scheduling — Drip Over 1-2 Weeks
+
+Do not post all derivatives at once. Spread them over 8-14 days. Clustering kills reach;
+spacing creates multiple touchpoints and extends the content's shelf life.
+
+**Peak engagement windows (general — adjust per brand.yaml):**
+- Twitter/X: Tue–Thu, 9–11 AM and 5–7 PM (audience timezone)
+- LinkedIn: Tue–Thu, 8–10 AM
+- Reddit: Mon–Wed, 10 AM–12 PM
+- Email: Tue or Thu, 8–10 AM (avoid Monday and Friday)
+- Instagram/Reels: Wed–Fri, 11 AM–1 PM
+
+**Suggested drip schedule:**
 
 ```
-Day 1 (Monday): LinkedIn post — best for start-of-week professional content
-Day 2 (Tuesday): Tweet 1 — peak Twitter engagement mid-week
-Day 3 (Wednesday): Reddit post — mid-week for most tech subreddits
-Day 4 (Thursday): Tweet 2 — second-highest engagement day
-Day 5 (Friday): Email send or Tweet 3 — newsletter day or end-of-week reflection
+Week 1
+  Day 1 (Mon/Tue): LinkedIn Post — professional audience starts week receptive to long-form
+  Day 2 (Tue/Wed): Tweet 1 (Core insight) — peak Twitter slot, standalone value
+  Day 3 (Wed):     Reddit Post — mid-week for most tech/niche subreddits
+  Day 4 (Thu):     Email Teaser — Thursday is second-best open-rate day
+  Day 5 (Fri):     Pull Quote graphic or Data Callout — visual content for end-of-week scroll
+
+Week 2
+  Day 8 (Mon):     Tweet 2 (Quotable moment) — re-enters the conversation
+  Day 10 (Wed):    Short Video Script (if produced) or Community Question
+  Day 12 (Fri):    Tweet 3 (Contrarian angle) — end-of-week reflection prompt
+  Day 14:          Key Takeaways — evergreen summary, good for re-pinning or sharing in DMs
 ```
 
-Adjust based on brand.yaml active channels.
+**Evergreen rotation (if flagged EVERGREEN):**
+Add a calendar reminder to re-share Tweet 1, LinkedIn Post, and Key Takeaways every 90 days.
+Update the hook sentence slightly before re-posting to avoid duplicate content penalties.
+Keep UTM params — the campaign name stays the same so analytics aggregate over time.
+
+**Date-sensitive content:**
+No rotation. Post once per schedule above. Archive after 30 days.
+
+Adjust based on brand.yaml active channels and posting cadence settings.
 
 ## Step 4: Review
 
 Present all derivatives. Use AskUserQuestion:
-> "Here are {N} pieces of content from the original. Anything to adjust?
+> "Here are {N} pieces of content from the original, scheduled across {X} days. Anything to adjust?
 > A) Rewrite a specific piece (tell me which platform and what to change)
 > B) Adjust the tone across all
 > C) Skip a platform I don't use
-> D) Looks good — save everything"
+> D) Collapse the schedule — I want to post faster
+> E) Looks good — save everything"
 
 STOP and wait.
 
@@ -529,18 +655,25 @@ STOP and wait.
 Use AskUserQuestion:
 > "Where should I save these? (default: `social/repurposed-{slug}-{date}.md`)"
 
-Save all derivatives in a single file with platform labels and the scheduling suggestion.
+Save all derivatives in a single file with:
+- Platform labels and derivative type
+- Scheduling block with exact dates (calculated from today)
+- UTM links per derivative
+- Evergreen rotation reminder (if flagged)
 
 ## Completion
 
 Report:
 - Source content: {title or description}
-- Derivatives created: {count} ({list of platforms})
+- Content type: EVERGREEN or DATE-SENSITIVE
+- Derivatives created: {count} ({list of types})
+- Drip schedule: {start date} → {end date}
 - File saved to: {path}
 
 Suggest next steps:
 - "Run `/m-calendar` to add these posts to a content calendar"
 - "Run `/m-threads` to expand the Twitter content into a full thread"
+- "Run `/m-visual` to generate pull quote and data callout graphics" (if available)
 
 ## Capture Learnings
 

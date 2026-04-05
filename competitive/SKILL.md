@@ -3,9 +3,10 @@ name: m-competitive
 preamble-tier: 3
 version: 1.0.0
 description: |
-  Competitor analysis — takes competitor names or URLs and produces a structured
-  comparison: positioning, strengths, weaknesses, pricing, channels, and content
-  strategy. Identifies gaps and opportunities. References brand.yaml competitors.
+  Deep competitive intelligence: analyzes 2-5 competitors across positioning, pricing,
+  content velocity, channel mix, tech stack signals, and hiring intent. Produces a
+  scored comparison matrix, Porter's Five Forces summary, and prioritized strategic
+  opportunities — not just data, but "so what?" actions you can execute this week.
 allowed-tools:
   - Bash
   - Read
@@ -508,6 +509,7 @@ Build the final competitor list. For each competitor, determine:
 - Company name
 - Website URL
 - Known market position (if any)
+- Estimated company stage (startup / growth / enterprise)
 
 If browse is available, visit each competitor's website:
 ```bash
@@ -516,91 +518,170 @@ $B text
 $B links
 ```
 
-Extract: tagline, main value proposition, pricing page URL, blog/content hub URL.
+Extract: tagline, main value proposition, pricing page URL, blog/content hub URL,
+jobs page URL, and any visible tech stack signals (e.g. chat widget vendor, analytics
+scripts, CDN hints visible in page source or links).
 
 If browse is not available, ask the user:
 > "For each competitor, can you share:
 > 1. Their main tagline or value prop
 > 2. Rough pricing (if known)
-> 3. What channels they use most"
+> 3. What channels they use most
+> 4. Anything notable about their recent product or marketing moves"
 
 ## Step 2: Analyze Each Competitor
 
-For each competitor, build a profile covering:
+For each competitor, build a profile across six lenses:
 
 **Positioning**
-- Target audience they address
-- Core value proposition
-- Category they compete in
-- Key messages on homepage
+- Target audience (firmographic / demographic)
+- Core value proposition and category claim
+- Key headline messages on homepage
+- Emotional angle: fear-based, aspiration-based, or outcome-based copy?
+- Brand voice: formal, conversational, bold, neutral
 
-**Product/Offering**
-- Main features and capabilities
-- Pricing tiers (free, paid, enterprise)
-- Any notable gaps or limitations
+**Product / Offering**
+- Main features and stated capabilities
+- Pricing tiers (free, paid, enterprise) — note anchoring strategy
+- Annual vs. monthly pricing delta (signals commitment incentive)
+- Free trial or freemium model (signals acquisition motion)
+- Notable feature gaps or limitations visible from public info
 
 **Marketing Channels**
-- Active channels (check links, social presence)
-- Content types they publish
-- Estimated posting frequency
+- Active channels (social links, community links, podcast appearances)
+- Content types published (long-form, video, case studies, templates)
+- Estimated posting frequency per channel
+- Paid ads presence (check Facebook Ad Library, Google ad previews if browse available)
+- Influencer / partnership signals (mentioned collaborations, co-marketing)
 
 **Content Strategy**
-- Blog topics and depth
-- SEO-oriented content vs. thought leadership
-- Social content themes
+- Blog topic clusters and depth (surface-level vs. practitioner-grade)
+- SEO-oriented content (comparison pages, "best X" lists, alternative pages) vs. thought leadership
+- Social content themes and engagement style
+- Gated vs. ungated content ratio (signals lead gen approach)
 
-If browse is available, check content:
+**Tech Stack Signals** (if browse available)
+- CRM / marketing automation hinted by form behavior or script names
+- Chat widget vendor (Intercom, Drift, Crisp, etc.) — reveals budget tier
+- Analytics stack (GA4, Mixpanel, Segment, etc.)
+- A/B testing or personalization tools (Optimizely, VWO, etc.)
+- Hosting / CDN signals
+
+**Hiring Page Signals** (high-value leading indicator)
+- Open roles in product, engineering, sales, marketing
+- Roles reveal strategic priorities 6-12 months out
+  - Many ML/AI engineers → AI feature push incoming
+  - Many enterprise AEs → moving upmarket
+  - Many content writers → SEO / content moat play
+  - Many partnerships managers → channel strategy shift
+
+If browse is available, check content and hiring:
 ```bash
 $B goto "{competitor blog URL}"
 $B text
+$B goto "{competitor jobs URL}"
+$B text
 ```
 
-Note top-performing content themes.
+Note top-performing content themes and open role patterns.
+
+**Industry Examples — What to Look For:**
+
+*SaaS (e.g. project management tools):*
+- Compare pricing page structure: per-seat vs. flat-rate vs. usage-based
+- Check if they have a "vs. [Your Brand]" comparison page (reveals perceived threat)
+- Look for PLG signals: self-serve signup, in-product upgrade prompts visible in screenshots
+
+*E-commerce / D2C (e.g. subscription boxes):*
+- Unboxing / lifestyle content cadence on Instagram and TikTok
+- Loyalty program visibility on homepage
+- Shipping / returns copy as differentiation signal
+
+*B2B services (e.g. marketing agencies):*
+- Case study depth and recency (thin = weak proof, rich = strong sales motion)
+- Thought leadership author names (signals personal brand investment)
+- Pricing visibility vs. "contact us" (positions them on value vs. commodity axis)
+
+*Consumer apps (e.g. fitness, finance):*
+- App store rating trajectory and review sentiment themes
+- Referral / virality mechanics visible in onboarding screenshots
+- Notification / retention strategy hinted by content calendar
 
 ## Step 3: Create Comparison Matrix
 
-Build a structured markdown table:
+Build a structured markdown table with a 1-5 score for each dimension (5 = clear leader):
 
 ```
-| Factor | Your Brand | {Competitor 1} | {Competitor 2} | {Competitor 3} |
-|--------|-----------|----------------|----------------|----------------|
-| Positioning | | | | |
-| Target audience | | | | |
-| Key differentiator | | | | |
-| Pricing model | | | | |
-| Free tier | | | | |
-| Main channels | | | | |
-| Content cadence | | | | |
-| Brand voice | | | | |
-| Strengths | | | | |
-| Weaknesses | | | | |
+| Dimension                  | Score Basis                          | Your Brand | {Comp 1} | {Comp 2} | {Comp 3} |
+|----------------------------|--------------------------------------|:----------:|:--------:|:--------:|:--------:|
+| **Positioning clarity**    | How crisp and ownable is the claim?  |            |          |          |          |
+| **Target audience fit**    | Specificity of ICP they address      |            |          |          |          |
+| **Value prop strength**    | Unique, credible, and compelling?    |            |          |          |          |
+| **Pricing competitiveness**| Price-to-value ratio vs. market      |            |          |          |          |
+| **Free / trial offer**     | Reduces acquisition friction?        |            |          |          |          |
+| **Content depth**          | Practitioner-grade vs. surface-level |            |          |          |          |
+| **Content velocity**       | Posts/week across all channels       |            |          |          |          |
+| **Channel diversity**      | Number of active channels            |            |          |          |          |
+| **SEO defensibility**      | Comparison / alternative pages?      |            |          |          |          |
+| **Social engagement**      | Avg. likes+comments per post         |            |          |          |          |
+| **Brand voice distinction**| Memorable, consistent, differentiated|            |          |          |          |
+| **Hiring signals**         | Growth trajectory from open roles    |            |          |          |          |
+| **Strengths summary**      | (text — top 2 advantages)            |            |          |          |          |
+| **Weaknesses summary**     | (text — top 2 vulnerabilities)       |            |          |          |          |
+| **TOTAL SCORE (out of 60)**|                                      |            |          |          |          |
 ```
 
-Fill in all cells based on research. Use "?" for unknown data.
+Fill in all cells based on research. Use "?" for unknown data. Tally total scores.
 
-## Step 4: Identify Opportunities
+## Step 4: Porter's Five Forces Snapshot
 
-Based on the comparison matrix, identify:
+Briefly map the competitive landscape using five signals (2-4 sentences each):
 
-**Positioning gaps**: Where no competitor is clearly winning
-**Content gaps**: Topics competitors ignore that your audience cares about
-**Channel gaps**: Channels competitors underuse
-**Messaging gaps**: Pain points competitors address poorly
+1. **Rivalry intensity** — How many competitors, how similar are their offers, how aggressive is their marketing? Are they competing on price, features, or brand?
+2. **Threat of new entrants** — How easy is it to build a similar product or service? Are there switching costs, network effects, or regulatory barriers protecting incumbents?
+3. **Buyer power** — How price-sensitive are customers? Do they comparison-shop heavily (many "vs." searches)? How long are typical sales cycles?
+4. **Supplier / platform power** — Are key competitors dependent on a platform (e.g. Facebook ads, App Store, Google SEO) that could change the rules? Does your brand have similar exposure?
+5. **Threat of substitutes** — What do buyers do instead of using any solution in this category? Is the real competition "doing nothing" or a spreadsheet?
 
-Format as prioritized list:
-1. **{Opportunity}** — {why it matters} — {suggested action}
+Use this to frame whether gaps are durable opportunities or easily copied.
+
+## Step 5: Identify Opportunities — The "So What?"
+
+Based on the matrix and Five Forces, surface concrete strategic opportunities. For each:
+
+**Positioning gaps**: Audiences or problems no competitor clearly owns
+**Content gaps**: Topics competitors ignore that your audience searches for or cares about
+**Channel gaps**: Channels competitors underuse relative to where the audience is active
+**Messaging gaps**: Pain points addressed poorly or with generic language
+**Pricing / packaging gaps**: Tiers or models the market is missing
+**Timing gaps**: Momentum plays — a competitor is retreating (layoffs, pivoting) or a new trigger event (regulation, technology shift) creates an opening
+
+Format as a prioritized list. Each item must answer "so what?":
+
+```
+## Opportunities — Prioritized
+
+### 1. {Opportunity Title} [Impact: High | Effort: Low]
+**Gap observed:** {what you saw in the data}
+**Why it matters now:** {why this is actionable, not just interesting}
+**Suggested action:** {concrete next step — a content series, a landing page, a pricing page change, a channel test}
+
+### 2. {Opportunity Title} [Impact: High | Effort: Medium]
+...
+```
 
 Use AskUserQuestion:
-> "Here's the competitive analysis. Does anything look off or need more depth on a specific competitor?"
+> "Here's the full competitive analysis with scored matrix and prioritized opportunities.
+> Does anything look off, or should I go deeper on a specific competitor or dimension?"
 
 STOP and wait.
 
-## Step 5: Save Document
+## Step 6: Save Document
 
 Use AskUserQuestion:
 > "Where should I save the competitive analysis? (default: `docs/competitive-analysis-{date}.md`)"
 
-Save the full document: competitor profiles, comparison matrix, opportunity list.
+Save the full document: competitor profiles, comparison matrix, Porter's Five Forces snapshot, and prioritized opportunity list with "so what?" actions.
 
 Also update brand.yaml competitors section if new competitors were discovered:
 ```bash
@@ -612,13 +693,15 @@ Also update brand.yaml competitors section if new competitors were discovered:
 
 Report:
 - Competitors analyzed: {list}
-- Key opportunity identified: {top opportunity}
+- Top-scoring competitor: {name} ({score}/60) — key threat: {summary}
+- Biggest gap/opportunity: {top opportunity title}
 - File saved to: {path}
 
 Suggest next steps:
 - "Run `/m-positioning` to build a positioning framework based on these gaps"
 - "Run `/m-strategy` to factor this analysis into your marketing strategy"
 - "Run `/m-keywords` to find content gaps in your SEO coverage"
+- "Run `/m-competitive` again in 30-60 days to track competitor movement"
 
 ## Capture Learnings
 

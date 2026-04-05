@@ -1,11 +1,13 @@
 ---
 name: m-edit
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Copy editing against brand voice. Reads a draft and compares against brand.yaml
   voice settings. Checks tone, avoid-list violations, AI vocabulary, readability,
-  and CTA clarity. Makes targeted edits — not rewrites. Shows tracked changes.
+  Flesch-Kincaid score, passive voice rate, sentence length distribution, CTA clarity,
+  headline strength, and paragraph flow. Makes targeted edits — not rewrites.
+  Shows tracked changes with before/after and explicit reasoning.
 allowed-tools:
   - Bash
   - Read
@@ -414,7 +416,7 @@ STOP and wait.
 
 Load the draft content. Confirm:
 - Content type (blog post, landing page, email, social post, ad copy)
-- Approximate length
+- Approximate length (word count, paragraph count)
 - Any specific instructions from the user (e.g., "preserve the intro", "tighten it by 20%")
 
 If the user didn't specify what to focus on, use AskUserQuestion:
@@ -426,9 +428,30 @@ If the user didn't specify what to focus on, use AskUserQuestion:
 
 STOP and wait.
 
-## Step 2: Brand Voice Check
+## Step 2: Headline / Title Review
 
-Compare the draft against brand.yaml voice settings:
+Analyze the headline or subject line before touching body copy.
+
+**Delivery check:**
+Does the title promise what the content actually delivers? Map the headline claim to the body conclusion. Flag mismatches.
+
+**Power words and emotional triggers:**
+Check for concrete, high-impact language: numbers, time frames, outcome words ("triple", "in 30 days", "without X"). Flag headlines that are generic or purely descriptive.
+
+**SEO keyword:**
+Is the primary keyword in the headline? Is it in the first half of the title (preferred for search snippets)? Flag if absent.
+
+**Red flags to call out:**
+- Clickbait that the body cannot support
+- Title longer than 60 characters (truncated in SERPs)
+- No verb — static noun phrases feel inert ("The Guide to X" vs "How to Do X in Half the Time")
+- Vague superlatives with no evidence ("the best", "the ultimate", "the most powerful")
+
+Rate headline strength: Strong / Adequate / Weak. Provide one rewrite suggestion if Weak or Adequate.
+
+## Step 3: Brand Voice Check
+
+Compare the draft against brand.yaml voice settings.
 
 **Tone check:**
 Read the brand voice (tone, personality) from brand.yaml.
@@ -436,6 +459,19 @@ Identify sentences that feel off-tone:
 - Too formal when brand is casual
 - Too casual when brand is professional
 - Hedging language when brand is direct
+- Apologetic framing when brand is confident
+
+**Brand voice score (1–10 rubric):**
+
+| Score | What it looks like |
+|-------|-------------------|
+| 9–10 | Every sentence sounds like the brand wrote it. Vocabulary, rhythm, and directness match perfectly. A reader who knows the brand would not doubt authorship. |
+| 7–8 | Voice is consistent with occasional slips — one or two sentences that feel slightly too formal, casual, or generic. Easy to fix with minor word swaps. |
+| 5–6 | Tone is in the right zone but several sentences drift. Structure and word choice feel like a different writer approximating the brand. Noticeable to anyone familiar with the brand. |
+| 3–4 | Multiple sections are clearly off-voice. Brand personality is absent in most paragraphs. Significant rewriting needed to reach acceptable alignment. |
+| 1–2 | Draft reads like it was written for a different brand or was AI-generated without brand guidance. Voice, vocabulary, and rhythm are misaligned throughout. |
+
+Report the score with a one-sentence rationale.
 
 **Avoid-list check:**
 Scan for words/phrases in the brand avoid list:
@@ -445,55 +481,106 @@ grep -in "{avoid term 1}\|{avoid term 2}\|{avoid term 3}" {file path} 2>/dev/nul
 ```
 
 **AI vocabulary check:**
-Scan for common AI-generated filler words:
+Scan for AI-generated filler, hollow intensifiers, and pattern phrases:
+
 ```bash
-grep -in "delve\|crucial\|robust\|comprehensive\|landscape\|game.changer\|leverage\|utilize\|in today.*world\|it.*worth noting\|it.*important to\|furthermore\|moreover\|in conclusion" {file path} 2>/dev/null
+grep -in \
+  "delve\|delving\|crucial\|robust\|comprehensive\|landscape\|game.changer\|game.changing\|\
+leverage\|leveraging\|utilize\|utilizing\|in today.*world\|in the modern world\|in an ever.evolving\|\
+it.*worth noting\|it.*important to note\|it.*important to remember\|needless to say\|\
+furthermore\|moreover\|additionally\|in conclusion\|in summary\|to summarize\|\
+at the end of the day\|it goes without saying\|rest assured\|make no mistake\|\
+the fact of the matter\|when it comes to\|in the realm of\|in the world of\|\
+take.*to the next level\|in today.*fast.paced\|in this day and age\|\
+cutting.edge\|state.of.the.art\|best.in.class\|world.class\|\
+holistic\|synergy\|synergies\|ecosystem\|empower\|empowering\|\
+seamlessly\|effortlessly\|streamline\|streamlining\|\
+groundbreaking\|revolutionary\|transformative\|paradigm\|\
+foster\|fostering\|facilitate\|facilitating\|\
+ensuring\|ensure that\|it is essential\|it is imperative\|\
+dive into\|dive deep\|deep dive\|unpack\|unwrap\|\
+tailor.made\|bespoke solution\|end.to.end\|turnkey\|\
+navigate\|navigating the\|unlock\|unlocking" \
+  {file path} 2>/dev/null
 ```
 
-List every violation found.
+**Structural AI pattern detection:**
+Beyond individual words, flag these sentence-level patterns:
 
-## Step 3: Readability Check
+- **Transition overload:** three or more consecutive paragraphs that open with "Furthermore", "Moreover", or "Additionally" — this is a signature AI rhythm
+- **Triple-adjective chains:** three adjectives stacked before one noun ("a comprehensive, robust, and scalable solution") — AI filler, pick one
+- **Hollow throat-clearing openers:** "It's worth noting that...", "It's important to understand that...", "It should be mentioned that..." — delete the opener, keep the sentence
+- **False conclusion signals:** "In conclusion", "To summarize", "In summary" appearing mid-document, not just at the end
+- **Certainty hedging pairs:** "may or may not", "can or cannot", "whether or not" — often signals AI trying to appear balanced
 
-Analyze the draft for readability issues:
+List every AI vocabulary and pattern violation found with the approximate line number.
+
+## Step 4: Readability Check
+
+Analyze the draft for readability issues.
+
+**Flesch-Kincaid target:**
+- Blog posts / landing pages: FK Grade 7–9 (readable by a broad audience)
+- Technical content: FK Grade 10–12 acceptable
+- Executive briefs: FK Grade 10–11
+- Email / social: FK Grade 6–8
+
+Estimate the FK grade from sentence length and syllable density. Flag if the draft reads significantly above or below target for its content type.
+
+**Sentence length distribution:**
+Count sentences and bucket them:
+- Short (≤12 words): target 30–40% of sentences
+- Medium (13–25 words): target 40–50%
+- Long (26+ words): keep under 20%
+
+Flag if long sentences exceed 20% — the draft will feel dense. Flag if short sentences exceed 60% — the draft will feel choppy.
+
+**Passive voice rate:**
+Target: under 10% of sentences.
+Flag passive constructions — suggest active rewrites.
+Examples of what to flag: "it was decided", "users are targeted", "content is created", "results were achieved", "data is collected"
+Estimate: (passive sentence count / total sentences) × 100. Report the percentage.
 
 **Paragraph length:**
 Flag paragraphs over 4 sentences — they create visual walls.
-
-**Sentence complexity:**
-Flag sentences over 25 words — break them in two.
-
-**Passive voice:**
-Flag passive constructions — suggest active rewrites.
-Examples of what to flag: "it was decided", "users are targeted", "content is created"
 
 **Opening hook:**
 Does the first sentence grab attention? Check against these patterns:
 - Asks a question the reader is already asking themselves
 - States a counterintuitive claim
 - Opens with a specific number or fact
-- Calls out the reader's situation
+- Calls out the reader's situation directly
 
-**Transitions:**
-Are sections connected? Flag abrupt topic changes.
+Flag if the draft opens with a weak pattern: "In today's world...", "X is important because...", "This article will explain..."
 
-## Step 4: CTA Check
+**Transitions and paragraph flow:**
+Are sections connected logically? Flag:
+- Abrupt topic changes with no bridge sentence
+- Repetitive transition language (three consecutive paragraphs starting the same way)
+- Sections where the last sentence of one paragraph and the first sentence of the next paragraph cover the same ground (redundant overlap)
+
+## Step 5: CTA Audit
 
 Identify all calls to action in the draft. For each:
 
-- Is it specific? ("Sign up free" beats "Learn more")
-- Is it benefit-driven? ("Get your free audit" beats "Click here")
-- Is there only one primary CTA? (Multiple CTAs dilute conversion)
-- Does it match the reader's stage? (Awareness content should not push a demo)
+**Specificity:** Is it specific? ("Start your free trial" beats "Learn more")
+**Benefit-driven:** Does it name what the reader gets? ("Get your free audit" beats "Click here")
+**Singularity:** Is there only one primary CTA? Multiple CTAs dilute conversion. Flag secondary CTAs that compete with the primary.
+**Stage alignment:** Does it match the reader's awareness stage?
+  - Awareness content (blog, educational) → low-commitment CTA ("Download the guide", "See how it works")
+  - Consideration content (case study, comparison) → medium-commitment CTA ("Start free trial", "Book a demo")
+  - Decision content (pricing, sales page) → high-commitment CTA ("Get started", "Talk to sales")
+**Placement:** Is the CTA where attention peaks? Flag if the CTA is buried mid-page with no repetition near the end.
 
-Note issues.
+Rate each CTA: Strong / Adequate / Weak. Provide a rewrite suggestion for Weak or Adequate CTAs.
 
-## Step 5: Make Targeted Edits
+## Step 6: Make Targeted Edits
 
 Now apply edits. Follow these rules:
 
 1. **Change as little as possible.** Preserve the author's voice and structure.
 2. **Fix violations, don't rewrite.** If a sentence uses an avoid-list word, swap the word. Don't rephrase the whole paragraph.
-3. **Show your work.** For every change, note why.
+3. **Show your work.** For every change, note the category and reason.
 
 Format changes as a tracked-change log:
 
@@ -502,34 +589,67 @@ Format changes as a tracked-change log:
 
 **[Line ~{N}] Avoid-list violation**
 Before: "...this robust solution helps teams..."
-After: "...this solution helps teams..."
+After:  "...this solution helps teams..."
 Reason: "robust" is on the avoid list
 
-**[Line ~{N}] AI vocabulary**
-Before: "It's worth noting that users often..."
-After: "Users often..."
-Reason: filler phrase, no meaning
+**[Line ~{N}] AI vocabulary — filler phrase**
+Before: "It's worth noting that users often abandon carts at checkout."
+After:  "Users often abandon carts at checkout."
+Reason: "It's worth noting that" adds no meaning; deleting it tightens the sentence
+
+**[Line ~{N}] AI pattern — transition overload**
+Before: "Furthermore, the platform integrates with Slack. Moreover, it supports webhooks."
+After:  "The platform integrates with Slack and supports webhooks."
+Reason: consecutive "Furthermore/Moreover" openers are an AI rhythm signature; merged into one direct sentence
+
+**[Line ~{N}] AI pattern — triple-adjective chain**
+Before: "a comprehensive, robust, and scalable solution"
+After:  "a scalable solution"
+Reason: three stacked adjectives dilute impact; one precise adjective is stronger
+
+**[Line ~{N}] Passive voice**
+Before: "Results are achieved through consistent effort."
+After:  "Consistent effort drives results."
+Reason: passive obscures the subject; active is clearer and more direct
 
 **[Line ~{N}] Paragraph too long**
 Before: {full paragraph}
-After: {split into 2 paragraphs}
-Reason: over 4 sentences, hard to scan
+After:  {split into 2 paragraphs}
+Reason: over 4 sentences, creates a visual wall
 
-**[Line ~{N}] CTA vague**
+**[Line ~{N}] CTA — weak, not benefit-driven**
 Before: "Learn more about our platform"
-After: "See how it works — free demo"
-Reason: original CTA has no specific benefit
+After:  "See how it works — free demo"
+Reason: original CTA has no specific benefit; revised version names what the reader gets
+
+**[Line ~{N}] Headline — weak, no verb or outcome**
+Before: "The Guide to Content Marketing"
+After:  "How to Build a Content Engine That Compounds Traffic"
+Reason: original is a static noun phrase; revised version uses action verb, outcome word ("compounds"), and specificity
 ```
 
 After the log, show the complete edited draft.
 
-## Step 6: Summary
+## Step 7: Summary
 
 Provide a brief editorial summary:
-- Issues found: {count by type}
-- Most common problem: {type}
-- Brand voice match: {Strong / Acceptable / Needs work}
-- Overall: {one sentence on draft quality}
+
+```
+Issues found:
+  - AI vocabulary hits: {count}
+  - AI pattern hits: {count}
+  - Avoid-list violations: {count}
+  - Passive voice sentences: {count} (~{%} of total)
+  - Long sentences (26+ words): {count}
+  - Paragraphs over 4 sentences: {count}
+  - CTA issues: {count}
+  - Headline issues: {yes/no}
+
+Most common problem: {type}
+Brand voice score: {1–10} — {one-sentence rationale}
+Estimated FK grade: {grade} (target: {target for content type})
+Overall: {one sentence on draft quality and primary edit direction}
+```
 
 Use AskUserQuestion:
 > "Here are the edits with explanations. Want me to:
@@ -546,6 +666,7 @@ Apply approved edits to the file (or save edited version).
 Report:
 - Edits applied: {count}
 - Brand voice issues resolved: {count}
+- Readability issues resolved: {count}
 - File saved to: {path}
 
 Suggest next steps:

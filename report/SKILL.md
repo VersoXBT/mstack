@@ -1,11 +1,13 @@
 ---
 name: m-report
 preamble-tier: 3
-version: 1.0.0
+version: 2.0.0
 description: |
   Marketing performance report. Pulls GA4 and Search Console data if API keys are
   available. Otherwise asks user to paste metrics. Generates executive summary,
-  channel breakdown, top content analysis, and next month priorities.
+  channel breakdown, metrics framework (leading vs lagging), trend analysis with
+  MoM/WoW comparisons, attribution model guidance, channel-specific KPIs, benchmark
+  comparisons, and next month priorities with effort/impact scoring.
 allowed-tools:
   - Bash
   - Read
@@ -470,16 +472,17 @@ echo "GA4_PROPERTY_ID: ${GA4_PROPERTY_ID:+set}"
 echo "GA4_API_KEY: ${GA4_API_KEY:+set}"
 echo "GSC_SITE_URL: ${GSC_SITE_URL:+set}"
 
-# Find previous reports
-find . -name "*report*" -o -name "*analytics*" 2>/dev/null | head -5
+# Find previous reports for trend comparison
+find . -name "*report*" -o -name "*analytics*" 2>/dev/null | head -10
 ```
 
 Use AskUserQuestion:
 > "Which reporting period should I cover?
-> A) Last 30 days
-> B) Last month (full calendar month)
-> C) Last quarter
-> D) Custom — tell me the dates"
+> A) Last 7 days (WoW comparison available)
+> B) Last 30 days (MoM comparison available)
+> C) Last month (full calendar month, MoM comparison)
+> D) Last quarter (QoQ comparison)
+> E) Custom — tell me the dates and what prior period to compare against"
 
 Then ask:
 > "What metrics do you have available?
@@ -488,34 +491,44 @@ Then ask:
 > C) I'll paste the data manually
 > D) I have both GA4 and Search Console"
 
+Then ask:
+> "What is your North Star Metric — the single number that best captures business health?
+> Examples: weekly active users, MRR, signups, qualified leads generated
+> (If unsure, I'll suggest one based on your channel data)"
+
 STOP and wait.
 
 ## Step 1: Collect Data
 
 **If API keys are available:**
 
-Pull GA4 data:
+Pull GA4 data for current period AND prior period (for trend comparison):
 ```bash
-# GA4 data pull via API
+# GA4 data pull — current period
 curl -s -X POST \
   "https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runReport" \
   -H "Authorization: Bearer ${GA4_API_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
-    "dateRanges": [{"startDate": "{start}", "endDate": "{end}"}],
+    "dateRanges": [
+      {"startDate": "{start}", "endDate": "{end}"},
+      {"startDate": "{prior_start}", "endDate": "{prior_end}"}
+    ],
     "metrics": [
       {"name": "sessions"},
       {"name": "users"},
       {"name": "newUsers"},
       {"name": "bounceRate"},
       {"name": "averageSessionDuration"},
-      {"name": "conversions"}
+      {"name": "conversions"},
+      {"name": "totalRevenue"},
+      {"name": "ecommercePurchases"}
     ],
     "dimensions": [{"name": "sessionDefaultChannelGroup"}]
   }' 2>/dev/null
 ```
 
-Pull Search Console data:
+Pull Search Console data with keyword-level detail:
 ```bash
 curl -s -X POST \
   "https://www.googleapis.com/webmasters/v3/sites/${GSC_SITE_URL}/searchAnalytics/query" \
@@ -525,133 +538,348 @@ curl -s -X POST \
     "startDate": "{start}",
     "endDate": "{end}",
     "dimensions": ["query", "page"],
-    "rowLimit": 25
+    "rowLimit": 25,
+    "dataState": "all"
   }' 2>/dev/null
 ```
 
 **If no API access:**
 
 Use AskUserQuestion:
-> "No API keys configured. Please paste your metrics:
-> 1. Total sessions / visits for the period
+> "No API keys configured. Please paste your metrics for BOTH the current period and the prior period (same length):
+>
+> **Current period:**
+> 1. Total sessions / visits
 > 2. Sessions by channel (organic, social, direct, email, paid)
-> 3. Top 5 pages by traffic
-> 4. Conversions or signups
-> 5. Any social metrics you track (followers, impressions, engagement rate)
+> 3. Conversions or signups
+> 4. Revenue (if tracked)
+> 5. Top 5 pages by traffic
+> 6. Top 5 pages by conversions
+>
+> **Prior period (same date range, one period back):**
+> 1. Same metrics as above
+>
+> **SEO (if available):** top 10 keywords, avg position, backlinks acquired
+>
+> **Social (if available):** followers per platform, impressions, engagement rate, top posts
+>
+> **Email (if available):** list size, sends, open rate, click rate, unsubscribes
+>
+> **Paid (if available):** spend, impressions, clicks, conversions, revenue
+>
 > Format however is easiest — I'll structure it."
 
 STOP and wait for data.
 
-## Step 2: Analyze Channel Performance
+## Step 2: Metrics Framework
+
+Before channel analysis, establish the metrics framework for this report.
+
+**North Star Metric:**
+> {Confirmed or suggested NSM} — current value: {X} vs prior period: {Y} ({delta}% change)
+> Trajectory: {on track / off track / unclear — brief reason}
+
+**Leading Indicators** (predict future performance — act on these now):
+| Metric | Current | Prior Period | Change | Signal |
+|--------|---------|--------------|--------|--------|
+| Impressions (organic + paid) | | | | |
+| Click-through rate | | | | |
+| New signups / leads | | | | |
+| Trial starts | | | | |
+| Email list growth | | | | |
+| Keyword ranking improvements | | | | |
+
+**Lagging Indicators** (confirm past performance — validate strategy):
+| Metric | Current | Prior Period | Change | Signal |
+|--------|---------|--------------|--------|--------|
+| Revenue / MRR | | | | |
+| Customer LTV | | | | |
+| Paying customer count | | | | |
+| Retention rate | | | | |
+| Churn rate | | | | |
+| Payback period | | | | |
+
+Flag any metric with a change >15% (positive or negative) with a note explaining likely cause. Changes between 5–15% are normal variance; treat as signal only if consistent across 3+ periods.
+
+## Step 3: Trend Analysis
+
+**Week-over-Week (WoW) — if period is ≤30 days:**
+
+| Metric | Week N | Week N-1 | WoW % | Trend |
+|--------|--------|----------|-------|-------|
+| Sessions | | | | ↑ / ↓ / — |
+| Signups | | | | |
+| NSM | | | | |
+
+**Month-over-Month (MoM):**
+
+| Metric | This Month | Last Month | MoM % | 3-Month Avg | vs Avg |
+|--------|-----------|------------|-------|-------------|--------|
+| Sessions | | | | | |
+| Organic traffic | | | | | |
+| Conversions | | | | | |
+| Revenue | | | | | |
+
+**Signal vs. Noise guidance:**
+- Single-week spikes/drops: likely noise unless tied to a specific event (launch, outage, campaign)
+- Changes consistent across 2+ periods: signal — investigate cause
+- Metric moves opposite to a correlated metric: flag as anomaly (e.g., traffic up but conversions flat)
+- Seasonality: note if change aligns with known seasonal patterns for the vertical
+
+## Step 4: Channel Performance
 
 For each active channel, calculate and present:
 
-| Channel | Sessions | % of Total | vs. Prior Period | Conversion Rate |
-|---------|----------|------------|-----------------|-----------------|
-| Organic Search | | | | |
-| Social | | | | |
-| Direct | | | | |
-| Email | | | | |
-| Referral | | | | |
-| Paid | | | | |
+| Channel | Sessions | % of Total | MoM Change | WoW Change | Conv. Rate | MoM Conv. Change |
+|---------|----------|------------|------------|------------|------------|-----------------|
+| Organic Search | | | | | | |
+| Social (total) | | | | | | |
+| Direct | | | | | | |
+| Email | | | | | | |
+| Referral | | | | | | |
+| Paid Search | | | | | | |
+| Paid Social | | | | | | |
 
 Flag channels that are:
-- Up significantly (>20% growth) — what drove this?
-- Down significantly (>20% decline) — what changed?
-- Flat — is this expected or a missed opportunity?
+- Up >15% MoM — what drove this? Is it sustainable?
+- Down >15% MoM — what changed? One-time or structural?
+- Conversion rate diverging from traffic trend — positive or negative efficiency shift?
 
-## Step 3: Content Performance
+### SEO-Specific KPIs
 
-Identify top and bottom performing content:
+| KPI | Current | Prior Period | MoM | Industry Benchmark* |
+|-----|---------|--------------|-----|---------------------|
+| Organic sessions | | | | — |
+| Organic conversion rate | | | | 2–4% (SaaS), 1–3% (ecomm) |
+| Top 3 keyword positions | | | | — |
+| Top 10 keyword positions | | | | — |
+| Average position (GSC) | | | | <20 for target terms |
+| Click-through rate (GSC) | | | | 3–5% pos 1–3; <1% pos 10+ |
+| Backlinks acquired | | | | — |
+| Domain Rating / Authority | | | | vs competitors |
+| Pages indexed | | | | — |
+| Core Web Vitals pass rate | | | | >75% |
+
+*Benchmarks vary by vertical — flag if brand's vertical differs significantly.
+
+Top 10 organic keywords this period (by clicks):
+| Keyword | Clicks | Impressions | CTR | Avg Position | vs Prior |
+|---------|--------|-------------|-----|--------------|---------|
+
+### Social Media KPIs
+
+| Platform | Followers | MoM Growth | Impressions | Eng. Rate | Share of Voice* | Clicks to Site |
+|----------|-----------|------------|-------------|-----------|-----------------|---------------|
+| Twitter/X | | | | | | |
+| LinkedIn | | | | | | |
+| Reddit | | | | | | |
+| Instagram | | | | | | |
+
+*Share of Voice = brand mentions / (brand + top 3 competitor mentions) for the period. Estimate if exact data unavailable.
+
+Industry engagement rate benchmarks:
+- Twitter/X: 0.5–1% good, >2% excellent
+- LinkedIn: 2–5% good, >5% excellent
+- Instagram: 1–3% good, >5% excellent
+
+Top 3 performing posts (by reach or engagement):
+| Post | Platform | Reach | Engagement | Clicks | Why it worked |
+|------|----------|-------|------------|--------|---------------|
+
+### Paid Channel KPIs
+
+| Channel | Spend | Impressions | Clicks | CTR | Conversions | Conv. Rate | CPA | Revenue | ROAS |
+|---------|-------|-------------|--------|-----|-------------|------------|-----|---------|------|
+| Google Search | | | | | | | | | |
+| Google Display | | | | | | | | | |
+| Meta (FB/IG) | | | | | | | | | |
+| LinkedIn Ads | | | | | | | | | |
+
+Industry ROAS benchmarks (paid search):
+- eCommerce: 4–8x good, <2x unprofitable at most margins
+- SaaS / lead gen: focus CPA vs CAC payback (target <12 months)
+- Brand awareness campaigns: use CPM and VCR, not ROAS
+
+### Email KPIs
+
+| List | Size | Sends | Delivered | Open Rate | Click Rate | CTOR | Unsub Rate | Conv. Rate |
+|------|------|-------|-----------|-----------|------------|------|------------|------------|
+| Main newsletter | | | | | | | | |
+| Nurture sequence | | | | | | | | |
+| Transactional | | | | | | | | |
+
+Industry email benchmarks (varies by vertical):
+- Open rate: 20–30% typical; <15% needs attention; >35% excellent
+- Click rate: 2–5% typical; <1% needs attention
+- Unsubscribe rate: <0.2% healthy; >0.5% signals list/content mismatch
+
+## Step 5: Content Performance
 
 **Top 5 pages by traffic:**
-| Page | Sessions | Avg Time | Bounce Rate | Conversions |
-|------|----------|----------|-------------|-------------|
+| Page | Sessions | MoM Change | Avg Time on Page | Bounce Rate | Conversions | Conv. Rate |
+|------|----------|------------|-----------------|-------------|-------------|------------|
 
 **Top 5 pages by conversions:**
-(May differ from top traffic pages)
+(Flag any page that ranks in conversions but not in traffic — hidden gem for CRO)
 
 **Content published this period:**
-| Piece | Published | Traffic | Shares | Status |
-|-------|-----------|---------|--------|--------|
+| Piece | Type | Published | Traffic | Shares | Backlinks | Status |
+|-------|------|-----------|---------|--------|-----------|--------|
 
-**Key insight from content data:**
-- {What type of content performed best?}
-- {What search queries are driving organic traffic?}
-- {Any content that underperformed expectations?}
+**Content insights:**
+- Best-performing content type: {format — listicle / long-form guide / case study / video / etc.}
+- Top organic search queries driving traffic this period: {top 5}
+- Content with declining traffic: {flag pieces down >20% MoM — update or consolidate?}
+- Content gap opportunity: {queries with high impressions but low clicks — expand or add new content}
 
-## Step 4: Social Media Metrics
+## Step 6: Attribution
 
-If social data is available (from user paste or API):
+**Attribution model in use:** {first-touch / last-touch / linear / time-decay / data-driven}
 
-| Platform | Followers | Growth | Impressions | Engagement Rate | Clicks |
-|----------|-----------|--------|-------------|-----------------|--------|
-| Twitter/X | | | | | |
-| LinkedIn | | | | | |
-| Reddit | | | | | |
+**Why this model fits this stage:**
+- Early-stage (awareness building): first-touch gives credit to discovery channels — use to evaluate top-of-funnel spend
+- Growth stage (multi-touch journeys): linear or time-decay attribution more accurately reflects channel interplay
+- Mature / high-volume: data-driven attribution (GA4 default) preferred if conversion volume supports it (>300 conversions/month)
 
-Top performing posts: {list with metrics}
+**Multi-touch path analysis (if data available):**
+Top 3 conversion paths by frequency:
+1. {Channel A} → {Channel B} → {Channel C} → Convert — {X}% of conversions
+2. {Channel A} → {Channel C} → Convert — {X}% of conversions
+3. {Channel B} → Convert — {X}% of conversions
 
-## Step 5: Generate Executive Summary
+**Attribution implication for budget:**
+- Channels that appear strong in last-touch but weak in first-touch: {list} — may be benefiting from upstream work
+- Channels that appear weak in last-touch but strong in first-touch: {list} — may be undervalued; supports top-of-funnel
+- Recommended: review budget allocation quarterly as attribution picture matures
 
-Write a concise summary for stakeholders:
+## Step 7: Executive Summary
+
+Write this section FIRST in the final report — stakeholders read only this.
 
 ```
 ## Executive Summary — {Period}
 
-### Highlights
-- {Biggest win in plain language}
-- {Second win}
-- {Notable change}
+### What's Working
+- {Biggest win with the number: e.g., "Organic traffic +34% MoM, driven by 3 new long-form guides"}
+- {Second win with number}
+- {Third win with number}
 
-### Challenges
-- {What underperformed}
-- {What needs attention}
+### What's Not Working
+- {Top underperformer with number and hypothesis: e.g., "Paid social CPA rose 28% — audience fatigue on primary creative"}
+- {Second issue with number}
 
-### Key Metric
-{The one number that best captures this period's performance}
-{comparison to prior period}
+### What To Do Next
+- {Top priority action, data-backed, one sentence}
+- {Second priority action}
+- {Third priority action}
+
+### North Star Metric
+{NSM name}: {current value} ({delta vs prior period})
+Status: {on track / needs attention / at risk}
 ```
 
-## Step 6: Recommendations
+## Step 8: Recommendations
 
-Based on the data, provide 3-5 prioritized recommendations:
+Each recommendation follows this format: **What → Why → Expected Impact → Effort**
 
-**Next month priorities:**
-1. **{Action}** — Reason: {data-backed why}
-2. **{Action}** — Reason: {data-backed why}
-3. **{Action}** — Reason: {data-backed why}
+Based on the data, provide 3–5 prioritized recommendations:
 
-**Stop doing (or deprioritize):**
-- {Channel or content type that's not delivering ROI}
+**Priority 1 — {Action title}**
+- What: {specific, actionable instruction}
+- Why: {data point that motivates this — cite the metric and its value}
+- Expected impact: {quantified if possible — e.g., "+15–20% organic sessions within 60 days based on current keyword gap"}
+- Effort: Low / Medium / High — {1–2 sentence effort description}
 
-**Double down on:**
-- {What's working that deserves more investment}
+**Priority 2 — {Action title}**
+- What: {specific, actionable instruction}
+- Why: {data point}
+- Expected impact: {quantified estimate}
+- Effort: Low / Medium / High
 
-## Step 7: Save Report
+**Priority 3 — {Action title}**
+- What: {specific, actionable instruction}
+- Why: {data point}
+- Expected impact: {quantified estimate}
+- Effort: Low / Medium / High
+
+**Stop / deprioritize:**
+- {Channel or tactic}: {why — metric that shows negative ROI or opportunity cost}
+
+**Double down:**
+- {What's working}: {metric that justifies increased investment}
+
+## Step 9: Visualization Guide
+
+When presenting this report (in a deck, dashboard, or doc), use the following chart types. Never use pie charts — use horizontal bar charts for part-to-whole comparisons instead.
+
+| Data Type | Chart Type | Why |
+|-----------|-----------|-----|
+| Traffic trend over time | Line chart | Shows trajectory and inflection points |
+| Channel mix comparison | Horizontal bar chart | Easy rank comparison; avoids pie chart distortion |
+| MoM / WoW metric changes | Grouped bar chart | Side-by-side period comparison |
+| Conversion funnel | Funnel chart (top-to-bottom) | Drop-off visibility at each stage |
+| Keyword position distribution | Dot plot or scatter | Shows spread of rankings |
+| Email performance by campaign | Grouped bar (open + click rate) | Benchmark against average line |
+| ROAS by campaign | Horizontal bar, sorted descending | Immediate ROI ranking |
+| NSM over time with events annotated | Line chart + event markers | Connects actions to outcomes |
+
+Annotation rule: any chart showing a >15% swing should include a text annotation explaining the likely cause.
+
+## Step 10: Benchmark Summary
+
+At end of report, include a benchmark table for the brand's primary vertical:
+
+**Vertical:** {SaaS / eCommerce / Media / B2B Services / other}
+
+| Metric | Brand This Period | Industry Median | Top Quartile | Status |
+|--------|-----------------|-----------------|--------------|--------|
+| Organic conv. rate | | | | |
+| Email open rate | | | | |
+| Email click rate | | | | |
+| Paid search ROAS | | | | |
+| Social eng. rate | | | | |
+| Bounce rate | | | | |
+| Avg session duration | | | | |
+
+Sources for benchmarks: use vertical-specific reports (Mailchimp benchmark, WordStream paid benchmarks, Semrush organic CTR studies). Flag when a benchmark source is >18 months old.
+
+## Step 11: Save Report
 
 Use AskUserQuestion:
-> "Here's the performance report. Want to add anything before saving?"
+> "Here's the performance report. Want to add anything before saving? (e.g., qualitative context, campaign details not captured in the data)"
 
 STOP and wait.
 
 Use AskUserQuestion:
 > "Where should I save this report? (default: `docs/report-{period}-{date}.md`)"
 
-Save the complete report.
+Save the complete report with all sections in the following order:
+1. Executive Summary
+2. North Star Metric & Metrics Framework
+3. Trend Analysis (WoW / MoM)
+4. Channel Performance (SEO → Social → Paid → Email)
+5. Content Performance
+6. Attribution
+7. Recommendations (prioritized, with What/Why/Impact/Effort)
+8. Visualization Guide (for deck use)
+9. Benchmark Comparison
 
 ## Completion
 
 Report:
 - Period covered: {dates}
+- Prior period compared: {dates}
 - Channels analyzed: {list}
-- Top channel: {channel} ({metric})
+- North Star Metric: {NSM} — {value} ({delta vs prior})
+- Top performing channel: {channel} ({key metric})
+- Biggest risk flagged: {metric and concern}
 - Report saved to: {path}
 
 Suggest next steps:
 - "Run `/m-strategy` to update your marketing plan based on these findings"
 - "Run `/m-calendar` to adjust next month's content based on what's working"
 - "Run `/m-keywords` to explore new content opportunities from search data"
+- "Run `/m-report` again next period to track trend direction"
 
 ## Capture Learnings
 

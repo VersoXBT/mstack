@@ -1,11 +1,15 @@
 ---
 name: m-keywords
 preamble-tier: 3
-version: 1.0.0
+version: 2.0.0
 description: |
   Keyword research for SEO content planning. Uses Ahrefs/SEMrush API if available,
-  otherwise browse-based SERP analysis. Groups by intent. Outputs primary keywords,
-  long-tail, content gaps, and keyword clusters. Saves structured doc.
+  otherwise browse-based SERP analysis. Classifies by intent (informational, navigational,
+  commercial investigation, transactional). Groups into topic clusters / pillar pages.
+  Assesses difficulty without API via SERP feature analysis. Surfaces long-tail, PAA,
+  comparison, and "best X for Y" patterns. Identifies content gaps by priority. Flags
+  seasonal and trending keywords. Outputs structured table with cluster, intent, volume
+  estimate, difficulty, and content type. Saves structured doc.
 allowed-tools:
   - Bash
   - Read
@@ -528,6 +532,18 @@ Build an initial list of 15-25 keyword ideas by:
 - "{topic} {modifier: tool/platform/software/guide/tutorial}"
 - "{topic} {qualifier: free/open-source/enterprise/startup}"
 
+**Long-tail and question patterns (generate for every primary keyword):**
+- "how to {verb} {topic}" — informational, low competition
+- "what is {topic}" / "what does {topic} mean" — informational, high volume
+- "is {topic} worth it" / "does {topic} work" — commercial investigation
+- "{topic} vs {alternative}: which is better" — commercial investigation
+- "best {topic} for {specific audience/use case}" — commercial investigation
+- "{topic} pricing / cost / price" — transactional signal
+- "{topic} {feature} tutorial" — informational, long-tail
+- "{topic} for beginners / small business / enterprise" — segmented long-tail
+
+Extract "People Also Ask" (PAA) and "Related searches" from SERP — these are pre-validated question keywords that Google surfaces because they convert well.
+
 If API keys are available:
 ```bash
 # SEMrush keyword overview
@@ -542,86 +558,208 @@ $B goto "https://www.google.com/search?q={seed keyword}"
 $B text
 ```
 
-Extract "People Also Ask", "Related searches" suggestions.
+## Step 2: Classify by Search Intent
 
-## Step 2: Classify by Intent
+**Intent taxonomy — assign exactly one intent label per keyword:**
 
-For each keyword, assign:
-- **Intent**: Informational (I), Transactional (T), Navigational (N), Commercial (C)
-- **Volume estimate**: High (1k+), Medium (100-1k), Low (<100) — estimate if no API
-- **Difficulty estimate**: Easy, Medium, Hard — based on SERP analysis
-- **Content type**: Blog post, Landing page, Comparison, Tutorial, Case study
+| Intent | Definition | Examples |
+|--------|-----------|---------|
+| **Informational (I)** | User wants to learn, understand, or solve a problem. No purchase intent yet. Usually triggers blog posts, guides, tutorials, glossary pages. | "how does blockchain work", "what is keyword clustering", "on-chain analytics explained" |
+| **Navigational (N)** | User is looking for a specific brand, product, or destination. Optimising for these only makes sense for your own brand terms. | "Ahrefs login", "{BrandName} pricing page", "{ProductName} docs" |
+| **Commercial Investigation (C)** | User is comparing options before a decision. High-value — captures prospects mid-funnel. Triggers comparison pages, review posts, listicles. | "best on-chain analytics tools", "Dune Analytics vs Nansen", "top email marketing platforms for startups" |
+| **Transactional (T)** | User is ready to act — buy, sign up, download, or book. Triggers landing pages, product pages, free-trial CTAs. | "on-chain analytics software", "sign up for email automation", "download React component library" |
+
+**For each keyword, also assign:**
+- **Volume estimate**: High (10k+/mo), Medium (1k–10k/mo), Low (100–1k/mo), Micro (<100/mo) — estimate from API data or SERP ad density + autocomplete position
+- **Difficulty estimate**: see Step 3
+- **Content type**: Blog post, Pillar page, Comparison, Tutorial, Landing page, Case study, Glossary entry, FAQ
+- **Seasonal flag**: Y/N (see Step 6)
 
 Build a table:
 
-| Keyword | Intent | Volume | Difficulty | Content Type |
-|---------|--------|--------|------------|-------------|
-| {keyword} | {I/T/N/C} | {H/M/L} | {E/M/H} | {type} |
+| Keyword | Intent | Volume | Difficulty | Content Type | Cluster | Seasonal |
+|---------|--------|--------|------------|-------------|---------|---------|
+| {keyword} | {I/N/C/T} | {H/M/L/Micro} | {Easy/Med/Hard} | {type} | {cluster name} | {Y/N} |
 
-## Step 3: Group into Clusters
+## Step 3: Assess Keyword Difficulty Without API
 
-Organize keywords into content clusters by topic:
+When no API data is available, evaluate difficulty from SERP signals alone:
 
-**Cluster 1: {Main topic}**
-- Primary keyword: {keyword}
-- Supporting: {keyword}, {keyword}, {keyword}
-- Content type: {type}
-- Suggested title: {draft title}
-
-**Cluster 2: {Main topic}**
-...
-
-Aim for 3-5 clusters. Each cluster = one piece of content (or a series).
-
-## Step 4: Identify Content Gaps
-
-If browse is available, check top 3 SERP results for primary keywords:
+**Check these signals for each primary keyword:**
 ```bash
-$B goto "https://www.google.com/search?q={primary keyword}"
+$B goto "https://www.google.com/search?q={keyword}"
 $B text
 ```
 
-Note topics that rank well but:
-- Lack depth or recency
-- Don't address the target audience's specific needs
-- Miss a specific angle you could own
+**SERP feature signals (higher feature density = harder keyword):**
+- Featured snippet present → Hard (strong informational monopoly)
+- Knowledge Panel present → Hard (navigational intent locked)
+- Multiple video carousels → Medium–Hard (Google favours multimedia)
+- Shopping ads → Transactional keyword, domain authority matters more
+- Local pack → Local SEO rules, different strategy needed
+- PAA box present → Opportunity exists for structured content
+- Ads only, no features → Commercial intent, moderate difficulty
 
-List 3-5 content gaps as opportunities.
+**Domain authority of top-10 results (proxy method):**
+- All top-10 are DA 70+ (Investopedia, Forbes, HubSpot, etc.) → Hard
+- Mix of DA 40–70 with some niche sites → Medium
+- Several DA 20–40 niche or newer sites in top 10 → Easy
 
-## Step 5: Prioritize
+**Content quality of top results:**
+- Thin, generic, or outdated content (2+ years old) → Opportunity
+- Shallow list posts with no depth → Opportunity for comprehensive guide
+- All results are long-form, well-structured, recently updated → Hard
+
+**Backlink proxy (no tool needed):**
+- Search `site:{ranking-domain.com} {keyword}` — if they've dedicated a section to the topic, intent match is strong and they'll hold position
+
+**Difficulty rating guide:**
+- **Easy**: niche sites rank, SERP features sparse, content is thin or dated
+- **Medium**: mix of authority sites and niche sites, some SERP features, content quality varies
+- **Hard**: all top-10 are high-DA brands, rich SERP features, fresh comprehensive content
+
+## Step 4: Group into Topic Clusters (Pillar-Page Architecture)
+
+Organise all keywords into a hub-and-spoke content model:
+
+**Pillar page** = one authoritative, comprehensive page targeting the broadest keyword in the cluster (typically 2,000–4,000 words). Links to all cluster pages.
+
+**Cluster pages** = individual focused pieces targeting supporting keywords (800–1,500 words). Each links back to the pillar page.
+
+**Why it works:** Internal linking within a cluster signals topical authority to Google. A strong pillar lifts ranking for all cluster pages.
+
+---
+
+**Cluster 1: {Main topic — broadest keyword}**
+- Pillar page keyword: {keyword} — Intent: {I/C/T} — Volume: {H/M/L}
+- Cluster page 1: {keyword} — Intent: {type} — Content type: {type}
+- Cluster page 2: {keyword} — Intent: {type} — Content type: {type}
+- Cluster page 3: {keyword} — Intent: {type} — Content type: {type}
+- Suggested pillar title: "{draft title}"
+- Internal link logic: {how cluster pages link to pillar and each other}
+
+**Cluster 2: {Main topic}**
+- Pillar page keyword: {keyword}
+- Cluster pages: {keyword}, {keyword}, {keyword}
+- Suggested pillar title: "{draft title}"
+
+**Cluster 3: {Main topic}**
+...
+
+Aim for 3–5 clusters. Mark which cluster to build first based on business priority and difficulty.
+
+**Cross-cluster opportunities:** List keywords that could appear in multiple clusters — these are often the highest-value comparison or "best X for Y" terms.
+
+## Step 5: Identify Content Gaps
+
+Content gaps = keywords where competitors rank in positions 1–10 but you have no page targeting them.
+
+**Method A — SERP comparison (no API):**
+```bash
+# Check what ranks for your primary keyword
+$B goto "https://www.google.com/search?q={primary keyword}"
+$B text
+# Note the top 3 domains
+# Then check what else each domain ranks for in your topic area
+$B goto "https://www.google.com/search?q=site:{competitor-domain}.com {topic}"
+$B text
+```
+
+**Method B — API gap analysis:**
+```bash
+curl -s "https://api.semrush.com/?" \
+  --data "type=domain_organic&key=${SEMRUSH_API_KEY}&domain={competitor}&database=us&export_columns=Ph,Po,Nq,Ur" \
+  2>/dev/null | head -100
+```
+
+**Gap categories — prioritise in this order:**
+
+1. **High-priority gaps**: Commercial Investigation keywords (C intent) where competitors rank and you have nothing. These are mid-funnel and directly affect signups.
+2. **Medium-priority gaps**: Informational keywords (I intent) that drive awareness and feed the top of funnel. Good for blog content.
+3. **Low-priority gaps**: Navigational terms for competitor brands — generally not worth chasing unless you can create a legitimate comparison page.
+4. **Quick-win gaps**: Keywords where position 1–10 results are weak (thin content, low DA sites) — even without an existing page, you can rank quickly with targeted new content.
+
+List 3–5 gaps per category as opportunities:
+
+**High-priority gaps:**
+1. {keyword} — competitor {domain} ranks #{position} — content angle: {your differentiation}
+
+**Quick-win gaps:**
+1. {keyword} — current top result is thin/dated — easy to outrank with {content type}
+
+## Step 6: Flag Seasonal and Trending Keywords
+
+**Seasonal patterns to check:**
+- Annual events: tax season, Black Friday, Q4 budget cycles, product launch windows
+- Industry cycles: conference season, regulatory deadlines, funding rounds in the space
+- Academic/hiring cycles: back-to-school, hiring freezes
+
+**How to identify seasonal keywords (no API):**
+```bash
+$B goto "https://trends.google.com/trends/explore?q={keyword}&date=today+5-y"
+$B text
+```
+
+Look for:
+- Consistent annual spikes → Seasonal (plan content 6–8 weeks before peak)
+- Sustained upward trend → Trending (act now)
+- Flat or declining → Evergreen or fading
+
+**Seasonal keyword action:**
+- Mark with `Seasonal: Y` and note peak month(s) in the keyword table
+- Flag as "publish by {date}" in the priority plan
+- Evergreen content that peaks seasonally should be refreshed before each peak
+
+**Trending signals without Google Trends:**
+- Keyword appears in recent industry newsletter subject lines
+- Appears in PAA boxes even for adjacent searches
+- Growing Reddit / Twitter / LinkedIn discussion volume
+- Recent regulatory or news event created new search demand
+
+## Step 7: Prioritize
 
 Present a prioritized keyword plan:
 
-**Quick wins** (high-medium volume, easy difficulty, intent match):
-1. {keyword} — {why it's a quick win}
+**Quick wins** (medium–high volume, easy difficulty, strong intent match, no competing internal page):
+1. {keyword} — Intent: {C/I} — Volume: {M/H} — Why: {thin SERP, niche domain competition, PAA opportunity}
 
-**Long-term targets** (high volume, medium-hard difficulty):
-1. {keyword} — {why it's worth targeting}
+**Long-term targets** (high volume, medium–hard difficulty, strategic importance):
+1. {keyword} — Intent: {C/T} — Volume: {H} — Why: {pillar opportunity, aligns with product roadmap}
 
-**Low-competition opportunities** (lower volume, very easy to rank):
-1. {keyword} — {niche but relevant}
+**Low-competition opportunities** (micro volume, very easy, niche but converts):
+1. {keyword} — Intent: {C/T} — Volume: {Micro/L} — Why: {highly specific, strong purchase signal}
+
+**Seasonal priorities** (act before peak window):
+1. {keyword} — Peak: {month} — Publish by: {date}
 
 Use AskUserQuestion:
 > "Here's the keyword research. Anything to adjust before I save it?
 > A) Looks good — save it
 > B) I want to focus on a specific cluster
-> C) Add more keywords for a specific topic"
+> C) Add more keywords for a specific topic
+> D) Show me only the quick wins"
 
 STOP and wait.
 
-## Step 6: Save
+## Step 8: Save
 
 Use AskUserQuestion:
 > "Where should I save the keyword research? (default: `docs/keywords-{date}.md`)"
 
-Save the full document: classified keyword table, clusters, gaps, priority list.
+Save the full document with these sections:
+1. Structured keyword table (all columns: keyword, intent, volume, difficulty, content type, cluster, seasonal)
+2. Cluster map with pillar + spoke structure
+3. Content gap analysis by priority tier
+4. Priority action plan (quick wins, long-term, seasonal)
 
 ## Completion
 
 Report:
 - Keywords researched: {count}
 - Clusters identified: {count}
+- Content gaps found: {count}
 - Top quick win: {keyword}
+- Seasonal keywords flagged: {count}
 - File saved to: {path}
 
 Suggest next steps:
