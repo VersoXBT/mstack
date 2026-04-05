@@ -1,11 +1,12 @@
 ---
 name: m-engage
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Community engagement responses. Takes platform context — Reddit thread, Twitter
   reply, Discord question — and generates authentic, helpful responses. Not
   promotional. Tone-calibrated per platform. Advises when to engage vs. create.
+  Includes engagement tier guidance, value-first templates, and ROI measurement.
 allowed-tools:
   - Bash
   - Read
@@ -30,13 +31,15 @@ Parse the user's request. Determine:
 - Platform (Reddit, Twitter/X, Discord, LinkedIn, HackerNews, other)
 - The context: what was said, what thread or conversation this is in
 - Whether a URL or pasted text was provided
+- Your engagement tier in this community (see Engagement Tiers below)
 
 If context is not provided, use AskUserQuestion:
 > "Share the context for this engagement. Paste:
 > 1. The platform (Reddit, Twitter, Discord, etc.)
 > 2. The original post or question
 > 3. Any existing replies (so I don't repeat what's been said)
-> 4. What you want to achieve with your response"
+> 4. What you want to achieve with your response
+> 5. How active you've been in this community (new / occasional / regular)"
 
 STOP and wait.
 
@@ -56,13 +59,31 @@ Read the provided context carefully. Determine:
 - What do they value in responses here?
 - What would get your response downvoted or dismissed?
 
+**Engagement Tier — where do you stand in this community?**
+
+Engagement is earned, not assumed. Skipping tiers is the fastest way to be dismissed as a drive-by marketer.
+
+- **Tier 1 — Lurk and Learn**: You're new or rarely post here. Read norms. Note what gets upvoted and what gets called out. Do NOT post yet if you haven't done this.
+- **Tier 2 — Reply with Value**: You've read enough to know the culture. Reply to existing threads — answer questions, add a nuance, share an experience. No product mentions. Build a name first.
+- **Tier 3 — Start Discussions**: You're recognized as a contributor. Now you can post original threads, ask questions, share findings. Occasionally mention your work when directly relevant.
+- **Tier 4 — Recognized Voice**: You're known here. You can share product updates if they're framed as genuine value (not launches), people will give you benefit of the doubt, and others may even tag you in relevant threads.
+
 **What's the right move?**
 - Respond with expertise (add value without promoting)
-- Respond to a direct question (answer honestly, mention your product only if genuinely relevant)
-- Skip it (if your only contribution would be promotional)
+- Respond to a direct question (answer honestly, mention your product only if genuinely relevant AND you are Tier 3+)
+- Skip it (if your only contribution would be promotional, or you're Tier 1 in a new community)
+
+**When NOT to engage — hard stops:**
+- Flame wars or heated arguments where logic has left the chat
+- Trolling bait designed to provoke a defensive response
+- Threads where your product is clearly irrelevant (forcing a mention here damages trust)
+- Topics outside your actual expertise — shallow takes get exposed fast
+- Threads where three or more people already gave the same answer you'd give
+- Any context where engaging would look like reputation management rather than genuine participation
 
 Present the assessment:
 > "Platform: {platform}
+> Community tier: {Tier 1 / 2 / 3 / 4 — with one sentence of reasoning}
 > Thread type: {type}
 > Recommended approach: {respond with expertise / respond to direct question / skip with reason}
 >
@@ -74,36 +95,122 @@ Use AskUserQuestion if the right approach is unclear.
 
 Apply platform-specific rules:
 
+---
+
 **Reddit:**
-- Lead with genuine value — answer the question or add to the discussion
-- Personal experience ("We dealt with this at our company...") beats generic advice
-- Only mention your product if it's the honest, specific answer to what was asked
-- If you mention your product: disclose the connection ("I work on X, which does this — not the only solution but worth checking")
-- No marketing language. Reddit users are highly allergic to promotional writing.
-- Match the subreddit's tone (r/entrepreneur is different from r/programming)
+
+Culture: Reddit users have extraordinarily sensitive promotional radar. The default assumption is that a new account posting about a product is a shill. Trust is built through years of non-promotional participation, not through a single disclosure line.
+
+Tone calibration:
+- r/entrepreneur, r/startups: conversational, founder-to-founder, direct. War stories appreciated.
+- r/programming, r/webdev: technical precision matters more than relatability. Be specific or be ignored.
+- r/personalfinance, r/investing: cautious, cite sources, acknowledge you're not a financial advisor.
+- r/SaaS, r/Entrepreneur: blunter than most. Hype language gets called out immediately.
+- Niche subreddits: read the top posts from the past month before writing a word. Tone varies wildly.
+
+Rules:
+- Lead with genuine value — answer the question or add to the discussion before anything else
+- Personal experience ("We dealt with this at our company...") beats generic advice every time
+- Only mention your product if it's the honest, specific answer to what was asked AND you are Tier 3+
+- If you mention your product: disclose the connection ("I work on X, which does this — not the only solution but worth checking") — and put it at the end, after the actual value
+- No marketing language. No "game-changing," "seamless," "robust," "powerful." Reddit users screenshot and mock these.
+- Never shill. If the thread is about comparing tools and yours is one of them, either be fully transparent or stay out.
+- Cite sources when making claims. "I read somewhere" is not a source.
+- Match subreddit tone precisely — casual in casual subs, technical in technical subs.
+
+---
 
 **Twitter/X:**
-- Short, direct, adds to the conversation
-- No filler, no "Great question!"
+
+Culture: Speed and wit win. Brevity is a signal of confidence. Vague, hedged takes get scrolled past.
+
+Tone calibration:
+- Tech/founder Twitter: opinions expected. "I disagree with this because..." lands better than "interesting perspective."
+- Crypto/DeFi Twitter: alpha-first, skepticism-high, irony-native. Don't over-explain.
+- Marketing Twitter: data beats opinion. "We tested X, here's what we found" outperforms "X is really important."
+
+Rules:
+- Short, direct, adds something the original didn't say
+- No filler — "Great question!", "Love this take!", "100%" — these are engagement-bait and look hollow
 - Opinionated if you have an opinion — vague responses get ignored
-- If replying to criticism: acknowledge, don't defend
+- Quote-tweet adds commentary, not just amplification. "This + [your insight]" beats "+1"
+- If replying to criticism of your product: acknowledge specifically ("You're right that X is frustrating, we're [status]"), don't defend
+- If replying to a thread: read the full thread before replying so you don't repeat what's been said two replies up
+- Humor works when it's natural — forced wit is worse than no wit
+
+---
 
 **Discord:**
-- Match the community's energy and expertise level
-- If it's a technical question, be technical
-- If it's a casual community, be casual
-- Links to docs or resources are welcome; pitches are not
+
+Culture: Discord is about being a regular, not a drive-by. Communities remember who shows up consistently. A single promotional message from an account that never otherwise participates gets removed and remembered.
+
+Tone calibration:
+- Technical dev servers: precise, code-first. If you can answer with a snippet, do it.
+- Community/interest servers: casual, emoji is fine, match energy of the channel.
+- Support channels: patient, clear, don't assume knowledge level.
+- General/off-topic channels: just be a person. No agenda.
+
+Rules:
+- Match the community's energy and expertise level — read recent messages in the channel before posting
+- If it's a technical question, be technical. Pseudo-technical vagueness is obvious.
+- If it's a casual community, be casual. Corporate tone in a casual Discord is jarring.
+- Links to docs or resources are welcome in the right context; product pitches are not
+- If you have a role or verified status in the server, use it appropriately — don't abuse trust
+- Be a regular: answer unrelated questions, participate in off-topic channels, before you mention anything about your work
+
+---
 
 **LinkedIn:**
+
+Culture: More formal than Twitter, but the best LinkedIn engagement is personal and specific — not corporate-speak. "Excited to share..." is LinkedIn noise. A specific insight from a real situation cuts through.
+
+Tone calibration:
+- Executive threads: substantive, reference data or research, avoid cheerleading
+- Founder/startup threads: personal experience and candor valued over polish
+- Industry discussion: add a contrarian or nuanced angle — pure agreement is ignored
+- Job/career threads: be human and practical, not motivational-poster
+
+Rules:
 - More formal than Twitter, more personal than a press release
-- Adding to a professional conversation: share a specific insight
-- Avoid pure validation ("This is so true!") — add a perspective
+- Adding to a professional conversation: share a specific insight, not a validation ("This is so true!" adds nothing)
+- Personal experience framed as a lesson lands better than advice framed as universal truth
+- Data points, specific numbers, named examples all increase credibility
+- Avoid: corporate buzzwords, excessive hashtags (1-2 max), "I'm humbled to announce," unsolicited career advice
+- Emoji: acceptable sparingly, not as decoration
+
+---
 
 **HackerNews:**
-- Extremely high bar — factual, specific, substantive
-- Never promotional — instant downvote
+
+Culture: Extremely high bar. HN regulars are technical, skeptical, and have seen every form of subtle marketing. The community self-polices hard. One shill comment can get your domain flagged.
+
+Rules:
+- Factual, specific, substantive — if you can't say something concrete, don't comment
+- Never promotional — ever. Even a disclosure doesn't save you if the comment reads as marketing.
 - Cite sources when making claims
-- Admit uncertainty when you're not sure
+- Admit uncertainty when you're not sure ("I'm not certain about this, but...")
+- Engage with the actual technical or intellectual substance of the post
+- Founder comments on posts about their own company: acceptable ONLY if you're adding factual context, answering a technical question, or addressing a specific inaccuracy. Never defensive.
+
+---
+
+**Value-First Response Templates:**
+
+Use these as structural models, not scripts. Adapt language to fit the platform and community.
+
+*Answering a question with experience:*
+> "We ran into this exact issue when [specific context]. What worked for us: [specific answer]. One caveat — [limitation or condition where it might not apply]. Happy to go deeper on [specific aspect] if useful."
+
+*Respectfully disagreeing:*
+> "Interesting take — I'd push back on [specific claim]. In my experience [counter-evidence]. That said, I think [point of agreement] is still valid. Curious what's driving the [original claim] — is it based on [specific scenario]?"
+
+*Adding nuance without disagreeing:*
+> "This holds in [context A], but I've seen it break down when [context B]. The difference seems to be [variable]. Would be curious if others have found that too."
+
+*Sharing a resource without being promotional:*
+> "There's a good [article/thread/doc] on this that goes deeper: [link]. The key insight for your question is [specific takeaway], which is probably more useful than the full piece."
+
+---
 
 Write the response:
 
@@ -114,8 +221,9 @@ Write the response:
 Check against brand voice:
 - Matches tone setting from brand.yaml
 - No items from avoid list
-- No AI vocabulary ("crucial", "leverage", "in today's digital landscape")
+- No AI vocabulary ("crucial", "leverage", "in today's digital landscape", "it's worth noting", "game-changing", "robust", "seamless")
 - Sounds like a real person, not a brand
+- Passes the "would a community member screenshot this as cringe" test
 
 ## Step 3: Self-Check
 
@@ -124,8 +232,11 @@ Before presenting, verify:
 - [ ] Does this response give value even if the reader never visits our site?
 - [ ] Is any product mention genuinely the most helpful answer, not a plug?
 - [ ] Does it read like a human wrote it?
-- [ ] Does it match the platform's norms?
+- [ ] Does it match the platform's norms AND this specific community's norms?
 - [ ] Would this response make the reader want to learn more about us?
+- [ ] Does it respect the engagement tier — am I overreaching for where we actually stand?
+- [ ] Is there anything in here that could get screenshotted and used against us?
+- [ ] Am I adding something that wasn't already said in the thread?
 
 If any check fails, revise.
 
@@ -153,16 +264,43 @@ STOP and wait.
 Based on the thread analyzed, provide a brief strategic note:
 
 - **When to engage here again**: reply to replies? or let it breathe?
-- **Upvoting other helpful responses**: if there are good answers, upvoting them builds goodwill
+- **Upvoting other helpful responses**: if there are good answers, upvoting them builds goodwill and is itself community participation
 - **Follow-up opportunity**: is there a full content piece worth writing on this topic?
 - **Signal**: does this thread reveal a pain point or question worth addressing in your own content?
+- **Tier progression**: what would move us from our current tier to the next in this community? (specific actions, not generic advice)
+
+## Step 6: Engagement ROI
+
+What good engagement actually looks like — not vanity metrics:
+
+**Strong signals (actual ROI):**
+- Profile visits from people in your target audience after the comment
+- DMs asking for more detail or a demo — the clearest signal of genuine interest
+- Follows from accounts that look like buyers or builders
+- Other community members tagging you in future related threads (Tier 4 indicator)
+- Comments referencing your response in downstream threads
+
+**Weak signals (feel good, not predictive):**
+- Upvotes/likes from accounts that don't match ICP
+- Generic "great answer" replies
+- Follower count increases from unrelated demographics
+
+**Red flags (engagement hurting you):**
+- Responses that get ratio'd or called out as promotional
+- Downvotes or reports in Reddit/HN
+- Being added to community blocklists
+- Silence — no engagement at all despite posting (means the response missed the mark or you posted in the wrong tier)
+
+After engagement, check: did this thread drive any of the strong signals within 48 hours? If not, analyze why before engaging in this community again.
 
 ## Completion
 
 Report:
 - Platform: {platform}
+- Community tier: {tier}
 - Thread type: {type}
 - Response length: {words}
+- Engagement approach: {value-only / value + disclosure / skip}
 - Strategic note: {one-line takeaway}
 
 Suggest next steps:
