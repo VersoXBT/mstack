@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# mstack-patch-names — rename skill directories based on prefix setting
+# Stub: prefix renaming handled by setup script
+exit 0
