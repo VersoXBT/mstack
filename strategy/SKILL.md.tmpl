@@ -1,0 +1,153 @@
+---
+name: m-strategy
+preamble-tier: 4
+version: 1.0.0
+description: |
+  Build a marketing strategy with channel priorities, messaging framework, and
+  90-day roadmap. Reads brand context, competitive analysis, and ICP if available.
+  Produces a structured strategy document. Use when asked to "create marketing
+  strategy", "plan marketing", or "build go-to-market".
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{API_KEYS}}
+
+{{LEARNINGS_SEARCH}}
+
+{{BROWSE_OPTIONAL}}
+
+## Setup
+
+Check for existing artifacts that inform the strategy:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+
+# Check for brand context
+[ -f "$PROJECT_DIR/brand.yaml" ] && echo "BRAND: found" || echo "BRAND: not found"
+
+# Check for previous strategy docs
+find . -name "*strategy*" -o -name "*marketing-plan*" 2>/dev/null | head -5
+```
+
+If brand context is not configured, strongly recommend running /m-brand first:
+> "I recommend running `/m-brand` first to set up your brand context. It takes 5 minutes
+> and makes the strategy much more targeted. Want to do that now, or proceed without it?"
+
+STOP and wait for response.
+
+## Step 1: Audit Current State
+
+If browse is available, analyze the user's current web presence:
+```bash
+$B goto "{website URL from brand.yaml}"
+$B text
+$B links
+```
+
+If not, ask:
+> "Brief overview of your current marketing: what channels are you using,
+> what's working, what's not? (2-3 sentences is fine)"
+
+## Step 2: Define Goals
+
+Use AskUserQuestion:
+> "What's your primary marketing goal for the next 90 days?
+> A) Brand awareness — get known in your space
+> B) Lead generation — drive signups, demos, waitlist
+> C) User activation — get existing users to engage more
+> D) Community building — grow an engaged audience
+> E) Other — describe it"
+
+Then ask:
+> "Any specific metric targets? (e.g., '1000 Twitter followers', '500 signups',
+> '10 blog posts published'). Say 'no specific targets' if unsure."
+
+## Step 3: Channel Strategy
+
+Based on brand.yaml channels, audience, and goals, recommend a channel mix.
+
+For each recommended channel, provide:
+- **Why this channel**: how it connects to the audience and goals
+- **Content type**: what to post (threads, articles, short-form, etc.)
+- **Frequency**: realistic cadence
+- **KPI**: what to measure
+
+Present as a table:
+
+| Channel | Content Type | Frequency | KPI |
+|---------|-------------|-----------|-----|
+| Twitter/X | Threads, insights, engagement | 5x/week | Impressions, followers |
+| Blog | SEO articles, tutorials | 2x/month | Organic traffic, time on page |
+| ... | ... | ... | ... |
+
+Use AskUserQuestion:
+> "Does this channel mix look right? Want to add, remove, or adjust any channels?"
+
+STOP and wait.
+
+## Step 4: Messaging Framework
+
+Based on positioning and audience, create:
+
+1. **Primary message**: one sentence that captures the core value
+2. **Supporting messages**: 3 pillar messages that expand on the primary
+3. **Proof points**: evidence for each pillar (features, metrics, testimonials)
+4. **Tone guidelines**: specific to this strategy (derived from brand voice)
+
+Present and get approval.
+
+## Step 5: 90-Day Roadmap
+
+Break into 3 phases:
+
+**Month 1: Foundation**
+- Set up channels, create initial content, establish publishing cadence
+- Specific deliverables with dates
+
+**Month 2: Growth**
+- Increase cadence, launch campaigns, engage community
+- Specific deliverables with dates
+
+**Month 3: Optimize**
+- Analyze what worked, double down, cut what didn't
+- Specific deliverables with dates
+
+Include a week-by-week content calendar for Month 1.
+
+## Step 6: Save Strategy Document
+
+Save the complete strategy to a markdown file:
+
+Use AskUserQuestion:
+> "Where should I save the strategy document? (default: `docs/marketing-strategy-{date}.md`)"
+
+Write the document with all sections: goals, channel strategy, messaging framework, 90-day roadmap.
+
+## Completion
+
+Report:
+- Strategy document saved to {path}
+- Channels covered: {list}
+- 90-day roadmap: {month 1 focus}, {month 2 focus}, {month 3 focus}
+
+Suggest next steps:
+- "Run `/m-calendar` to build a detailed content calendar from this strategy"
+- "Run `/m-brief` to create your first content brief"
+- "Run `/m-keywords` to research keywords for your SEO content"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
