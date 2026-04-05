@@ -23,7 +23,6 @@ if [ ! -f "$CONFIG_FILE" ]; then
 # mstack configuration
 proactive: true
 skill_prefix: true
-telemetry: off
 auto_upgrade: false
 browse_path: ""
 default_language: "en"

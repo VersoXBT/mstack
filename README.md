@@ -178,7 +178,6 @@ No API keys? Skills still work — they fall back to browse-based analysis, WebS
 ```bash
 mstack-config set skill_prefix true    # /m-write vs /write (default: true)
 mstack-config set proactive true       # auto-suggest skills based on context
-mstack-config set telemetry off        # off | anonymous | community
 mstack-config list                     # show all settings
 ```
 
@@ -196,10 +195,7 @@ mstack-config list                     # show all settings
 
 ## Privacy
 
-- **Default is off.** No telemetry unless you opt in.
-- **What's sent (if you opt in):** skill name, duration, success/fail. That's it.
-- **What's never sent:** content, file paths, repo names, prompts, or any user-generated data.
-- **Change anytime:** `mstack-config set telemetry off`
+**mstack collects zero data.** No telemetry, no analytics, no tracking, no phone-home. Everything runs locally on your machine. Your brand context, learnings, and content never leave your disk.
 
 ## License
 
