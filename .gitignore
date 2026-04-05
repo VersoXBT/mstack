@@ -6,3 +6,10 @@ node_modules/
 dist/
 *.bun-build
 .mstack-dev/
+.agents/
+.kiro/
+.cursor/
+.openclaw/
+.opencode/
+.slate/
+.factory/

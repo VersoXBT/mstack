@@ -35,13 +35,11 @@ CONFIG_HEADER='# mstack configuration — edit freely, changes take effect on ne
 # update_check: true        # false = suppress version check notifications
 #
 # ─── Skill naming ────────────────────────────────────────────────────
-# skill_prefix: false       # true = namespace skills as /mstack-qa, /mstack-ship
-#                           # false = short names /qa, /ship
+# skill_prefix: false       # true = namespace skills as /m-write, /m-audit, /m-ads
+#                           # false = short names /write, /audit, /ads
 #
 # ─── Advanced ────────────────────────────────────────────────────────
-# codex_reviews: enabled    # disabled = skip Codex adversarial reviews in /ship
 # mstack_contributor: false # true = file field reports when mstack misbehaves
-# skip_eng_review: false    # true = skip eng review gate in /ship (not recommended)
 #
 '
 
