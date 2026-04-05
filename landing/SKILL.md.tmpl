@@ -1,11 +1,11 @@
 ---
 name: m-landing
 preamble-tier: 2
-version: 1.0.0
+version: 1.1.0
 description: |
   Landing page copy. Takes a product or feature plus target audience. Generates:
-  hero section, problem statement, benefits, social proof, FAQ, and final CTA.
-  Conversion-focused: one CTA, benefit-driven headlines, specific outcomes.
+  hero section, problem statement (PAS), benefits, social proof, FAQ, and final CTA.
+  Conversion-focused: one CTA per page, message match, F-pattern hierarchy, mobile-first.
 allowed-tools:
   - Bash
   - Read
@@ -32,37 +32,56 @@ find . -name "*landing*" -o -name "*lp-*" 2>/dev/null | head -5
 
 Parse the user's request. Determine:
 - What product, feature, or offer this page is for
-- Target audience segment
+- Target audience segment (specific: "SaaS founders with <10 employees", not "businesses")
 - Primary CTA (sign up, book a demo, download, buy)
+- Traffic source — if known (paid ad, email, SEO). Message match requires the landing page headline to mirror the ad or email subject line the visitor came from.
 
 If the core details are missing, use AskUserQuestion:
 > "Tell me about this landing page:
 > 1. What is it for? (product, feature, offer, lead magnet)
-> 2. Who is it targeting? (be specific — 'startup founders' beats 'businesses')
-> 3. What's the ONE action you want visitors to take?"
+> 2. Who is it targeting? (be specific — 'B2B SaaS founders' beats 'businesses')
+> 3. What's the ONE action you want visitors to take?
+> 4. Where is traffic coming from? (Google Ads, cold email, social, organic) — this affects headline match."
 
 Then ask:
 > "What existing evidence do you have? (optional but useful)
-> - Customer quotes or testimonials
-> - Metrics ('10,000 users', '4.9 stars')
+> - Customer quotes or testimonials (with name, title, company)
+> - Metrics ('10,000 users', '4.9 stars', '$2M saved')
 > - Company logos of customers
+> - Press mentions (publications, not just quotes)
 > Say 'none yet' if you're launching fresh."
 
 STOP and wait.
 
+## Conversion Principles (apply throughout all steps)
+
+These rules govern every decision on the page:
+
+**One CTA per page.** Every link that isn't the primary CTA is a conversion leak. No nav bar. No footer links to other pages. The only escape should be the CTA button.
+
+**Message match.** The headline must echo the ad, email subject, or search query that brought the visitor here. If the ad says "Automate your invoicing", the headline cannot say "Streamline your workflow". Mirror the exact language.
+
+**F-pattern reading.** Visitors scan in an F: across the top, down the left edge, and a shorter scan in the middle. Put the highest-value content top-left. Never bury the CTA or the core value proposition below the fold.
+
+**Above-the-fold hierarchy.** The first screen must contain: (1) what it does, (2) who it's for, (3) why it matters, (4) the CTA. Everything below the fold supports and extends that premise.
+
+**Page speed over polish.** A landing page that loads in 4 seconds loses 25% of visitors before they read a word. Do NOT recommend: video backgrounds, heavy carousels, custom fonts loading from 3 CDNs, or full-bleed hero images over 200 KB. Recommend: system fonts as fallback, compressed WebP images, inline critical CSS, deferred JS. Target: <3s load on mobile, <1.5s on desktop.
+
+**Mobile-first layout.** More than 60% of landing page traffic is mobile. Stack all benefit blocks vertically. Put the primary CTA within thumb reach (bottom 40% of screen). Reduce form fields to the minimum required — every additional field drops conversion ~10%. One input (email) converts better than three inputs (name, company, email).
+
 ## Step 1: Define the Conversion Goal
 
-A landing page should have ONE goal. Confirm:
-- Primary CTA: {CTA verb} + {specific benefit}: e.g., "Start free trial", "Book a 20-minute demo"
-- Secondary CTA (for unready visitors): e.g., "See how it works" (lower commitment)
-- No nav links on the page — they leak traffic
+A landing page must have exactly ONE goal. Confirm:
+- Primary CTA: `{CTA verb}` + `{specific outcome}` — e.g., "Start free trial", "Book a 20-minute demo", "Get the free guide"
+- Secondary CTA (for unready visitors only): lower-commitment alternative placed below the fold — e.g., "See how it works →" linking to a demo video anchor. Never place this near the primary CTA.
+- Remove all navigation links — they bleed traffic to pages that don't convert.
 
 If the user hasn't decided on the CTA, suggest options:
 > "For {product/feature}, the most common CTAs are:
-> A) Free trial — works if the product sells itself through use
-> B) Demo/call — works for higher-ticket or complex products
-> C) Waitlist/notify me — works for pre-launch
-> D) Download/get — works for lead magnets"
+> A) Free trial — works if the product sells itself through use (low-touch SaaS)
+> B) Demo/call — works for higher-ticket or complex products (>$200/mo or enterprise)
+> C) Waitlist/notify me — works pre-launch to build urgency and a list
+> D) Download/get — works for lead magnets; low friction, high volume"
 
 ## Step 2: Write the Hero Section
 
@@ -71,128 +90,190 @@ The hero must answer three questions in under 5 seconds:
 2. Who is it for?
 3. Why should I care right now?
 
-**Headline options:**
+**Headline formula:** `[Specific Outcome] without [Specific Pain]`
+
+Examples of the formula applied:
+- "Close deals 40% faster without chasing prospects through five tools"
+- "Publish your newsletter in 20 minutes without staring at a blank page"
+- "Know exactly where your budget went without building another spreadsheet"
 
 Rules:
-- Lead with the outcome, not the feature
-- Specific beats vague: "Ship 3x faster" beats "Work better"
-- Address the reader: "you", "your team"
-- Under 10 words is ideal
+- Lead with the outcome the customer cares about, not the feature that delivers it
+- Specific beats vague: "Ship 3x faster" > "Work better" > "The future of work"
+- Address the reader directly: "you", "your team"
+- Mirror the language from the ad or email that sent them here (message match)
+- Under 10 words is ideal; 14 words maximum
 
 Write 3 headline options:
 
-**Option A — Outcome-focused:**
-`{headline}`
+**Option A — Outcome-focused (recommended default):**
+`[Outcome] without [Pain]`
 
 **Option B — Problem-focused:**
-`{headline}`
+`Stop [specific pain]. Start [specific gain].`
 
 **Option C — Contrarian/bold:**
-`{headline}`
+Challenges an assumption the audience holds. Use only if the brand voice supports it.
 
 **Subheadline:**
-Expands the headline in one sentence (max 20 words). Adds specificity.
-`{subheadline}`
+Expands the headline in one sentence (max 20 words). Adds the "how" — the mechanism that makes the outcome real.
+Format: `{Product name} {does X} so {audience} can {outcome} without {friction}.`
 
-**Hero CTA:**
-`{CTA button text}` — short, specific, first-person ("Get my free report" > "Submit")
+**Hero CTA button text:**
+Short, specific, first-person phrasing converts better than passive:
+- "Get my free report" > "Download" > "Submit"
+- "Start my free trial" > "Start free trial" > "Try it"
+- "Book my 20-min demo" > "Book a demo" > "Contact us"
 
-**Hero supporting copy** (optional, 1-2 lines under the CTA):
-`{risk reducer: "No credit card required" / "Cancel anytime" / "Free for {N} users"}`
+**Risk reducer** (1 line under the CTA button):
+Remove the reason to hesitate. Pick the one most relevant:
+- "No credit card required"
+- "Cancel anytime"
+- "Free for {N} users"
+- "Setup in 5 minutes"
+- "Join {N}+ teams already using {product}"
+
+**Social proof anchor near the CTA:**
+Place one hard number or logo strip within visual proximity of the CTA button:
+- "{N}+ teams trust {product}" — use when you have user count
+- Star rating + review count — use when you have ratings
+- Logo strip of 3-5 recognizable customers — use when you have enterprise logos
+- If none: use the founder's relevant credential ("Built by the team that previously built {known thing}")
 
 Use AskUserQuestion:
 > "Which headline do you prefer? (A, B, or C) Or what would you change?"
 
 STOP and wait.
 
-## Step 3: Write the Problem Statement
+## Step 3: Write the Problem Section (Pain–Agitate–Solve)
 
-Right below the hero: confirm that you understand the reader's pain.
+Right below the hero: confirm that you understand the reader's problem before presenting the solution. Use the PAS framework explicitly — do not skip to benefits.
 
-Rules:
-- Use language your customers actually use (not polished marketing speak)
-- Name the problem — don't dance around it
-- Make the reader feel seen
+**P — Name the pain (1-2 sentences):**
+State the problem in the customer's own words. Use the language they use when venting about this to a colleague, not the polished language a marketer would use.
+- Bad: "Managing your data across multiple platforms is challenging."
+- Good: "You're copying numbers from five tools into a spreadsheet every Monday morning — and it's still wrong by noon."
 
+**A — Agitate (2-3 sentences):**
+Make the cost of the problem real. What is it costing them in time, money, reputation, sleep? What gets worse if they don't fix it? This should feel uncomfortable to read — that's the point.
+- Bad: "This wastes valuable time."
+- Good: "That's 3 hours a week, every week — 150 hours a year spent on a task that adds nothing to your product. While you're rebuilding the same broken report, your competitor shipped three features."
+
+**S — Solve (1-2 sentences):**
+Present the product as the solution. Keep it short. The detailed explanation comes in Step 4.
+- "That's what {product} is built to fix."
+- "{Product} pulls everything into one place automatically, so your Monday morning starts with answers, not chores."
+
+**Section format:**
 ```
-## {Short problem section heading}
+## {Short, pain-validating heading — e.g., "Sound familiar?" or "You've tried everything."}
 
-{2-3 sentences describing the frustration your target audience experiences.
-Specific > vague. "You're spending 3 hours on reports that no one reads" >
-"Managing your marketing data is hard."}
+{Pain sentence(s).}
+
+{Agitate sentence(s).}
+
+{Solve sentence(s).}
 ```
 
 ## Step 4: Write the Benefits Section
 
-3-5 benefit blocks. Each benefit:
-- Headline: outcome (not a feature name)
-- Body: 1-2 sentences expanding on the outcome, with specifics
+3-5 benefit blocks. Each block must translate a feature into a customer outcome.
 
-**Format:**
+**Feature-to-benefit translation rule:**
+Ask "so what?" after every feature statement until you reach something the reader cares about.
+- "AI-powered analytics" → so what? → "See your data automatically" → so what? → "Spot problems before they cost you customers." Use that last answer.
 
+**Block format:**
+```
+{Icon or visual signal}
+
+### {Benefit headline — outcome, not feature name}
+
+{Sentence 1: What specifically changes for the reader.}
+{Sentence 2: Concrete detail, metric, or example that makes it real.}
+```
+
+**Headline rules:**
+- Start with a verb ("Cut reporting time") or specific noun ("One dashboard")
+- Avoid feature names as headlines — "Dashboard" is a feature; "See everything in one place" is a benefit
+- Each benefit headline should address a different pain point from Step 3
+- Use numbers when possible: "2-minute setup" > "Quick setup"
+
+**Full section format:**
 ```
 ## What You Get
 
-### {Outcome headline 1}
-{1-2 sentence explanation with specific details. What changes for the reader.}
+### {Benefit headline 1}
+{2-sentence explanation.}
 
-### {Outcome headline 2}
-{1-2 sentence explanation.}
+### {Benefit headline 2}
+{2-sentence explanation.}
 
-### {Outcome headline 3}
-{1-2 sentence explanation.}
+### {Benefit headline 3}
+{2-sentence explanation.}
 
-[### {Outcome headline 4} — optional]
+[### {Benefit headline 4} — optional]
 [{explanation}]
 ```
 
-Rules for benefit headlines:
-- Start with a verb or specific noun
-- Avoid feature names as headlines ("Dashboard" is a feature; "See everything in one place" is a benefit)
-- Each benefit should address a different pain point from Step 3
-
 ## Step 5: Write the Social Proof Section
 
-Social proof reduces the perceived risk of taking action.
+Social proof reduces perceived risk. Use the highest-credibility type available. Do not mix types randomly — use a hierarchy.
 
-**If testimonials/logos are available:**
+**Proof type hierarchy (use the highest available):**
+1. Quantified customer outcome: `"We cut reporting time from 3 hours to 20 minutes"` + name + title + company
+2. Recognizable customer logos (enterprise or well-known brands)
+3. Aggregate metrics: `"500+ teams trust {product}"`, `"$12M in revenue tracked"`
+4. Star rating + review platform badge (G2, Capterra, Product Hunt)
+5. Press mentions with publication logo (not just pull quotes)
+6. Founder credibility (for pre-launch or low-proof stage)
+
+**Testimonial format (for types 1-2):**
+Each testimonial must include: photo, full name, title, company. Vague testimonials without attribution convert poorly. Specific outcome quotes convert best.
+
 ```
-## {N} teams already {doing the thing}
+## {N} teams already {doing the specific thing — mirrors the CTA outcome}
 
-"{Customer quote — specific outcome, not vague praise.
+"{Specific outcome quote. Numbers and before/after comparisons work best.
 'We cut our reporting time from 3 hours to 20 minutes' > 'Great product!'}"
-— {Name}, {Title} at {Company}
+— {Full Name}, {Job Title} at {Company Name}
+[Photo] [Company Logo]
 
-[Company logo 1] [Company logo 2] [Company logo 3]
+[Company logo 1] [Company logo 2] [Company logo 3] [Company logo 4] [Company logo 5]
 ```
 
 **If launching fresh (no social proof yet):**
 ```
-## Built for {audience}
+## Built by people who lived this problem
 
-{Explain the founder's/team's relevant experience or the specific problem you've
-solved personally. "Built after 5 years of doing {X} manually" establishes
-credibility without fabricated social proof.}
+{Founder or team credential sentence. Connect past experience directly to the problem the product solves.
+"Built after 5 years of running {relevant operation} manually" is credible.
+"We're passionate about solving your problems" is not.}
 ```
 
-Do not invent fake testimonials. If none exist, use credibility signals instead.
+Do not invent testimonials, fabricate metrics, or use placeholder names. Use credibility signals if real proof does not exist yet.
 
 ## Step 6: Write the FAQ Section
 
-3-5 questions that address the top objections before they're raised.
+3-5 questions that neutralize the top objections before the reader voices them. Do not write "helpful" FAQs about features — write friction-reducing answers to doubts.
 
-Common objections to address:
-- "Is this for my size of company?"
-- "How long does it take to set up?"
-- "What if I don't like it?"
-- "How is this different from {main competitor}?"
-- "Is my data safe?"
+**Objection identification — address these in priority order:**
+1. Fit: "Is this for a company my size / my use case?"
+2. Effort: "How long does it take to set up / migrate / learn?"
+3. Risk: "What if I don't like it? Can I cancel? Is my data safe?"
+4. Differentiation: "How is this different from {main competitor I'm already using}?"
+5. Timing: "Why now? Can I wait?"
+
+**Answer rules:**
+- Be direct. No hedging. "Yes, you can cancel anytime." not "We offer flexible options."
+- Specifics reduce friction: "Setup takes under 10 minutes" > "Setup is quick"
+- Differentiation answers should acknowledge the competitor by category, then pivot: "If you're already using {Competitor}, {product} connects directly to it and handles the part {Competitor} doesn't."
 
 ```
 ## Questions
 
-**{Objection as question}**
-{Direct, specific answer. Don't hedge.}
+**{Objection as a natural question a prospect would actually ask}**
+{Direct, specific answer. One paragraph maximum.}
 
 **{Objection as question}**
 {Direct answer.}
@@ -203,28 +284,50 @@ Common objections to address:
 
 ## Step 7: Final CTA Section
 
-Repeat the CTA at the bottom. This time, summarize what they're getting.
+Repeat the primary CTA at the bottom. By this point the visitor has read the full page — they need a reason to act now, not a repetition of features.
+
+**Bottom CTA formula:** `[Transformation statement] + [CTA button] + [Risk reducer]`
+
+The transformation statement articulates what their situation looks like after using the product — future state, not product description.
+- Bad: "Try {Product} today"
+- Good: "Your next Monday morning starts with answers, not chores."
 
 ```
-## {Strong closing statement — the transformation promise}
+## {Strong closing transformation statement — what their life looks like after}
 
-{1-2 sentences: what their life looks like after using this.}
+{1-2 sentences: the specific before/after contrast. Make it concrete.}
 
-[{CTA button text}]
-{Risk reducer: "No credit card" / "Cancel anytime" / "Free 14-day trial"}
+[{CTA button text — same as hero}]
+{Risk reducer — same as hero, for consistency}
 ```
 
 ## Step 8: Review the Full Page
 
-Assemble all sections and present the complete landing page copy.
+Assemble all sections and run this conversion checklist before presenting:
+
+- [ ] Page has exactly ONE primary CTA button (same text in hero and footer)
+- [ ] Headline mirrors the ad/email/search query that sent traffic here (message match)
+- [ ] Hero answers: what, who, why — above the fold
+- [ ] Problem section uses PAS structure (pain named, agitated, solved)
+- [ ] Every benefit headline states an outcome, not a feature name
+- [ ] Social proof uses real attribution (name, title, company) or is omitted
+- [ ] FAQ addresses objections, not features
+- [ ] No navigation links on the page
+- [ ] No more than one form field above the fold (email or CTA only)
+- [ ] No video backgrounds, no heavy carousels, no 3+ external font loads recommended
+- [ ] Mobile: all CTAs reachable by thumb, benefits stack vertically
+
+Present the complete landing page copy.
 
 Use AskUserQuestion:
 > "Here's the full landing page copy. What would you like to adjust?
 > A) The headline
-> B) The benefits section
-> C) The CTA copy
-> D) The overall tone
-> E) Looks good — save it"
+> B) The problem section
+> C) The benefits section
+> D) The social proof or FAQ
+> E) The CTA copy or risk reducer
+> F) The overall tone
+> G) Looks good — save it"
 
 STOP and wait.
 
@@ -239,12 +342,15 @@ Save the full page with all sections clearly labeled.
 
 Report:
 - Product/feature: {name}
+- Target audience: {specific segment}
 - Primary CTA: {CTA text}
-- Sections: Hero, Problem, {N} Benefits, Social Proof, FAQ, Final CTA
+- Traffic source / message match confirmed: {yes/no}
+- Sections: Hero, Problem (PAS), {N} Benefits, Social Proof, FAQ ({N} objections), Final CTA
+- Conversion checklist: passed / {N} items flagged
 - File saved to: {path}
 
 Suggest next steps:
-- "Run `/m-ads` to create paid campaigns that drive traffic to this page"
+- "Run `/m-ads` to create paid campaigns that drive traffic to this page — use the headline from Option A as the ad headline for message match"
 - "Run `/m-edit` to check the copy against your brand voice"
 - "Run `/m-seo` if this is a public landing page that needs search optimization"
 
