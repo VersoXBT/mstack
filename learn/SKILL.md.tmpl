@@ -1,0 +1,151 @@
+---
+name: m-learn
+preamble-tier: 1
+version: 1.0.0
+description: |
+  Manage marketing learnings. View all learnings, search by type or keyword, prune
+  old entries, and export. Uses mstack-learnings-search CLI. Simple utility for
+  reviewing and maintaining what mstack has learned about your marketing.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+## Setup
+
+Check if learnings exist:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+LEARNINGS_FILE="$PROJECT_DIR/learnings.md"
+
+if [ -f "$LEARNINGS_FILE" ]; then
+  ENTRY_COUNT=$(grep -c "^##" "$LEARNINGS_FILE" 2>/dev/null || echo "0")
+  echo "Learnings file found: $LEARNINGS_FILE"
+  echo "Entries: $ENTRY_COUNT"
+else
+  echo "No learnings file found at: $LEARNINGS_FILE"
+fi
+```
+
+Use AskUserQuestion:
+> "What would you like to do with your marketing learnings?
+> A) View all learnings
+> B) Search by keyword or type
+> C) Prune old or outdated entries
+> D) Export to a file
+> E) Add a learning manually"
+
+STOP and wait.
+
+## View All Learnings
+
+If user chose A:
+
+```bash
+~/.claude/skills/mstack/bin/mstack-learnings-search "" 2>/dev/null || \
+  cat "$LEARNINGS_FILE" 2>/dev/null || \
+  echo "No learnings found."
+```
+
+Display all entries. Summarize:
+- Total entries: {count}
+- Entry types breakdown (if tagged): {type: count}
+- Date range: {oldest to newest}
+
+## Search Learnings
+
+If user chose B:
+
+Use AskUserQuestion:
+> "What are you looking for?
+> - Type a keyword (e.g., 'Twitter', 'email', 'landing page')
+> - Or a type (e.g., 'what-worked', 'what-failed', 'audience-insight')"
+
+```bash
+~/.claude/skills/mstack/bin/mstack-learnings-search "{search term}" 2>/dev/null || \
+  grep -i "{search term}" "$LEARNINGS_FILE" 2>/dev/null || \
+  echo "No matches found."
+```
+
+Display matching entries with context.
+
+## Prune Old Entries
+
+If user chose C:
+
+```bash
+cat "$LEARNINGS_FILE" 2>/dev/null
+```
+
+Review entries and flag for pruning:
+- Entries older than 90 days that contradict newer learnings
+- Duplicate or near-duplicate insights
+- Learnings that no longer apply (old product state, deprecated channels)
+
+Present flagged entries to the user:
+> "I found {N} entries that may be outdated or redundant:
+> [list them]
+> Which should I remove? (comma-separated numbers, or 'all', or 'none')"
+
+STOP and wait for confirmation before removing anything.
+
+Remove approved entries:
+```bash
+# Remove specific entries from learnings file
+# Back up first
+cp "$LEARNINGS_FILE" "${LEARNINGS_FILE}.bak"
+# Edit file to remove flagged entries
+```
+
+Report: "{N} entries removed. Backup saved to {path}.bak"
+
+## Export Learnings
+
+If user chose D:
+
+Use AskUserQuestion:
+> "Where should I export the learnings?
+> A) Markdown file (default: `docs/learnings-export-{date}.md`)
+> B) Plain text
+> C) Tell me a path"
+
+```bash
+cp "$LEARNINGS_FILE" "{export path}" 2>/dev/null || \
+  cat "$LEARNINGS_FILE" > "{export path}"
+echo "Exported to: {export path}"
+```
+
+## Add Learning Manually
+
+If user chose E:
+
+Use AskUserQuestion:
+> "Describe the learning. Include:
+> 1. What you tried or observed
+> 2. The result or insight
+> 3. Type: what-worked / what-failed / audience-insight / channel-insight / other"
+
+Format and append to learnings file:
+```bash
+cat >> "$LEARNINGS_FILE" << 'EOF'
+## {date} — {type}
+{learning text}
+EOF
+```
+
+Confirm: "Learning added to {path}"
+
+## Completion
+
+Report:
+- Action taken: {action}
+- Entries processed: {count}
+- Learnings file: {path}
+
+{{TELEMETRY}}

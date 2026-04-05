@@ -1,0 +1,143 @@
+---
+name: m-upgrade
+preamble-tier: 1
+version: 1.0.0
+description: |
+  Self-update for mstack. Detects install location, checks current version, fetches
+  the latest from git, compares versions, and offers to upgrade. Run when asked to
+  "update mstack", "upgrade mstack", or "get latest mstack".
+allowed-tools:
+  - Bash
+  - Read
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+## Setup
+
+Detect the mstack install location:
+
+```bash
+# Find where mstack is installed
+MSTACK_SKILL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/mstack"
+if [ -d "$MSTACK_SKILL_DIR" ]; then
+  echo "INSTALL_DIR: $MSTACK_SKILL_DIR"
+else
+  # Fallback: search common locations
+  for d in "$HOME/.claude/skills/mstack" "$HOME/.config/claude/skills/mstack"; do
+    [ -d "$d" ] && echo "INSTALL_DIR: $d" && break
+  done
+fi
+```
+
+## Step 1: Check Current Version
+
+```bash
+INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
+
+# Get current version from package.json
+CURRENT_VERSION=$(cat "$INSTALL_DIR/package.json" 2>/dev/null | \
+  grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+echo "Current version: ${CURRENT_VERSION:-unknown}"
+
+# Check git status
+cd "$INSTALL_DIR" && git log --oneline -1 2>/dev/null || echo "Git not available"
+cd "$INSTALL_DIR" && git remote get-url origin 2>/dev/null || echo "No remote configured"
+```
+
+Report the current version and install location.
+
+## Step 2: Fetch Latest
+
+```bash
+INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
+cd "$INSTALL_DIR"
+
+# Check for updates without applying them
+git fetch origin 2>/dev/null
+BEHIND=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo "0")
+LATEST_TAG=$(git describe --tags origin/main 2>/dev/null || echo "unknown")
+echo "Commits behind: $BEHIND"
+echo "Latest version: $LATEST_TAG"
+```
+
+## Step 3: Compare and Decide
+
+If already up to date (`BEHIND=0`):
+> "mstack is already up to date. You're on version {current}."
+
+Stop here. Nothing to do.
+
+If updates are available:
+
+Show what's new:
+```bash
+cd "$INSTALL_DIR"
+git log HEAD..origin/main --oneline 2>/dev/null | head -20
+```
+
+Use AskUserQuestion:
+> "mstack has {N} new commits since your version {current}.
+> Latest: {latest version}
+>
+> Changes:
+> {commit list}
+>
+> Upgrade now?
+> A) Yes — pull latest and re-run setup
+> B) No — stay on current version"
+
+STOP and wait.
+
+## Step 4: Apply Upgrade
+
+If user chose A:
+
+```bash
+INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
+cd "$INSTALL_DIR"
+
+# Stash any local changes
+git stash 2>/dev/null
+
+# Pull latest
+git pull origin main 2>/dev/null
+PULL_STATUS=$?
+
+if [ $PULL_STATUS -eq 0 ]; then
+  echo "PULL: success"
+  NEW_VERSION=$(cat package.json 2>/dev/null | \
+    grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+  echo "New version: $NEW_VERSION"
+else
+  echo "PULL: failed — see error above"
+fi
+```
+
+If pull succeeded, re-run setup:
+```bash
+INSTALL_DIR="${MSTACK_SKILL_DIR:-$HOME/.claude/skills/mstack}"
+cd "$INSTALL_DIR"
+bash setup/install.sh 2>/dev/null || echo "Setup script not found or failed"
+```
+
+Check for errors in the setup output and report.
+
+## Completion
+
+If upgrade succeeded:
+- Previous version: {old version}
+- New version: {new version}
+- Setup: complete
+- Skills updated: all skills regenerated
+
+If already up to date:
+- Version: {version}
+- Status: up to date
+
+If upgrade failed:
+- Error: {error message}
+- Suggestion: "Try running `cd {install dir} && git pull` manually"
+
+{{TELEMETRY}}

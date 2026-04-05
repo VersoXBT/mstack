@@ -1,0 +1,167 @@
+---
+name: m-calendar
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Content calendar planning. Takes a strategy doc or channel list with frequency
+  and generates a monthly calendar: date, channel, content type, topic, and status.
+  Includes theme weeks, recurring series, and seasonal hooks. Exports markdown table.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for existing strategy and content assets:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*strategy*" -o -name "*calendar*" -o -name "*brief*" 2>/dev/null | head -10
+find . -name "*.md" -path "*/content/*" 2>/dev/null | head -10
+```
+
+If a strategy document was found, read it:
+```bash
+cat {strategy file} 2>/dev/null | head -80
+```
+
+Parse the user's request. Determine:
+- Which month to plan (current month if not specified)
+- Which channels to include
+
+If not provided, use AskUserQuestion:
+> "Let's build your content calendar. A few questions:
+> 1. Which month? (e.g., 'May 2025' or 'next month')
+> 2. Which channels? I'll use your brand.yaml channels, or tell me specifically."
+
+Then ask:
+> "What's your publishing frequency per channel?
+> Examples: 'Twitter: daily, Blog: 2x/month, LinkedIn: 3x/week, Reddit: weekly'
+> Or say 'suggest it' and I'll recommend based on your channel list."
+
+STOP and wait.
+
+## Step 1: Define the Calendar Framework
+
+Based on the channels and frequency provided:
+
+Calculate total content pieces:
+- {Channel}: {frequency} = {count} pieces/month
+- Total: {sum} pieces for {month}
+
+If the total seems too high, flag it:
+> "That's {N} pieces in a month. For a team starting out, I'd suggest starting with
+> {lower number} to maintain quality. Want to adjust the frequency?"
+
+Define content mix:
+- Evergreen (timeless educational) vs. timely (news, product updates, seasonal)
+- Content types per channel (threads, articles, social posts, newsletter, etc.)
+
+## Step 2: Identify Themes and Series
+
+A calendar with random topics burns out quickly. Build structure:
+
+**Weekly themes** (if strategy doc exists, derive from there):
+- Week 1: {theme — e.g., "Audience pain points"}
+- Week 2: {theme — e.g., "Product/solution spotlight"}
+- Week 3: {theme — e.g., "Social proof / case studies"}
+- Week 4: {theme — e.g., "Industry insights / thought leadership"}
+
+**Recurring series** (high-value formats that get scheduled regularly):
+- {Series name}: {description, e.g., "Weekly tip thread every Tuesday"}
+- {Series name}: {description, e.g., "Monthly deep-dive blog post"}
+
+**Seasonal hooks** for {month}:
+- {Relevant event, holiday, or industry moment in this month}
+- {Relevant event 2}
+
+## Step 3: Generate the Calendar
+
+Build a complete monthly calendar table:
+
+```
+# Content Calendar — {Month Year}
+
+## Summary
+Total pieces: {N}
+Channels: {list}
+Theme structure: {week themes}
+
+## Calendar
+
+| Date | Day | Channel | Content Type | Topic | Theme | Status |
+|------|-----|---------|-------------|-------|-------|--------|
+| {date} | {Mon} | {channel} | {type} | {topic} | {theme} | Draft |
+| {date} | {Tue} | {channel} | {type} | {topic} | {theme} | Draft |
+...
+```
+
+Rules for filling topics:
+- Use specific, concrete topics (not "{channel} post")
+- Pull from existing briefs, strategy doc, or keyword research if available
+- Interleave content types to avoid repetition (not 3 blog posts in a row)
+- Leave some slots as "{theme} — topic TBD" for flexibility
+- Flag any slot that needs a content brief or research
+
+**Content that needs a brief:**
+- {date}: {topic} → Run `/m-brief` before writing
+
+**Content that can be repurposed:**
+- {date}: {topic} → Can be repurposed from {source piece}
+
+## Step 4: Review
+
+Present the full calendar. Use AskUserQuestion:
+> "Here's the {month} content calendar ({N} pieces). What would you like to change?
+> A) Adjust the topic for a specific date (tell me which)
+> B) Change the theme structure
+> C) Reduce or increase frequency
+> D) Looks good — save it"
+
+STOP and wait.
+
+## Step 5: Save
+
+Use AskUserQuestion:
+> "Where should I save the calendar? (default: `docs/calendar-{month-year}.md`)"
+
+Save the calendar as a markdown file with the full table.
+
+Optionally offer CSV export:
+> "Want a CSV version too? You can import it into Notion, Airtable, or Google Sheets."
+
+If yes, generate CSV:
+```
+Date,Day,Channel,Content Type,Topic,Theme,Status
+{row}
+{row}
+```
+
+## Completion
+
+Report:
+- Month: {month}
+- Total pieces: {N}
+- Channels covered: {list}
+- Theme weeks: {list}
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-brief` to create briefs for the blog posts in this calendar"
+- "Run `/m-write` to start writing the first piece on the calendar"
+- "Run `/m-social` to create social posts for any announcements in the calendar"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

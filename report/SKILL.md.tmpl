@@ -1,0 +1,225 @@
+---
+name: m-report
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Marketing performance report. Pulls GA4 and Search Console data if API keys are
+  available. Otherwise asks user to paste metrics. Generates executive summary,
+  channel breakdown, top content analysis, and next month priorities.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{API_KEYS}}
+
+{{LEARNINGS_SEARCH}}
+
+## Setup
+
+Check for API keys and existing reports:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+
+# Check for analytics API keys
+echo "GA4_PROPERTY_ID: ${GA4_PROPERTY_ID:+set}"
+echo "GA4_API_KEY: ${GA4_API_KEY:+set}"
+echo "GSC_SITE_URL: ${GSC_SITE_URL:+set}"
+
+# Find previous reports
+find . -name "*report*" -o -name "*analytics*" 2>/dev/null | head -5
+```
+
+Use AskUserQuestion:
+> "Which reporting period should I cover?
+> A) Last 30 days
+> B) Last month (full calendar month)
+> C) Last quarter
+> D) Custom — tell me the dates"
+
+Then ask:
+> "What metrics do you have available?
+> A) GA4 access (I can pull data via API if credentials are configured)
+> B) Search Console (I can pull search data if configured)
+> C) I'll paste the data manually
+> D) I have both GA4 and Search Console"
+
+STOP and wait.
+
+## Step 1: Collect Data
+
+**If API keys are available:**
+
+Pull GA4 data:
+```bash
+# GA4 data pull via API
+curl -s -X POST \
+  "https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runReport" \
+  -H "Authorization: Bearer ${GA4_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dateRanges": [{"startDate": "{start}", "endDate": "{end}"}],
+    "metrics": [
+      {"name": "sessions"},
+      {"name": "users"},
+      {"name": "newUsers"},
+      {"name": "bounceRate"},
+      {"name": "averageSessionDuration"},
+      {"name": "conversions"}
+    ],
+    "dimensions": [{"name": "sessionDefaultChannelGroup"}]
+  }' 2>/dev/null
+```
+
+Pull Search Console data:
+```bash
+curl -s -X POST \
+  "https://www.googleapis.com/webmasters/v3/sites/${GSC_SITE_URL}/searchAnalytics/query" \
+  -H "Authorization: Bearer ${GA4_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startDate": "{start}",
+    "endDate": "{end}",
+    "dimensions": ["query", "page"],
+    "rowLimit": 25
+  }' 2>/dev/null
+```
+
+**If no API access:**
+
+Use AskUserQuestion:
+> "No API keys configured. Please paste your metrics:
+> 1. Total sessions / visits for the period
+> 2. Sessions by channel (organic, social, direct, email, paid)
+> 3. Top 5 pages by traffic
+> 4. Conversions or signups
+> 5. Any social metrics you track (followers, impressions, engagement rate)
+> Format however is easiest — I'll structure it."
+
+STOP and wait for data.
+
+## Step 2: Analyze Channel Performance
+
+For each active channel, calculate and present:
+
+| Channel | Sessions | % of Total | vs. Prior Period | Conversion Rate |
+|---------|----------|------------|-----------------|-----------------|
+| Organic Search | | | | |
+| Social | | | | |
+| Direct | | | | |
+| Email | | | | |
+| Referral | | | | |
+| Paid | | | | |
+
+Flag channels that are:
+- Up significantly (>20% growth) — what drove this?
+- Down significantly (>20% decline) — what changed?
+- Flat — is this expected or a missed opportunity?
+
+## Step 3: Content Performance
+
+Identify top and bottom performing content:
+
+**Top 5 pages by traffic:**
+| Page | Sessions | Avg Time | Bounce Rate | Conversions |
+|------|----------|----------|-------------|-------------|
+
+**Top 5 pages by conversions:**
+(May differ from top traffic pages)
+
+**Content published this period:**
+| Piece | Published | Traffic | Shares | Status |
+|-------|-----------|---------|--------|--------|
+
+**Key insight from content data:**
+- {What type of content performed best?}
+- {What search queries are driving organic traffic?}
+- {Any content that underperformed expectations?}
+
+## Step 4: Social Media Metrics
+
+If social data is available (from user paste or API):
+
+| Platform | Followers | Growth | Impressions | Engagement Rate | Clicks |
+|----------|-----------|--------|-------------|-----------------|--------|
+| Twitter/X | | | | | |
+| LinkedIn | | | | | |
+| Reddit | | | | | |
+
+Top performing posts: {list with metrics}
+
+## Step 5: Generate Executive Summary
+
+Write a concise summary for stakeholders:
+
+```
+## Executive Summary — {Period}
+
+### Highlights
+- {Biggest win in plain language}
+- {Second win}
+- {Notable change}
+
+### Challenges
+- {What underperformed}
+- {What needs attention}
+
+### Key Metric
+{The one number that best captures this period's performance}
+{comparison to prior period}
+```
+
+## Step 6: Recommendations
+
+Based on the data, provide 3-5 prioritized recommendations:
+
+**Next month priorities:**
+1. **{Action}** — Reason: {data-backed why}
+2. **{Action}** — Reason: {data-backed why}
+3. **{Action}** — Reason: {data-backed why}
+
+**Stop doing (or deprioritize):**
+- {Channel or content type that's not delivering ROI}
+
+**Double down on:**
+- {What's working that deserves more investment}
+
+## Step 7: Save Report
+
+Use AskUserQuestion:
+> "Here's the performance report. Want to add anything before saving?"
+
+STOP and wait.
+
+Use AskUserQuestion:
+> "Where should I save this report? (default: `docs/report-{period}-{date}.md`)"
+
+Save the complete report.
+
+## Completion
+
+Report:
+- Period covered: {dates}
+- Channels analyzed: {list}
+- Top channel: {channel} ({metric})
+- Report saved to: {path}
+
+Suggest next steps:
+- "Run `/m-strategy` to update your marketing plan based on these findings"
+- "Run `/m-calendar` to adjust next month's content based on what's working"
+- "Run `/m-keywords` to explore new content opportunities from search data"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

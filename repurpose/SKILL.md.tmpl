@@ -1,0 +1,182 @@
+---
+name: m-repurpose
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Content atomization. Takes one piece of content and generates 5-8 derivatives:
+  tweets, LinkedIn post, Reddit post, email teaser, and short summary. Adapts tone
+  per platform. Includes scheduling suggestions for a full week of posts.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for source content:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+```
+
+Parse the user's request. Determine if a file path or pasted content was provided.
+
+If not provided, use AskUserQuestion:
+> "Share the content you want to repurpose. You can:
+> A) Paste the content directly
+> B) Share the file path
+> C) Share a URL (if browse is available in this session)"
+
+Then ask:
+> "Which platforms do you want content for?
+> A) All (Twitter/X, LinkedIn, Reddit, Email, Summary)
+> B) Specific ones — tell me which"
+
+STOP and wait.
+
+## Step 1: Extract Key Ideas
+
+Read the source content and extract:
+
+1. **Core argument or insight**: the main point in one sentence
+2. **Supporting points**: 3-5 distinct ideas or facts
+3. **Most quotable moment**: the sentence with the most punch
+4. **Best statistic or specific detail**: numbers and specifics repurpose best
+5. **The hook**: what made you write this in the first place
+
+Summarize internally. Do not ask the user — proceed to Step 2.
+
+## Step 2: Generate Derivatives
+
+Generate all derivatives. Each adapts the source content for its platform's norms.
+
+---
+
+### Twitter/X — Standalone Tweet 1 (Core insight)
+```
+{tweet using the core argument, under 280 chars}
+```
+{char count}/280
+
+### Twitter/X — Standalone Tweet 2 (Quotable moment)
+```
+{tweet using the most quotable line or stat, under 280 chars}
+```
+{char count}/280
+
+### Twitter/X — Standalone Tweet 3 (Contrarian angle or question)
+```
+{tweet that invites debate or reflection, under 280 chars}
+```
+{char count}/280
+→ For a full thread, run `/m-threads`
+
+---
+
+### LinkedIn Post
+```
+{First 2 lines — must earn the "see more" click}
+
+{Body — expanded insight, professional framing, 1-2 supporting points}
+
+{1 takeaway sentence}
+
+{Question to drive comments or final reflection}
+
+#{hashtag} #{hashtag} #{hashtag}
+```
+{char count}/1,300
+
+---
+
+### Reddit Post
+**Suggested subreddits:** r/{subreddit 1}, r/{subreddit 2}
+
+**Title:** `{Reddit title — specific, value-first, no clickbait}`
+
+**Body:**
+```
+{Authentic framing — what you learned or observed, personal angle.
+Lead with value. Mention your product/blog only if essential and with disclosure.}
+```
+
+---
+
+### Email Teaser (for newsletter or drip)
+**Subject line options:**
+1. `{subject line 1 — curiosity-driven}`
+2. `{subject line 2 — outcome-driven}`
+3. `{subject line 3 — question}`
+
+**Body:**
+```
+{50-100 word teaser that makes the reader want to click to the full piece.
+Hint at the insight, don't give it all away.
+CTA: "Read the full {post/guide/breakdown}" → {link placeholder}}
+```
+
+---
+
+### Short Summary (for docs, Notion, or pinned post)
+```
+{3-5 sentence summary of the key points. Dense. No filler.
+Suitable for linking in a Discord pinned message, README, or FAQ.}
+```
+
+---
+
+## Step 3: Scheduling Suggestions
+
+Based on the content and platforms, suggest a posting schedule:
+
+```
+Day 1 (Monday): LinkedIn post — best for start-of-week professional content
+Day 2 (Tuesday): Tweet 1 — peak Twitter engagement mid-week
+Day 3 (Wednesday): Reddit post — mid-week for most tech subreddits
+Day 4 (Thursday): Tweet 2 — second-highest engagement day
+Day 5 (Friday): Email send or Tweet 3 — newsletter day or end-of-week reflection
+```
+
+Adjust based on brand.yaml active channels.
+
+## Step 4: Review
+
+Present all derivatives. Use AskUserQuestion:
+> "Here are {N} pieces of content from the original. Anything to adjust?
+> A) Rewrite a specific piece (tell me which platform and what to change)
+> B) Adjust the tone across all
+> C) Skip a platform I don't use
+> D) Looks good — save everything"
+
+STOP and wait.
+
+## Step 5: Save
+
+Use AskUserQuestion:
+> "Where should I save these? (default: `social/repurposed-{slug}-{date}.md`)"
+
+Save all derivatives in a single file with platform labels and the scheduling suggestion.
+
+## Completion
+
+Report:
+- Source content: {title or description}
+- Derivatives created: {count} ({list of platforms})
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-calendar` to add these posts to a content calendar"
+- "Run `/m-threads` to expand the Twitter content into a full thread"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
