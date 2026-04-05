@@ -1,0 +1,152 @@
+---
+name: m-positioning
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Positioning and messaging framework. Reads brand context and competitive analysis
+  to generate: category definition, audience statement, key differentiator, value
+  propositions, messaging pillars, and elevator pitches at 30s, 60s, and 2min.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for existing positioning artifacts and competitive analysis:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*competi*" -o -name "*positioning*" 2>/dev/null | head -5
+```
+
+If competitive analysis exists, read it:
+```bash
+cat {competitive analysis file} 2>/dev/null | head -100
+```
+
+If brand context is not configured, ask before proceeding:
+> "No brand context found. To create a strong positioning framework, I need to know:
+> 1. What does your product do in one sentence?
+> 2. Who is your primary audience?
+> 3. Your top 2-3 competitors and their main weakness"
+
+If brand context is available, proceed directly to Step 1.
+
+## Step 1: Understand the Context
+
+If competitive analysis is not available, ask:
+> "Have you run `/m-competitive` yet? If so, share the file or paste key findings.
+> If not, briefly describe: what are your top 2-3 competitors and what do they get wrong?"
+
+Use AskUserQuestion to confirm understanding:
+> "Quick check before I build the framework — what do you want customers to feel
+> or think when they first hear about {brand name}? (one sentence)"
+
+STOP and wait.
+
+## Step 2: Define the Category
+
+Using the "only we..." framework, identify the positioning statement:
+
+Work through these questions internally (do not ask the user):
+- What job does the customer hire this product to do?
+- What category does this product belong to?
+- How is this category different from existing ones?
+- What does the brand own that no competitor can credibly claim?
+
+Draft a category definition:
+```
+"{Brand} is the [category] for [audience] who [need/situation].
+Unlike [alternatives], we [key differentiator]."
+```
+
+## Step 3: Build the Framework
+
+Generate the complete positioning framework:
+
+---
+
+**Category Definition**
+[One sentence defining the space you compete in]
+
+**Target Audience Statement**
+[Precise description of who this is for: role, context, need]
+
+**Key Differentiator**
+[The one thing only you can credibly claim — "only we..." statement]
+
+**Value Propositions (3)**
+1. {Outcome-focused, not feature-focused}
+2. {Outcome-focused, not feature-focused}
+3. {Outcome-focused, not feature-focused}
+
+**Messaging Pillars (3)**
+Each pillar = one core idea the brand consistently communicates:
+1. {Pillar}: {one-line explanation} — Proof point: {specific evidence}
+2. {Pillar}: {one-line explanation} — Proof point: {specific evidence}
+3. {Pillar}: {one-line explanation} — Proof point: {specific evidence}
+
+**Elevator Pitches**
+
+*30 seconds (50-60 words):*
+[High-energy, lead with pain or outcome, name the product, one CTA]
+
+*60 seconds (100-120 words):*
+[Expand on problem, introduce solution, one key proof point, CTA]
+
+*2 minutes (250-300 words):*
+[Full narrative: problem, why existing solutions fail, your approach, proof, vision, CTA]
+
+---
+
+Present the draft framework. Use AskUserQuestion:
+> "Here's the positioning framework. What would you like to adjust?
+> A) The category definition
+> B) The differentiator
+> C) The value propositions
+> D) The messaging pillars
+> E) The elevator pitches
+> F) It looks good — save it"
+
+STOP and wait.
+
+## Step 4: Refine
+
+If the user requests changes, revise the specific section. Re-present only the changed section.
+
+Repeat until user approves.
+
+## Step 5: Save
+
+Use AskUserQuestion:
+> "Where should I save the positioning framework? (default: `docs/positioning-{date}.md`)"
+
+Save the approved framework as a markdown document.
+
+## Completion
+
+Report:
+- Key differentiator: {summary}
+- Messaging pillars: {list}
+- Elevator pitches: 30s, 60s, 2min created
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-strategy` to build a marketing strategy using this positioning"
+- "Run `/m-write` to create content aligned with these messaging pillars"
+- "Run `/m-ads` to write ad copy using the value propositions"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

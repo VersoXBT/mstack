@@ -1,0 +1,171 @@
+---
+name: m-icp
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Ideal customer profile builder. Generates 2-3 detailed buyer personas: demographics,
+  job title, goals, pain points, objections, preferred channels, buying triggers, and
+  Jobs-to-be-Done. Based on brand.yaml audience. Saves structured persona docs.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for existing ICP or persona documents:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*persona*" -o -name "*icp*" -o -name "*customer*" 2>/dev/null | head -5
+```
+
+If brand context is configured, use audience data as the foundation. If not, ask:
+> "No brand context found. Let me gather the basics:
+> 1. What does your product do? (one sentence)
+> 2. Who are your current or target customers?
+> 3. Do you have any existing customer data? (industry, titles, company sizes)"
+
+Use AskUserQuestion:
+> "How many personas should I create?
+> A) 2 personas (recommended — covers primary + secondary audience)
+> B) 3 personas (if you serve distinctly different segments)
+> C) Just 1 (highly focused product)"
+
+STOP and wait.
+
+## Step 1: Define Persona Count and Segments
+
+Based on brand.yaml and user input, identify the distinct audience segments.
+
+If the product serves both technical and non-technical users, create separate personas.
+If the audience is homogeneous, create variations by company stage or role seniority.
+
+Briefly describe each planned persona segment:
+> "Here are the {N} personas I'll build:
+> 1. {Persona 1 segment}: {one-line description}
+> 2. {Persona 2 segment}: {one-line description}
+> Does this segmentation make sense, or should I adjust?"
+
+STOP and wait for confirmation.
+
+## Step 2: Build Each Persona
+
+For each persona, generate a complete profile using this structure:
+
+---
+
+### Persona {N}: {Name} — {Job Title}
+
+**Demographics**
+- Age range: {range}
+- Location: {geography type}
+- Company type: {B2B/B2C, industry, size}
+- Role level: {IC / manager / director / exec}
+
+**A Day in Their Life**
+[2-3 sentences: what they're responsible for, what tools they use, what their success looks like]
+
+**Goals**
+1. {Professional goal directly relevant to your product}
+2. {Secondary goal}
+3. {Career or business goal}
+
+**Pain Points**
+1. {Primary pain — the one that keeps them up at night}
+2. {Workflow frustration}
+3. {Gap in current tools or approaches}
+
+**Jobs to Be Done**
+> "When I {situation}, I want to {motivation}, so I can {outcome}."
+
+[Write 2-3 JTBD statements in this format]
+
+**Objections to Buying**
+1. {Most common objection}
+2. {Price or value objection}
+3. {Trust or switching-cost objection}
+Handling: {brief note on how to address each}
+
+**Preferred Channels**
+- Where they discover new tools: {channels}
+- Where they consume content: {channels}
+- Where they ask peers for recommendations: {communities}
+
+**Buying Triggers**
+- {Event that makes them actively look for a solution}
+- {Internal trigger: pain threshold, failure, growth milestone}
+- {External trigger: competitor adoption, regulation, trend}
+
+**Messaging That Resonates**
+- Headline style: {direct/outcome-focused vs. conceptual}
+- Tone: {technical precision / plain language / storytelling}
+- Format: {docs / case studies / demos / peer reviews}
+
+**Channels to Reach Them**
+| Channel | Why | Content Type |
+|---------|-----|-------------|
+| {channel} | {reason} | {type} |
+
+---
+
+Repeat for all personas.
+
+## Step 3: Identify Cross-Persona Patterns
+
+After building all personas, note:
+
+**Shared pain points** (across all personas):
+- {pain 1}
+- {pain 2}
+
+**Diverging needs** (where personas differ most):
+- {difference}
+
+**Content implications**: what types of content address the most common pain
+
+**Channel priorities**: ranked by reach across personas
+
+## Step 4: Review and Refine
+
+Present all personas. Use AskUserQuestion:
+> "Here are the {N} personas. What would you like to adjust?
+> A) Edit a specific persona (tell me which one and what to change)
+> B) Add or remove a segment
+> C) They look good — save them"
+
+STOP and wait.
+
+## Step 5: Save
+
+Use AskUserQuestion:
+> "Where should I save the personas? (default: `docs/icp-personas-{date}.md`)"
+
+Save all personas plus the cross-persona analysis.
+
+## Completion
+
+Report:
+- Personas created: {list of names and titles}
+- Primary JTBD: {top JTBD statement}
+- Top 3 pain points across all personas
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-strategy` to build a channel strategy targeting these personas"
+- "Run `/m-write` to create content that speaks to these personas"
+- "Run `/m-brief` to create SEO briefs targeting specific persona pain points"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
