@@ -3,9 +3,10 @@ name: m-icp
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Ideal customer profile builder. Generates 2-3 detailed buyer personas: demographics,
-  job title, goals, pain points, objections, preferred channels, buying triggers, and
-  Jobs-to-be-Done. Based on brand.yaml audience. Saves structured persona docs.
+  Ideal customer profile builder. Generates 2-3 detailed buyer personas using the
+  Jobs-to-Be-Done (JTBD) framework (functional, emotional, and social jobs), firmographic
+  and demographic segmentation, buying triggers, objection mapping, channel preferences,
+  and day-in-the-life scenarios. Based on brand.yaml audience. Saves structured persona docs.
 allowed-tools:
   - Bash
   - Read
@@ -34,7 +35,8 @@ If brand context is configured, use audience data as the foundation. If not, ask
 > "No brand context found. Let me gather the basics:
 > 1. What does your product do? (one sentence)
 > 2. Who are your current or target customers?
-> 3. Do you have any existing customer data? (industry, titles, company sizes)"
+> 3. Is this primarily B2B, B2C, or mixed?
+> 4. Do you have any existing customer data? (industry, titles, company sizes, revenue ranges)"
 
 Use AskUserQuestion:
 > "How many personas should I create?
@@ -47,6 +49,22 @@ STOP and wait.
 ## Step 1: Define Persona Count and Segments
 
 Based on brand.yaml and user input, identify the distinct audience segments.
+
+**Segmentation strategy:**
+
+For **B2B products**, segment by firmographics first:
+- Company size (SMB: 1–50, mid-market: 51–500, enterprise: 500+)
+- Industry vertical (SaaS, fintech, healthcare, e-commerce, logistics, professional services, etc.)
+- Growth stage (pre-seed, seed, Series A–C, late-stage, public, bootstrapped)
+- Tech sophistication (low-code users vs. developer-first teams)
+- Geography and compliance environment (US, EU GDPR-bound, regulated industries)
+
+For **B2C products**, segment by demographics and psychographics first:
+- Age range and life stage (early career, family formation, mid-career, retirement)
+- Income bracket and spending behaviour
+- Digital fluency and platform habits
+- Motivation archetype (status-seeker, convenience-maximiser, values-driven, budget-optimizer)
+- Geographic market (urban/suburban/rural, country-specific context)
 
 If the product serves both technical and non-technical users, create separate personas.
 If the audience is homogeneous, create variations by company stage or role seniority.
@@ -67,55 +85,113 @@ For each persona, generate a complete profile using this structure:
 
 ### Persona {N}: {Name} — {Job Title}
 
-**Demographics**
+**Firmographic / Demographic Profile**
+
+For B2B:
+- Company type: {industry vertical}, {size by headcount}, {ARR or revenue range if known}
+- Growth stage: {e.g., Series B SaaS, bootstrapped agency, public retailer}
+- Tech stack sophistication: {low-code / mid / developer-first}
+- Geography and compliance context: {region, regulatory constraints}
+- Role level: {IC / manager / director / VP / C-suite}
+- Team size they manage or influence: {N direct reports, cross-functional reach}
+
+For B2C:
 - Age range: {range}
-- Location: {geography type}
-- Company type: {B2B/B2C, industry, size}
-- Role level: {IC / manager / director / exec}
+- Location type: {urban / suburban / rural}, {country or region}
+- Life stage: {e.g., early career professional, new parent, recent retiree}
+- Income bracket: {approximate range or descriptor}
+- Digital fluency: {daily power user / occasional / late adopter}
 
 **A Day in Their Life**
-[2-3 sentences: what they're responsible for, what tools they use, what their success looks like]
+
+[Write 3–5 sentences. Ground this in a specific scenario — not abstract attributes but a slice of a real workday or routine. Show: what they're doing at 9 AM, what tool or process is currently causing friction, what "success" looks like for them that day, and the moment your product category becomes relevant. Example industries to draw from: manufacturing ops manager in Ohio; marketing lead at a Johannesburg fintech; solo founder in Berlin running an e-commerce store; nurse practitioner at a regional US hospital network.]
 
 **Goals**
-1. {Professional goal directly relevant to your product}
-2. {Secondary goal}
-3. {Career or business goal}
+1. {Functional goal: the concrete outcome they're paid or motivated to achieve}
+2. {Growth goal: how they want their situation to improve over the next 12 months}
+3. {Career or personal aspiration that shapes how they evaluate tools and decisions}
 
 **Pain Points**
-1. {Primary pain — the one that keeps them up at night}
-2. {Workflow frustration}
-3. {Gap in current tools or approaches}
+1. {Primary pain — the specific failure mode that keeps them up at night, with concrete stakes}
+2. {Workflow frustration — a recurring daily/weekly inefficiency they've normalised but hate}
+3. {Gap in current tools or approaches — what their current stack doesn't do, and what they patch with workarounds}
 
-**Jobs to Be Done**
-> "When I {situation}, I want to {motivation}, so I can {outcome}."
+**Jobs to Be Done (JTBD — Clayton Christensen framework)**
 
-[Write 2-3 JTBD statements in this format]
+JTBD reframes the purchase question from "who is this customer?" to "what progress are they trying to make?" Each job has three dimensions:
 
-**Objections to Buying**
-1. {Most common objection}
-2. {Price or value objection}
-3. {Trust or switching-cost objection}
-Handling: {brief note on how to address each}
+- **Functional job**: the practical task they need to get done
+- **Emotional job**: how they want to feel (or stop feeling) as a result
+- **Social job**: how they want to be perceived by others
 
-**Preferred Channels**
-- Where they discover new tools: {channels}
-- Where they consume content: {channels}
-- Where they ask peers for recommendations: {communities}
+Write 2–3 JTBD statements in this format:
+> "When I {triggering situation}, I want to {functional motivation}, so I can {desired outcome}."
+
+Then annotate each with the emotional and social layer:
+- Emotional undercurrent: {e.g., feel confident presenting to the board; stop feeling like they're guessing}
+- Social signal: {e.g., be seen as data-driven by peers; be known as the person who shipped fast}
+
+Example across industries:
+- *SaaS ops manager*: "When my team misses SLA targets two weeks in a row, I want to pinpoint the bottleneck without running manual SQL queries, so I can fix it before the quarterly review."
+- *E-commerce founder*: "When I launch a new product, I want to understand which acquisition channel is actually profitable, so I can stop funding ads that don't convert."
+- *HR director at a mid-market firm*: "When we're about to close a hiring round, I want confidence that our offer is competitive, so I can avoid losing candidates to counteroffers."
 
 **Buying Triggers**
-- {Event that makes them actively look for a solution}
-- {Internal trigger: pain threshold, failure, growth milestone}
-- {External trigger: competitor adoption, regulation, trend}
+
+Buying triggers are the specific events that shift someone from "vaguely aware of the problem" to "actively evaluating solutions now." Map both external and internal triggers:
+
+External triggers (events in the world):
+- {Funding event: raised a round, new budget cycle starts, just got acquired}
+- {New hire: CTO/CMO/Head of X just joined and is re-evaluating the stack}
+- {Competitive event: a key competitor adopted a solution, industry benchmark published}
+- {Regulatory / compliance deadline: new law, audit requirement, certification needed}
+- {Product launch: they're shipping something new that exposes a capability gap}
+
+Internal triggers (pain reaching a threshold):
+- {Failure moment: a specific, costly incident that made the status quo unacceptable}
+- {Growth milestone: team doubled, customer base crossed N, manual process can no longer scale}
+- {Leadership pressure: board asked for a metric they can't currently produce}
+- {Prior solution cancelled or deprecated: forced to re-evaluate}
+
+Time-sensitivity signal: {how urgently does this trigger create purchasing pressure? days / weeks / a quarter}
+
+**Objection Mapping**
+
+For each common objection, provide the objection as the persona would state it and the counter-narrative that resolves it:
+
+| Objection | Root fear behind it | Counter-narrative |
+|-----------|--------------------|--------------------|
+| "{exact words they'd say}" | {underlying anxiety: risk, effort, ROI doubt, trust} | {reframe or proof point that addresses the root fear} |
+| "{price or value objection}" | {cost of change vs. cost of status quo} | {quantify the cost of inaction or show comparable ROI} |
+| "{trust / switching-cost objection}" | {fear of migration pain, vendor lock-in, team disruption} | {migration support, trial structure, reference customer story} |
+
+**Preferred Channels — Where They Actually Are**
+
+"Channel preference" is not just which platforms exist — it's where this persona *actively consumes content* for professional decisions, not casual browsing.
+
+Content discovery (how they first encounter a tool or idea):
+- {e.g., Hacker News front page; LinkedIn scroll during commute; a Slack community digest; a podcast they listen to on the way to the gym}
+
+Deep-dive research (how they evaluate before committing):
+- {e.g., G2 or Capterra reviews; vendor documentation; YouTube walkthroughs; asking in a Slack/Discord/Reddit community; requesting a proof-of-concept}
+
+Peer recommendations (who they trust most):
+- {e.g., former colleagues, their professional network on LinkedIn, a specific Slack workspace, an industry Discord server, a WhatsApp group for founders}
+
+Content format preferences:
+- {e.g., short async video demos over written docs; detailed case studies with ROI numbers; interactive product tours; benchmark reports they can share with their boss}
 
 **Messaging That Resonates**
-- Headline style: {direct/outcome-focused vs. conceptual}
-- Tone: {technical precision / plain language / storytelling}
-- Format: {docs / case studies / demos / peer reviews}
+- Headline style: {direct outcome-focused / credibility-led / pain-first / curiosity-driven}
+- Tone: {technical precision / plain language / storytelling / authoritative benchmark}
+- Proof format: {case studies with named customers / analyst reports / community-sourced reviews / live demos}
+- Words to use: {terminology this persona uses for their own job}
+- Words to avoid: {jargon that signals "not built for me"}
 
 **Channels to Reach Them**
-| Channel | Why | Content Type |
-|---------|-----|-------------|
-| {channel} | {reason} | {type} |
+| Channel | Why it works for this persona | Content Type | Frequency |
+|---------|------------------------------|--------------|-----------|
+| {channel} | {reason tied to their habits} | {type} | {cadence} |
 
 ---
 
@@ -125,16 +201,26 @@ Repeat for all personas.
 
 After building all personas, note:
 
+**Shared functional jobs** (the JTBD all personas have in common):
+- {job 1 — the universal progress they're all trying to make}
+- {job 2}
+
 **Shared pain points** (across all personas):
 - {pain 1}
 - {pain 2}
 
-**Diverging needs** (where personas differ most):
-- {difference}
+**Shared buying triggers** (events that activate all personas simultaneously):
+- {trigger — e.g., a funding event often activates multiple buyer types at once}
 
-**Content implications**: what types of content address the most common pain
+**Diverging needs** (where personas differ most — critical for messaging and positioning):
+- {difference 1: e.g., Persona A wants self-serve speed; Persona B wants white-glove onboarding}
+- {difference 2: e.g., Persona A is price-sensitive; Persona B buys on ROI and risk}
 
-**Channel priorities**: ranked by reach across personas
+**Objection overlap**: which objections appear across multiple personas (these deserve dedicated content or sales collateral)
+
+**Content implications**: what content types address the most common JTBD and shared pain points
+
+**Channel priorities**: ranked by combined reach across personas, with rationale
 
 ## Step 4: Review and Refine
 
@@ -142,7 +228,8 @@ Present all personas. Use AskUserQuestion:
 > "Here are the {N} personas. What would you like to adjust?
 > A) Edit a specific persona (tell me which one and what to change)
 > B) Add or remove a segment
-> C) They look good — save them"
+> C) Adjust the JTBD framing or buying triggers
+> D) They look good — save them"
 
 STOP and wait.
 
@@ -157,8 +244,9 @@ Save all personas plus the cross-persona analysis.
 
 Report:
 - Personas created: {list of names and titles}
-- Primary JTBD: {top JTBD statement}
-- Top 3 pain points across all personas
+- Primary JTBD per persona: {top JTBD statement for each}
+- Top 3 shared pain points across all personas
+- Top 2 universal buying triggers
 - File saved to: {path}
 
 Suggest next steps:
