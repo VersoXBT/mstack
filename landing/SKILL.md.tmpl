@@ -1,0 +1,253 @@
+---
+name: m-landing
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Landing page copy. Takes a product or feature plus target audience. Generates:
+  hero section, problem statement, benefits, social proof, FAQ, and final CTA.
+  Conversion-focused: one CTA, benefit-driven headlines, specific outcomes.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for existing landing pages and related content:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*landing*" -o -name "*lp-*" 2>/dev/null | head -5
+```
+
+Parse the user's request. Determine:
+- What product, feature, or offer this page is for
+- Target audience segment
+- Primary CTA (sign up, book a demo, download, buy)
+
+If the core details are missing, use AskUserQuestion:
+> "Tell me about this landing page:
+> 1. What is it for? (product, feature, offer, lead magnet)
+> 2. Who is it targeting? (be specific — 'startup founders' beats 'businesses')
+> 3. What's the ONE action you want visitors to take?"
+
+Then ask:
+> "What existing evidence do you have? (optional but useful)
+> - Customer quotes or testimonials
+> - Metrics ('10,000 users', '4.9 stars')
+> - Company logos of customers
+> Say 'none yet' if you're launching fresh."
+
+STOP and wait.
+
+## Step 1: Define the Conversion Goal
+
+A landing page should have ONE goal. Confirm:
+- Primary CTA: {CTA verb} + {specific benefit}: e.g., "Start free trial", "Book a 20-minute demo"
+- Secondary CTA (for unready visitors): e.g., "See how it works" (lower commitment)
+- No nav links on the page — they leak traffic
+
+If the user hasn't decided on the CTA, suggest options:
+> "For {product/feature}, the most common CTAs are:
+> A) Free trial — works if the product sells itself through use
+> B) Demo/call — works for higher-ticket or complex products
+> C) Waitlist/notify me — works for pre-launch
+> D) Download/get — works for lead magnets"
+
+## Step 2: Write the Hero Section
+
+The hero must answer three questions in under 5 seconds:
+1. What is this?
+2. Who is it for?
+3. Why should I care right now?
+
+**Headline options:**
+
+Rules:
+- Lead with the outcome, not the feature
+- Specific beats vague: "Ship 3x faster" beats "Work better"
+- Address the reader: "you", "your team"
+- Under 10 words is ideal
+
+Write 3 headline options:
+
+**Option A — Outcome-focused:**
+`{headline}`
+
+**Option B — Problem-focused:**
+`{headline}`
+
+**Option C — Contrarian/bold:**
+`{headline}`
+
+**Subheadline:**
+Expands the headline in one sentence (max 20 words). Adds specificity.
+`{subheadline}`
+
+**Hero CTA:**
+`{CTA button text}` — short, specific, first-person ("Get my free report" > "Submit")
+
+**Hero supporting copy** (optional, 1-2 lines under the CTA):
+`{risk reducer: "No credit card required" / "Cancel anytime" / "Free for {N} users"}`
+
+Use AskUserQuestion:
+> "Which headline do you prefer? (A, B, or C) Or what would you change?"
+
+STOP and wait.
+
+## Step 3: Write the Problem Statement
+
+Right below the hero: confirm that you understand the reader's pain.
+
+Rules:
+- Use language your customers actually use (not polished marketing speak)
+- Name the problem — don't dance around it
+- Make the reader feel seen
+
+```
+## {Short problem section heading}
+
+{2-3 sentences describing the frustration your target audience experiences.
+Specific > vague. "You're spending 3 hours on reports that no one reads" >
+"Managing your marketing data is hard."}
+```
+
+## Step 4: Write the Benefits Section
+
+3-5 benefit blocks. Each benefit:
+- Headline: outcome (not a feature name)
+- Body: 1-2 sentences expanding on the outcome, with specifics
+
+**Format:**
+
+```
+## What You Get
+
+### {Outcome headline 1}
+{1-2 sentence explanation with specific details. What changes for the reader.}
+
+### {Outcome headline 2}
+{1-2 sentence explanation.}
+
+### {Outcome headline 3}
+{1-2 sentence explanation.}
+
+[### {Outcome headline 4} — optional]
+[{explanation}]
+```
+
+Rules for benefit headlines:
+- Start with a verb or specific noun
+- Avoid feature names as headlines ("Dashboard" is a feature; "See everything in one place" is a benefit)
+- Each benefit should address a different pain point from Step 3
+
+## Step 5: Write the Social Proof Section
+
+Social proof reduces the perceived risk of taking action.
+
+**If testimonials/logos are available:**
+```
+## {N} teams already {doing the thing}
+
+"{Customer quote — specific outcome, not vague praise.
+'We cut our reporting time from 3 hours to 20 minutes' > 'Great product!'}"
+— {Name}, {Title} at {Company}
+
+[Company logo 1] [Company logo 2] [Company logo 3]
+```
+
+**If launching fresh (no social proof yet):**
+```
+## Built for {audience}
+
+{Explain the founder's/team's relevant experience or the specific problem you've
+solved personally. "Built after 5 years of doing {X} manually" establishes
+credibility without fabricated social proof.}
+```
+
+Do not invent fake testimonials. If none exist, use credibility signals instead.
+
+## Step 6: Write the FAQ Section
+
+3-5 questions that address the top objections before they're raised.
+
+Common objections to address:
+- "Is this for my size of company?"
+- "How long does it take to set up?"
+- "What if I don't like it?"
+- "How is this different from {main competitor}?"
+- "Is my data safe?"
+
+```
+## Questions
+
+**{Objection as question}**
+{Direct, specific answer. Don't hedge.}
+
+**{Objection as question}**
+{Direct answer.}
+
+**{Objection as question}**
+{Direct answer.}
+```
+
+## Step 7: Final CTA Section
+
+Repeat the CTA at the bottom. This time, summarize what they're getting.
+
+```
+## {Strong closing statement — the transformation promise}
+
+{1-2 sentences: what their life looks like after using this.}
+
+[{CTA button text}]
+{Risk reducer: "No credit card" / "Cancel anytime" / "Free 14-day trial"}
+```
+
+## Step 8: Review the Full Page
+
+Assemble all sections and present the complete landing page copy.
+
+Use AskUserQuestion:
+> "Here's the full landing page copy. What would you like to adjust?
+> A) The headline
+> B) The benefits section
+> C) The CTA copy
+> D) The overall tone
+> E) Looks good — save it"
+
+STOP and wait.
+
+## Step 9: Save
+
+Use AskUserQuestion:
+> "Where should I save the landing page copy? (default: `content/landing-{slug}-{date}.md`)"
+
+Save the full page with all sections clearly labeled.
+
+## Completion
+
+Report:
+- Product/feature: {name}
+- Primary CTA: {CTA text}
+- Sections: Hero, Problem, {N} Benefits, Social Proof, FAQ, Final CTA
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-ads` to create paid campaigns that drive traffic to this page"
+- "Run `/m-edit` to check the copy against your brand voice"
+- "Run `/m-seo` if this is a public landing page that needs search optimization"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
