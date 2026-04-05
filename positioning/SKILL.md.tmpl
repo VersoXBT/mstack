@@ -3,9 +3,13 @@ name: m-positioning
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Positioning and messaging framework. Reads brand context and competitive analysis
-  to generate: category definition, audience statement, key differentiator, value
-  propositions, messaging pillars, and elevator pitches at 30s, 60s, and 2min.
+  Positioning and messaging framework grounded in April Dunford's "Obviously Awesome"
+  methodology, Category Design, and the "Only We..." differentiator approach. Reads
+  brand context and competitive analysis to produce: a defensible category definition,
+  precise audience statement, genuine key differentiator, outcome-focused value
+  propositions, three messaging pillars with proof points, and elevator pitches at
+  30s / 60s / 2min — each built on a tested formula. Includes quick validation tests
+  the user can run before publishing.
 allowed-tools:
   - Bash
   - Read
@@ -38,8 +42,8 @@ cat {competitive analysis file} 2>/dev/null | head -100
 If brand context is not configured, ask before proceeding:
 > "No brand context found. To create a strong positioning framework, I need to know:
 > 1. What does your product do in one sentence?
-> 2. Who is your primary audience?
-> 3. Your top 2-3 competitors and their main weakness"
+> 2. Who is your primary audience (role, industry, company size)?
+> 3. Your top 2-3 competitors and the single biggest thing they get wrong"
 
 If brand context is available, proceed directly to Step 1.
 
@@ -49,7 +53,7 @@ If competitive analysis is not available, ask:
 > "Have you run `/m-competitive` yet? If so, share the file or paste key findings.
 > If not, briefly describe: what are your top 2-3 competitors and what do they get wrong?"
 
-Use AskUserQuestion to confirm understanding:
+Use AskUserQuestion to confirm the emotional target:
 > "Quick check before I build the framework — what do you want customers to feel
 > or think when they first hear about {brand name}? (one sentence)"
 
@@ -57,65 +61,127 @@ STOP and wait.
 
 ## Step 2: Define the Category
 
-Using the "only we..." framework, identify the positioning statement:
+Work through the April Dunford "Obviously Awesome" competitive alternatives lens internally
+(do not recite this process to the user):
 
-Work through these questions internally (do not ask the user):
-- What job does the customer hire this product to do?
-- What category does this product belong to?
-- How is this category different from existing ones?
-- What does the brand own that no competitor can credibly claim?
+**Competitive alternatives analysis**
+- What would customers use if this product didn't exist? (not just direct competitors —
+  spreadsheets, doing nothing, and legacy tools count)
+- What unique capabilities does this product have that those alternatives lack?
+- What value do those capabilities unlock that the alternatives cannot deliver?
+- What type of customer values that specific outcome most?
 
-Draft a category definition:
+**Category design test**
+Ask: does this product fit an existing category, or does it create a new one?
+- If it fits an existing category: position as the best in class for a specific niche
+  (e.g., "Slack for factory floors" rather than just "team chat")
+- If it creates a new category: name the category first, make the problem vivid, then
+  introduce the product as the obvious solution (Dunford's Category Design play)
+
+**"Only We..." differentiator filter**
+A real differentiator passes three tests:
+1. True — you can prove it with evidence
+2. Relevant — the target customer actually cares
+3. Exclusive — no competitor can credibly say the same thing today
+If a claim fails any test, it is a table-stakes feature, not a differentiator. Keep
+searching until you find one that passes all three.
+
+Draft a positioning statement using the Dunford template:
 ```
-"{Brand} is the [category] for [audience] who [need/situation].
-Unlike [alternatives], we [key differentiator]."
+For [target customer] who [have this problem or goal],
+{Brand} is the [category] that [delivers this specific outcome].
+Unlike [competitive alternative], we [key differentiator that passes all three tests].
 ```
 
 ## Step 3: Build the Framework
 
-Generate the complete positioning framework:
+Generate the complete positioning framework using the structure below. Every section
+must be grounded in findings from Steps 1 and 2.
 
 ---
 
 **Category Definition**
-[One sentence defining the space you compete in]
+One sentence. Name the category you compete in (or are creating). If creating a new
+category, make the problem vivid first, then name the space.
+Example: "A new category of revenue intelligence — not CRM, not BI — that tells sales
+teams which deals will close before the rep even asks."
 
 **Target Audience Statement**
-[Precise description of who this is for: role, context, need]
+Be specific: role + context + trigger moment (what just happened that makes them seek
+this solution today?).
+Example: "VP of Sales at B2B SaaS companies (50–500 employees) who just missed a
+quarterly forecast and can no longer trust their pipeline data."
 
-**Key Differentiator**
-[The one thing only you can credibly claim — "only we..." statement]
+**Key Differentiator — "Only We..." Statement**
+One claim that is true, relevant, and exclusive. Lead with the outcome, not the feature.
+Example: "Only we surface deal risk from conversation data in real time — so reps know
+which deals need attention before the forecast call, not after."
 
 **Value Propositions (3)**
+Each one = a specific outcome the customer achieves, not a product feature.
+Format: [Who] can [do what] so that [business result].
 1. {Outcome-focused, not feature-focused}
 2. {Outcome-focused, not feature-focused}
 3. {Outcome-focused, not feature-focused}
 
-**Messaging Pillars (3)**
-Each pillar = one core idea the brand consistently communicates:
-1. {Pillar}: {one-line explanation} — Proof point: {specific evidence}
-2. {Pillar}: {one-line explanation} — Proof point: {specific evidence}
-3. {Pillar}: {one-line explanation} — Proof point: {specific evidence}
+**Messaging Hierarchy**
+The primary message is the "Only We..." statement. The three pillars support and prove it.
+Each pillar must be independently credible — a skeptical buyer should be able to verify it.
+
+*Primary Message:* {the single "Only We..." claim from the differentiator above}
+
+*Pillar 1 — {Name}:* {one-line explanation of this supporting idea}
+Proof point: {specific, verifiable evidence — a metric, case study, third-party
+validation, or technical fact}
+
+*Pillar 2 — {Name}:* {one-line explanation}
+Proof point: {specific, verifiable evidence}
+
+*Pillar 3 — {Name}:* {one-line explanation}
+Proof point: {specific, verifiable evidence}
 
 **Elevator Pitches**
 
-*30 seconds (50-60 words):*
-[High-energy, lead with pain or outcome, name the product, one CTA]
+*30 seconds (50–60 words) — Formula: Pain → Consequence → Solution → CTA*
+Open with the pain in the customer's own language. State the consequence of not solving
+it. Name the product and its differentiator in one sentence. End with a single, low-
+friction call to action.
+Example structure: "Most [role]s deal with [pain]. That means [consequence]. [Brand] is
+the [category] that [differentiator]. [Soft CTA]."
 
-*60 seconds (100-120 words):*
-[Expand on problem, introduce solution, one key proof point, CTA]
+*60 seconds (100–120 words) — Formula: Hook → Problem → Failed alternatives → Solution → Proof → CTA*
+Start with a sharp hook (a surprising stat or vivid scenario). Name the problem and why
+existing solutions fail at it. Introduce the product and what makes it different. Add
+one concrete proof point (customer result, metric, or milestone). Close with a CTA.
 
-*2 minutes (250-300 words):*
-[Full narrative: problem, why existing solutions fail, your approach, proof, vision, CTA]
+*2 minutes (250–300 words) — Formula: World → Problem → Status quo failure → Insight → Solution → Evidence → Vision → CTA*
+Paint the world the customer lives in. Make the problem specific and costly. Explain
+why current approaches are structurally flawed (not just "we're better"). Share the
+insight or belief that led to this product. Describe the solution and how it works at
+a mechanism level. Provide two to three evidence points (customer stories, metrics,
+traction). Cast a vision of what the customer's world looks like after the problem is
+solved. Close with a CTA that matches the audience's buying stage.
+
+**Quick Positioning Validation Tests**
+Before publishing, run at least two of these:
+1. **The Grandma Test** — explain the category definition to someone unfamiliar with
+   your industry; if they cannot repeat it back accurately in their own words, simplify
+2. **The Swap Test** — replace your brand name with a competitor's in the "Only We..."
+   statement; if it still reads as true, the claim is not differentiated enough
+3. **The Prospect Reaction Test** — read the 30-second pitch to three real prospects
+   (or lost deals) and ask "does this resonate?" and "what's missing?"; revise until
+   you hear "yes, that's my problem" unprompted
+4. **The Sales Team Test** — ask a sales rep to use the elevator pitch in their next
+   call; debrief on which phrases landed and which prompted confusion
 
 ---
 
 Present the draft framework. Use AskUserQuestion:
 > "Here's the positioning framework. What would you like to adjust?
 > A) The category definition
-> B) The differentiator
+> B) The differentiator / 'Only We...' statement
 > C) The value propositions
-> D) The messaging pillars
+> D) The messaging hierarchy and pillars
 > E) The elevator pitches
 > F) It looks good — save it"
 
@@ -123,7 +189,14 @@ STOP and wait.
 
 ## Step 4: Refine
 
-If the user requests changes, revise the specific section. Re-present only the changed section.
+If the user requests changes, revise the specific section. Re-present only the changed
+section, not the full framework.
+
+When refining the differentiator, apply the three-test filter again (true, relevant,
+exclusive) before accepting any new claim.
+
+When refining pitches, preserve the formula structure — only change the words, not the
+sequence of moves.
 
 Repeat until user approves.
 
@@ -137,9 +210,11 @@ Save the approved framework as a markdown document.
 ## Completion
 
 Report:
-- Key differentiator: {summary}
-- Messaging pillars: {list}
+- Category defined: {summary}
+- Key differentiator: {the "Only We..." statement}
+- Messaging pillars: {list of three pillar names}
 - Elevator pitches: 30s, 60s, 2min created
+- Validation tests suggested: {list of tests recommended}
 - File saved to: {path}
 
 Suggest next steps:
