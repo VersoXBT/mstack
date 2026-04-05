@@ -27,10 +27,8 @@ const claude: HostConfig = {
   suppressedResolvers: [],
 
   runtimeRoot: {
-    globalSymlinks: ['bin', 'browse/dist', 'browse/bin', 'mstack-upgrade', 'ETHOS.md'],
-    globalFiles: {
-      'review': ['checklist.md', 'TODOS-format.md'],
-    },
+    globalSymlinks: ['bin', 'mstack-upgrade'],
+    globalFiles: {},
   },
 
   install: {
