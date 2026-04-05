@@ -1,0 +1,184 @@
+---
+name: m-keywords
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Keyword research for SEO content planning. Uses Ahrefs/SEMrush API if available,
+  otherwise browse-based SERP analysis. Groups by intent. Outputs primary keywords,
+  long-tail, content gaps, and keyword clusters. Saves structured doc.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{API_KEYS}}
+
+{{LEARNINGS_SEARCH}}
+
+{{BROWSE_OPTIONAL}}
+
+## Setup
+
+Check for existing keyword research and available APIs:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*keyword*" -o -name "*seo*" 2>/dev/null | head -5
+
+# Check for SEO API keys
+echo "AHREFS: ${AHREFS_API_KEY:+set}"
+echo "SEMRUSH: ${SEMRUSH_API_KEY:+set}"
+```
+
+Parse the user's request. Determine if they provided:
+- A seed topic or keyword
+- A specific URL to analyze
+- A competitor to match
+
+If not provided, use AskUserQuestion:
+> "What topic or product area should I research keywords for?
+> Examples: 'on-chain analytics', 'email marketing automation', 'React component library'
+> Or share a competitor URL and I'll find their keyword gaps."
+
+Then ask:
+> "What's the main goal for these keywords?
+> A) Drive awareness — informational content (how-to, guides, explainers)
+> B) Drive signups — transactional content (comparisons, landing pages)
+> C) Both
+> D) I'll tell you which content pieces I want to target"
+
+STOP and wait.
+
+## Step 1: Seed Keyword Expansion
+
+Start with seed keywords from the user request and brand.yaml keywords.
+
+Build an initial list of 15-25 keyword ideas by:
+
+**From brand context:**
+- Primary keywords from brand.yaml
+- Audience pain points → keyword phrases
+- Competitor names → comparison keywords
+
+**Variations to generate:**
+- "{topic} for {audience type}"
+- "best {topic}"
+- "{topic} vs {alternative}"
+- "how to {outcome with topic}"
+- "{topic} {modifier: tool/platform/software/guide/tutorial}"
+- "{topic} {qualifier: free/open-source/enterprise/startup}"
+
+If API keys are available:
+```bash
+# SEMrush keyword overview
+curl -s "https://api.semrush.com/?" \
+  --data "type=phrase_related&key=${SEMRUSH_API_KEY}&phrase={seed}&database=us&export_columns=Ph,Nq,Cp,Co" \
+  2>/dev/null | head -50
+```
+
+If browse is available but no API:
+```bash
+$B goto "https://www.google.com/search?q={seed keyword}"
+$B text
+```
+
+Extract "People Also Ask", "Related searches" suggestions.
+
+## Step 2: Classify by Intent
+
+For each keyword, assign:
+- **Intent**: Informational (I), Transactional (T), Navigational (N), Commercial (C)
+- **Volume estimate**: High (1k+), Medium (100-1k), Low (<100) — estimate if no API
+- **Difficulty estimate**: Easy, Medium, Hard — based on SERP analysis
+- **Content type**: Blog post, Landing page, Comparison, Tutorial, Case study
+
+Build a table:
+
+| Keyword | Intent | Volume | Difficulty | Content Type |
+|---------|--------|--------|------------|-------------|
+| {keyword} | {I/T/N/C} | {H/M/L} | {E/M/H} | {type} |
+
+## Step 3: Group into Clusters
+
+Organize keywords into content clusters by topic:
+
+**Cluster 1: {Main topic}**
+- Primary keyword: {keyword}
+- Supporting: {keyword}, {keyword}, {keyword}
+- Content type: {type}
+- Suggested title: {draft title}
+
+**Cluster 2: {Main topic}**
+...
+
+Aim for 3-5 clusters. Each cluster = one piece of content (or a series).
+
+## Step 4: Identify Content Gaps
+
+If browse is available, check top 3 SERP results for primary keywords:
+```bash
+$B goto "https://www.google.com/search?q={primary keyword}"
+$B text
+```
+
+Note topics that rank well but:
+- Lack depth or recency
+- Don't address the target audience's specific needs
+- Miss a specific angle you could own
+
+List 3-5 content gaps as opportunities.
+
+## Step 5: Prioritize
+
+Present a prioritized keyword plan:
+
+**Quick wins** (high-medium volume, easy difficulty, intent match):
+1. {keyword} — {why it's a quick win}
+
+**Long-term targets** (high volume, medium-hard difficulty):
+1. {keyword} — {why it's worth targeting}
+
+**Low-competition opportunities** (lower volume, very easy to rank):
+1. {keyword} — {niche but relevant}
+
+Use AskUserQuestion:
+> "Here's the keyword research. Anything to adjust before I save it?
+> A) Looks good — save it
+> B) I want to focus on a specific cluster
+> C) Add more keywords for a specific topic"
+
+STOP and wait.
+
+## Step 6: Save
+
+Use AskUserQuestion:
+> "Where should I save the keyword research? (default: `docs/keywords-{date}.md`)"
+
+Save the full document: classified keyword table, clusters, gaps, priority list.
+
+## Completion
+
+Report:
+- Keywords researched: {count}
+- Clusters identified: {count}
+- Top quick win: {keyword}
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-brief` to create a content brief for any of these keywords"
+- "Run `/m-seo` to optimize existing content for target keywords"
+- "Run `/m-strategy` to incorporate these keywords into the content calendar"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

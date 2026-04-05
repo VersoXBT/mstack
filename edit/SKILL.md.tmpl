@@ -1,0 +1,192 @@
+---
+name: m-edit
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Copy editing against brand voice. Reads a draft and compares against brand.yaml
+  voice settings. Checks tone, avoid-list violations, AI vocabulary, readability,
+  and CTA clarity. Makes targeted edits — not rewrites. Shows tracked changes.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+## Setup
+
+Check for brand context:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+[ -f "$PROJECT_DIR/brand.yaml" ] && echo "BRAND: found" || echo "BRAND: not found"
+```
+
+Parse the user's request. Determine if a file path was provided or if the draft was pasted.
+
+If a file path was given, read it:
+```bash
+cat {file path} 2>/dev/null
+```
+
+If no draft is provided, use AskUserQuestion:
+> "Please share the draft to edit. You can:
+> A) Paste it directly
+> B) Share the file path
+> C) Tell me the file name and I'll find it"
+
+STOP and wait.
+
+## Step 1: Read the Draft
+
+Load the draft content. Confirm:
+- Content type (blog post, landing page, email, social post, ad copy)
+- Approximate length
+- Any specific instructions from the user (e.g., "preserve the intro", "tighten it by 20%")
+
+If the user didn't specify what to focus on, use AskUserQuestion:
+> "What's most important to you for this edit?
+> A) Brand voice alignment — make it sound like us
+> B) Cut the length — remove padding without losing substance
+> C) Sharpen the CTA — make the ask clearer
+> D) Full edit — check everything"
+
+STOP and wait.
+
+## Step 2: Brand Voice Check
+
+Compare the draft against brand.yaml voice settings:
+
+**Tone check:**
+Read the brand voice (tone, personality) from brand.yaml.
+Identify sentences that feel off-tone:
+- Too formal when brand is casual
+- Too casual when brand is professional
+- Hedging language when brand is direct
+
+**Avoid-list check:**
+Scan for words/phrases in the brand avoid list:
+```bash
+# If draft is a file:
+grep -in "{avoid term 1}\|{avoid term 2}\|{avoid term 3}" {file path} 2>/dev/null
+```
+
+**AI vocabulary check:**
+Scan for common AI-generated filler words:
+```bash
+grep -in "delve\|crucial\|robust\|comprehensive\|landscape\|game.changer\|leverage\|utilize\|in today.*world\|it.*worth noting\|it.*important to\|furthermore\|moreover\|in conclusion" {file path} 2>/dev/null
+```
+
+List every violation found.
+
+## Step 3: Readability Check
+
+Analyze the draft for readability issues:
+
+**Paragraph length:**
+Flag paragraphs over 4 sentences — they create visual walls.
+
+**Sentence complexity:**
+Flag sentences over 25 words — break them in two.
+
+**Passive voice:**
+Flag passive constructions — suggest active rewrites.
+Examples of what to flag: "it was decided", "users are targeted", "content is created"
+
+**Opening hook:**
+Does the first sentence grab attention? Check against these patterns:
+- Asks a question the reader is already asking themselves
+- States a counterintuitive claim
+- Opens with a specific number or fact
+- Calls out the reader's situation
+
+**Transitions:**
+Are sections connected? Flag abrupt topic changes.
+
+## Step 4: CTA Check
+
+Identify all calls to action in the draft. For each:
+
+- Is it specific? ("Sign up free" beats "Learn more")
+- Is it benefit-driven? ("Get your free audit" beats "Click here")
+- Is there only one primary CTA? (Multiple CTAs dilute conversion)
+- Does it match the reader's stage? (Awareness content should not push a demo)
+
+Note issues.
+
+## Step 5: Make Targeted Edits
+
+Now apply edits. Follow these rules:
+
+1. **Change as little as possible.** Preserve the author's voice and structure.
+2. **Fix violations, don't rewrite.** If a sentence uses an avoid-list word, swap the word. Don't rephrase the whole paragraph.
+3. **Show your work.** For every change, note why.
+
+Format changes as a tracked-change log:
+
+```
+## Edit Log
+
+**[Line ~{N}] Avoid-list violation**
+Before: "...this robust solution helps teams..."
+After: "...this solution helps teams..."
+Reason: "robust" is on the avoid list
+
+**[Line ~{N}] AI vocabulary**
+Before: "It's worth noting that users often..."
+After: "Users often..."
+Reason: filler phrase, no meaning
+
+**[Line ~{N}] Paragraph too long**
+Before: {full paragraph}
+After: {split into 2 paragraphs}
+Reason: over 4 sentences, hard to scan
+
+**[Line ~{N}] CTA vague**
+Before: "Learn more about our platform"
+After: "See how it works — free demo"
+Reason: original CTA has no specific benefit
+```
+
+After the log, show the complete edited draft.
+
+## Step 6: Summary
+
+Provide a brief editorial summary:
+- Issues found: {count by type}
+- Most common problem: {type}
+- Brand voice match: {Strong / Acceptable / Needs work}
+- Overall: {one sentence on draft quality}
+
+Use AskUserQuestion:
+> "Here are the edits with explanations. Want me to:
+> A) Apply them all to the file
+> B) Walk through each change
+> C) Only apply a subset — tell me which to skip"
+
+STOP and wait.
+
+## Completion
+
+Apply approved edits to the file (or save edited version).
+
+Report:
+- Edits applied: {count}
+- Brand voice issues resolved: {count}
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-seo` to check on-page SEO after editing"
+- "Run `/m-repurpose` to create social posts from the polished content"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

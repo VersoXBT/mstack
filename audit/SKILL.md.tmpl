@@ -1,0 +1,256 @@
+---
+name: m-audit
+preamble-tier: 4
+version: 1.0.0
+description: |
+  Full marketing audit orchestrator. Checks SEO, content quality, social presence,
+  brand consistency, and competitor comparison. Produces a scored audit report with
+  prioritized fixes. Uses browse if available. Run before building strategy.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{API_KEYS}}
+
+{{LEARNINGS_SEARCH}}
+
+{{BROWSE_OPTIONAL}}
+
+## Setup
+
+Check for brand context and existing audit artifacts:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+[ -f "$PROJECT_DIR/brand.yaml" ] && echo "BRAND: found" || echo "BRAND: not found"
+find . -name "*audit*" 2>/dev/null | head -5
+```
+
+If brand context is missing, use AskUserQuestion:
+> "No brand context found. For a useful audit I need:
+> 1. Your website URL
+> 2. Your main social profiles (Twitter, LinkedIn, etc.)
+> 3. Your top 2 competitors' websites
+> 4. Your target audience (one sentence)"
+
+Otherwise, ask only what's missing from brand.yaml:
+> "I have your brand context. To run the full audit, I also need:
+> - Your website URL (if not in brand.yaml): {url or 'already have it'}
+> - Anything specific you want me to focus on?
+> A) Everything — full audit
+> B) SEO only
+> C) Content quality only
+> D) Social presence only"
+
+STOP and wait for response.
+
+## Step 1: Website & On-Page SEO Audit
+
+If browse is available:
+```bash
+$B goto "{website URL}"
+$B text
+$B links
+```
+
+Check and score each item (Pass / Partial / Fail):
+
+**Technical basics**
+- [ ] Page loads in under 3 seconds
+- [ ] Mobile-friendly layout
+- [ ] HTTPS active
+- [ ] No broken links on homepage
+
+**On-page SEO**
+- [ ] Title tag present and under 60 chars
+- [ ] Meta description present and under 155 chars
+- [ ] H1 tag on every page (one per page)
+- [ ] H2/H3 structure logical
+- [ ] Target keyword in title and first paragraph
+- [ ] Image alt text present
+
+**Content quality**
+- [ ] Homepage headline clear (visitor understands what you do in 5 seconds)
+- [ ] Value proposition above the fold
+- [ ] CTA visible without scrolling
+- [ ] Social proof present (testimonials, logos, metrics)
+
+If browse is not available, ask user:
+> "Please share your website URL. I'll guide you through a manual checklist if
+> browse isn't available in this session."
+
+Score the section: {X}/12 points
+
+## Step 2: Content Audit
+
+Check for existing content:
+
+```bash
+find . -name "*.md" -path "*/content/*" -o -name "*.md" -path "*/blog/*" 2>/dev/null | head -20
+find . -name "*.md" 2>/dev/null | grep -i "post\|article\|blog" | head -20
+```
+
+If content files are found, analyze a sample (up to 10 most recent):
+- Word count distribution
+- SEO basics applied (title, meta, H2s)
+- Brand voice consistency
+- CTA present in each piece
+
+If browse is available, check the live blog:
+```bash
+$B goto "{blog URL}"
+$B text
+```
+
+Check and score:
+**Content presence**
+- [ ] Blog or content section exists
+- [ ] 5+ published pieces
+- [ ] Published in last 30 days (active cadence)
+- [ ] Consistent topic focus matching audience needs
+
+**Content quality**
+- [ ] Articles over 800 words (depth signals)
+- [ ] Internal linking between articles
+- [ ] External links to credible sources
+- [ ] Meta descriptions on blog posts
+- [ ] Social share buttons or links
+
+Score the section: {X}/9 points
+
+## Step 3: Social Media Audit
+
+Check channels from brand.yaml. For each active channel:
+
+If browse is available:
+```bash
+$B goto "{social profile URL}"
+$B text
+```
+
+Check and score per channel:
+- [ ] Bio/about section complete
+- [ ] Profile and cover images present
+- [ ] Website link in bio
+- [ ] Posted in last 7 days
+- [ ] Engagement visible (likes, replies, comments)
+- [ ] Content matches brand voice
+
+Score per channel. Aggregate: {X}/{max} points
+
+## Step 4: Brand Consistency Audit
+
+Compare all touchpoints against brand.yaml:
+
+**Voice consistency**
+- [ ] Website copy matches brand voice setting
+- [ ] Social posts match brand voice
+- [ ] Same avoid-list respected across channels
+
+**Visual consistency** (if images visible via browse)
+- [ ] Consistent color usage
+- [ ] Consistent logo usage
+- [ ] Consistent typography patterns
+
+**Messaging consistency**
+- [ ] Same positioning statement across channels
+- [ ] Same value propositions reinforced
+- [ ] No conflicting claims between channels
+
+Score: {X}/9 points
+
+## Step 5: Competitor Comparison
+
+If competitive analysis file exists, load it:
+```bash
+cat {competitive analysis file} 2>/dev/null | head -80
+```
+
+If not, check a competitor website via browse if available:
+```bash
+$B goto "{competitor 1 URL}"
+$B text
+```
+
+Compare:
+- SEO: estimated traffic signals, content depth
+- Content: cadence, topics, quality
+- Social: following, engagement, channels
+- Website: clarity, conversion elements
+
+Note where your brand is ahead, behind, or equal.
+
+## Step 6: Generate Audit Report
+
+Build the scored audit report:
+
+```
+# Marketing Audit — {Brand Name} — {Date}
+
+## Overall Score: {X}/{max} points
+
+| Category | Score | Status |
+|----------|-------|--------|
+| Website & SEO | {X}/12 | {Pass/Needs Work/Fail} |
+| Content | {X}/9 | {Pass/Needs Work/Fail} |
+| Social Media | {X}/18 | {Pass/Needs Work/Fail} |
+| Brand Consistency | {X}/9 | {Pass/Needs Work/Fail} |
+
+## Priority Fixes
+
+### Critical (fix this week)
+1. {Issue} — {specific action} — Impact: High
+2. {Issue} — {specific action} — Impact: High
+
+### Important (fix this month)
+1. {Issue} — {specific action} — Impact: Medium
+2. {Issue} — {specific action} — Impact: Medium
+
+### Nice to Have (backlog)
+1. {Issue} — {specific action} — Impact: Low
+
+## Section Details
+{Full details per section above}
+
+## What's Working
+{Positive findings}
+```
+
+Use AskUserQuestion:
+> "Here's your marketing audit. Before I save it, anything you want me to add or clarify?"
+
+STOP and wait.
+
+## Step 7: Save Report
+
+Use AskUserQuestion:
+> "Where should I save the audit report? (default: `docs/marketing-audit-{date}.md`)"
+
+Save the full report.
+
+## Completion
+
+Report:
+- Overall score: {X}/{max}
+- Critical fixes: {count}
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-seo` to fix the on-page SEO issues identified"
+- "Run `/m-keywords` to build a keyword strategy for content gaps"
+- "Run `/m-strategy` to build a plan addressing all priority fixes"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

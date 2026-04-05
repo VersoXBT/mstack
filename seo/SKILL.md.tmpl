@@ -1,0 +1,248 @@
+---
+name: m-seo
+preamble-tier: 3
+version: 1.0.0
+description: |
+  On-page SEO optimization. Takes a URL or content file and checks: title tag, meta
+  description, H1/H2 structure, keyword density, internal links, image alt text,
+  schema markup, and URL structure. Outputs an actionable checklist with fixes.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{API_KEYS}}
+
+{{LEARNINGS_SEARCH}}
+
+{{BROWSE_OPTIONAL}}
+
+## Setup
+
+Parse the user's request. Determine if they provided:
+- A URL to analyze
+- A local content file
+- Both (live page + source content)
+
+If neither is provided, use AskUserQuestion:
+> "What do you want me to optimize?
+> A) A live URL — paste it
+> B) A local content file — share the path
+> C) Content pasted directly
+> D) Multiple pages — share URLs or paths"
+
+Then ask:
+> "What's the primary keyword for this content?"
+
+STOP and wait.
+
+## Step 1: Load the Content
+
+If a URL was provided and browse is available:
+```bash
+$B goto "{URL}"
+$B text
+$B links
+```
+
+If a local file was provided:
+```bash
+cat {file path}
+```
+
+Extract:
+- Title tag (from `<title>` or frontmatter `title:`)
+- Meta description (from `<meta name="description">` or frontmatter)
+- H1 count and text
+- H2 list
+- H3 list
+- Word count (approximate)
+- All links (internal and external)
+- Image count and alt text presence
+- URL structure
+
+## Step 2: Title Tag Analysis
+
+Check the title tag against SEO best practices:
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Present | Pass/Fail | {found or missing} |
+| Length 50-60 chars | Pass/Fail | {current length} chars |
+| Primary keyword included | Pass/Fail | {keyword found Y/N} |
+| Keyword near start | Pass/Fail | {position} |
+| Brand name format | Pass/Fail | {format check} |
+| Click-worthy | Pass/Fail | {assessment} |
+
+If issues found, provide a fixed version:
+- Current: `{current title}`
+- Recommended: `{improved title}` ({char count} chars)
+
+## Step 3: Meta Description Analysis
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Present | Pass/Fail | {found or missing} |
+| Length 140-155 chars | Pass/Fail | {current length} chars |
+| Primary keyword included | Pass/Fail | {found Y/N} |
+| CTA or value statement | Pass/Fail | {present Y/N} |
+
+If issues found, provide a fix:
+- Current: `{current meta}`
+- Recommended: `{improved meta}` ({char count} chars)
+
+## Step 4: Heading Structure Analysis
+
+**H1 check:**
+- Count: {count} (should be exactly 1)
+- Text: `{H1 text}`
+- Contains keyword: {yes/no}
+- Assessment: {pass/fix}
+
+**H2 structure:**
+List all H2s and note:
+- Do they follow a logical order?
+- Does each cover a distinct subtopic?
+- Do they contain secondary keywords or semantic variations?
+- Are there opportunities to add H2s that address "People Also Ask" questions?
+
+**H3 usage:**
+- Are H3s used within H2 sections appropriately?
+- Any orphan H3s (no parent H2)?
+
+Provide heading suggestions where needed.
+
+## Step 5: Keyword Density & Usage
+
+Target keyword: {keyword}
+
+Check usage:
+- First mention: paragraph {N} (ideal: paragraph 1)
+- Total mentions: {count}
+- Density: {percentage} (ideal: 0.5-1.5%)
+- In H1: yes/no
+- In H2: {count} headings
+- In meta: yes/no
+- In image alt text: yes/no
+
+Secondary keywords and LSI terms found: {list}
+
+Recommendations:
+- {Add keyword to X location}
+- {Remove {N} redundant uses — over-optimized}
+- {Add semantic variation: "keyword synonym"}
+
+## Step 6: Internal Links
+
+Count: {count} internal links found
+
+Check:
+- [ ] At least 2-3 internal links to related content
+- [ ] Anchor text is descriptive (not "click here" or "read more")
+- [ ] No broken internal links (check with browse if available)
+- [ ] Most important pages linked to from this content
+
+If browse is available, spot-check links:
+```bash
+$B goto "{internal link URL}"
+# check 200 response
+```
+
+Suggested internal links to add:
+1. Link to {related page} with anchor text "{suggested anchor}"
+2. Link to {related page} with anchor text "{suggested anchor}"
+
+## Step 7: Image Alt Text Audit
+
+Images found: {count}
+Images with alt text: {count}/{total}
+Images with keyword in alt: {count}
+
+For each image missing alt text, suggest:
+- `alt="{descriptive text with keyword where natural}"`
+
+## Step 8: Schema Markup Check
+
+Look for existing schema markup:
+```bash
+grep -i "schema.org\|application/ld+json\|itemtype" {file} 2>/dev/null | head -10
+```
+
+Based on content type, recommend schema:
+- Blog post → `Article` schema
+- Product page → `Product` schema
+- FAQ section → `FAQPage` schema
+- How-to content → `HowTo` schema
+
+Provide a basic schema snippet if missing.
+
+## Step 9: URL Structure (if URL provided)
+
+Check:
+- [ ] Keyword in URL slug
+- [ ] URL is short and readable
+- [ ] No unnecessary parameters or numbers
+- [ ] Lowercase, hyphens (not underscores)
+
+Suggest improved URL if needed.
+
+## Step 10: Compile Checklist
+
+Generate a prioritized fix list:
+
+```
+## SEO Audit: {Page Title or URL}
+Primary keyword: {keyword}
+Audit date: {date}
+
+### Fix Now (high impact, quick wins)
+- [ ] {Fix 1} — {specific action}
+- [ ] {Fix 2} — {specific action}
+
+### Fix This Week
+- [ ] {Fix 3} — {specific action}
+- [ ] {Fix 4} — {specific action}
+
+### Nice to Have
+- [ ] {Fix 5} — {specific action}
+
+### Passing Already
+- [x] {Element that's already optimized}
+```
+
+Use AskUserQuestion:
+> "Here's the SEO audit. Should I:
+> A) Apply the fixes to the local file now
+> B) Just save the checklist for me to act on
+> C) Apply only the critical fixes"
+
+STOP and wait.
+
+## Completion
+
+Apply selected fixes (if local file). Save the checklist.
+
+Report:
+- Page: {title or URL}
+- Keyword: {keyword}
+- Issues found: {count}
+- Critical fixes applied: {count}
+- Checklist saved to: {path}
+
+Suggest next steps:
+- "Run `/m-repurpose` to create social content from this optimized piece"
+- "Run `/m-keywords` to find more keywords to target in new content"
+- "Run `/m-brief` to plan the next SEO-optimized content piece"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}

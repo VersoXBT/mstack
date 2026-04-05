@@ -1,0 +1,204 @@
+---
+name: m-brief
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Content brief creation. Takes a keyword or topic and generates a full brief:
+  target keyword, search intent, title, meta description, H2/H3 outline, word count,
+  audience segment, CTA, internal links, and competitor content to beat.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+{{BROWSE_OPTIONAL}}
+
+## Setup
+
+Check for keyword research and existing briefs:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+find . -name "*keyword*" -o -name "*brief*" 2>/dev/null | head -5
+find . -name "*.md" -path "*/content/*" 2>/dev/null | head -10
+```
+
+Parse the user's request for a target keyword or topic.
+
+If not provided, use AskUserQuestion:
+> "What keyword or topic is this brief for?
+> Examples: 'best on-chain analytics tools', 'how to set up a DeFi dashboard',
+> 'React state management comparison'"
+
+Then ask:
+> "Who is this piece for?
+> A) {Persona 1 from brand.yaml if available}
+> B) {Persona 2 from brand.yaml if available}
+> C) General audience — not persona-specific
+> D) Let me describe the audience"
+
+STOP and wait.
+
+## Step 1: Analyze Search Intent
+
+Determine the search intent for the target keyword:
+
+- **Informational**: User wants to learn (how-to, what is, guide)
+- **Commercial**: User is comparing options (best X, X vs Y, X alternatives)
+- **Transactional**: User is ready to act (buy, sign up, get X)
+- **Navigational**: User is looking for a specific site
+
+If browse is available, check the SERP:
+```bash
+$B goto "https://www.google.com/search?q={target keyword}"
+$B text
+```
+
+Note:
+- What type of content dominates page 1 (articles, listicles, landing pages, docs)
+- Approximate word count of top results
+- Common headings and subheadings in top results
+- "People Also Ask" questions — these become H2/H3 opportunities
+
+## Step 2: Analyze Competitor Content
+
+If browse is available, look at the top 2-3 results:
+```bash
+$B goto "{top result URL}"
+$B text
+```
+
+For each competitor piece, note:
+- Structure and heading hierarchy
+- Content depth and word count
+- What angle they take
+- What they miss or get wrong
+- Opportunities to be more specific, more current, or more useful
+
+## Step 3: Build the Brief
+
+Generate the complete content brief:
+
+---
+
+```
+# Content Brief: {Title Draft}
+
+## Target Keyword
+Primary: {keyword}
+Secondary: {2-3 related keywords}
+LSI terms: {semantic variations}
+
+## Search Intent
+{Informational / Commercial / Transactional / Navigational}
+Reason: {why this keyword has this intent based on SERP}
+
+## Audience
+Persona: {name from ICP or description}
+Where they are in the funnel: {Awareness / Consideration / Decision}
+What they know already: {assumed knowledge level}
+What they want to walk away with: {specific outcome}
+
+## Recommended Title
+Primary: {SEO-optimized title with keyword near the front}
+Alt 1: {variation}
+Alt 2: {variation}
+
+## Meta Description
+{Under 155 chars, includes keyword, clear benefit statement}
+
+## Word Count Target
+{range, e.g., 1,400-1,800 words}
+Reason: {based on competitor content length + depth needed}
+
+## Content Structure
+
+H1: {final title}
+
+**Intro** (100-150 words)
+- Hook: {specific question, stat, or contrarian claim}
+- State the problem
+- Preview the solution
+
+H2: {Section 1 — addresses most common intent}
+  H3: {Subsection if needed}
+  H3: {Subsection if needed}
+  Key points: {bullet list of what to cover}
+
+H2: {Section 2}
+  Key points: {bullet list}
+
+H2: {Section 3}
+  Key points: {bullet list}
+
+H2: {Section 4 — optional, for longer pieces}
+  Key points: {bullet list}
+
+**Conclusion** (100-150 words)
+- Recap key insight
+- CTA: {specific next action}
+
+## CTA
+Primary: {specific CTA text and destination}
+Secondary: {alternative for readers not ready to convert}
+
+## Internal Links
+Suggest linking to:
+- {existing content piece 1}: anchor text "{text}"
+- {existing content piece 2}: anchor text "{text}"
+
+## Competitor Content to Beat
+1. {URL} — weakness: {what to do better}
+2. {URL} — weakness: {what to do better}
+
+## Notes for Writer
+- {specific voice note from brand.yaml}
+- {specific angle or unique insight to include}
+- {data point or example to reference if known}
+```
+
+---
+
+Present the brief. Use AskUserQuestion:
+> "Here's the content brief. Want to adjust anything before saving?
+> A) The outline structure
+> B) The CTA or audience
+> C) The word count target
+> D) Looks good — save it"
+
+STOP and wait.
+
+## Step 4: Save
+
+Use AskUserQuestion:
+> "Where should I save this brief? (default: `briefs/{slug}-brief.md`)"
+
+Save the brief document.
+
+## Completion
+
+Report:
+- Keyword: {keyword}
+- Intent: {intent type}
+- Word count target: {range}
+- Outline: {number} sections
+- File saved to: {path}
+
+Suggest next steps:
+- "Run `/m-write` and reference this brief to write the full piece"
+- "Run `/m-edit` on the draft to check brand voice alignment"
+- "Run `/m-seo` on the published piece to verify on-page optimization"
+
+{{OPERATIONAL_LEARNING}}
+
+{{TELEMETRY}}
