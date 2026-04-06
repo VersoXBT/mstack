@@ -1,3 +1,13 @@
+<div align="center">
+
+[![Stars](https://img.shields.io/github/stars/VersoXBT/mstack?style=flat-square&logo=github&label=Stars)](https://github.com/VersoXBT/mstack)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Built for Claude Code](https://img.shields.io/badge/Built%20for-Claude%20Code-blueviolet?style=flat-square&logo=anthropic)](https://claude.ai/code)
+[![Skills](https://img.shields.io/badge/Skills-21-green?style=flat-square)]()
+[![Inspired by gstack](https://img.shields.io/badge/Inspired%20by-gstack-orange?style=flat-square)](https://github.com/garrytan/gstack)
+
+</div>
+
 # mstack
 
 > Your marketing team shouldn't be 12 people. It should be 21 skills and a brand that never forgets its voice.
@@ -202,3 +212,16 @@ mstack-config list                     # show all settings
 ## License
 
 MIT. Free forever. Go ship some content.
+
+## Contributors
+
+Thanks to these wonderful people:
+
+<!-- ALL-CONTRIBUTORS-LIST:START -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/VersoXBT"><img src="https://avatars.githubusercontent.com/u/202813801?v=4" width="80px;" alt=""/><br /><sub><b>VersoXBT</b></sub></a><br />💻 📖 🎨</td>
+    <td align="center"><a href="https://github.com/claude"><img src="https://avatars.githubusercontent.com/u/81847?v=4" width="80px;" alt=""/><br /><sub><b>Claude</b></sub></a><br />🤖 💡</td>
+  </tr>
+</table>
+<!-- ALL-CONTRIBUTORS-LIST:END -->
