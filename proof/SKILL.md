@@ -380,22 +380,104 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 # Proof Builder
 
 ## Inputs
 
 Collect:
+- Source type: interview, transcript, support note, CRM note, usage data, review,
+  public quote, survey, sales note, or analytics export.
+- Raw evidence or source location.
 - Customer or segment.
 - Before state.
 - After state.
 - Metric or qualitative result.
+- Baseline, after state, timeframe, cohort, sample size, numerator/denominator,
+  measurement method, and source of truth for quantified outcomes.
 - Quote source.
-- Consent constraints.
+- Consent constraints, rights granted, logo/photo/name rights, quote-edit
+  approval, channel scope, geography, revocation risk, and expiration.
 - Product use case.
 - Objection the proof should answer.
+- Regulated category, claim risk, reviewer, and freshness date.
 
 If consent is unclear, write anonymized/internal drafts and flag that approval is
 required before publication.
+
+## Evidence Register
+
+Create this table before drafting assets:
+
+| Evidence ID | Claim supported | Source type | Source URL/file | Observed at | Raw snippet | Owner | Confidence | Verification status | Sensitivity |
+|-------------|-----------------|-------------|-----------------|-------------|-------------|-------|------------|---------------------|-------------|
+
+Verification statuses: `verified`, `customer_reported`, `internal_only`,
+`pending_review`, `unverified`.
+
+## Consent And Rights Gate
+
+Use these statuses:
+- `approved_public`: name, title, company, quote, logo, and/or photo can be used
+  according to the scope captured.
+- `approved_anonymized`: public use allowed only without identifying details.
+- `internal_only`: can be used for sales/internal strategy, not public marketing.
+- `pending`: draft with `[APPROVAL REQUIRED]`.
+- `denied`: do not use.
+
+Public assets can only use approved proof. Exact quotes cannot be materially
+rewritten without quote-edit approval. If approval is unclear, return
+DONE_WITH_CONCERNS or internal-only drafts.
+
+## Claim Ledger
+
+For every proof claim, create:
+
+| Claim | Evidence IDs | Max defensible wording | Attribution strength | Metric fields | Risk class | Allowed channels | Reviewer | Last verified | Expires at |
+|-------|--------------|------------------------|----------------------|---------------|------------|------------------|----------|---------------|------------|
+
+Risk classes: low, medium, high, regulated.
+Regulated, financial, health, legal, security, environmental, employment, AI
+accuracy, ROI, guarantee, and comparative-superlative claims need reviewer
+metadata before public use. Do not mark DONE when regulated public claims are
+unreviewed.
 
 ## Workflow
 
@@ -408,10 +490,15 @@ required before publication.
    - Risk-reversal proof.
 2. Extract the strongest claim and evidence.
 3. Build a proof bank:
+   - Evidence ID.
    - Claim.
    - Evidence.
    - Source.
    - Confidence.
+   - Consent status.
+   - Last verified.
+   - Allowed channels.
+   - Risk flags.
    - Usage channel.
 4. Draft assets:
    - Landing-page proof block.
@@ -424,16 +511,35 @@ required before publication.
    - No unverifiable quote changes.
    - Consent status clear.
    - Claims match evidence.
+   - Public-ready assets include evidence IDs and consent status.
+   - Pending consent is marked `[APPROVAL REQUIRED]`.
+   - Freshness and expiration are explicit.
 6. Map proof to objections and funnel stages.
+7. Save a reusable proof library by default:
+   `marketing/proof-library-{date}.md`.
+
+## Downstream Packs
+
+For `/m-landing`, `/m-ads`, `/m-email`, sales enablement, and social, include
+channel-specific copy plus:
+- Evidence IDs.
+- Consent status.
+- Last verified / expires at.
+- Risk class.
+- Approved channels.
+- Approval notes.
 
 ## Output Format
 
 Return:
 - Proof summary.
 - Proof bank table.
+- Evidence register.
+- Claim ledger.
 - Draft assets.
 - Objection mapping.
 - Consent and claim risks.
+- Downstream proof packs.
 - Next interviews or evidence to collect.
 
 ## Privacy Boundary
