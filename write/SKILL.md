@@ -363,6 +363,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Setup
 
 Parse the user's request. Determine:
@@ -372,6 +410,26 @@ Parse the user's request. Determine:
 - **Audience**: B2B technical, B2B executive, B2C consumer, or other — determines readability target
 - **Word count**: if specified, or use defaults (blog: 1200-1800, landing: 600-1000, email: 300-500, case study: 800-1200)
 - **Brief**: if the user ran /m-brief first, check for a brief file in the project
+
+## Context Intake
+
+Locate and read useful upstream artifacts before research:
+
+```bash
+eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
+[ -f "$PROJECT_DIR/icp.yaml" ] && echo "ICP: found" || echo "ICP: not found"
+[ -f "$PROJECT_DIR/positioning.yaml" ] && echo "POSITIONING: found" || echo "POSITIONING: not found"
+find . -name "*brief*" -o -name "*positioning*" -o -name "*proof*" 2>/dev/null | head -10
+```
+
+If a saved `/m-brief` exists, read it and treat it as source of truth. Preserve:
+- Keyword, intent, funnel stage, audience, unique angle, CTA, internal links.
+- H1/H2/H3 outline.
+- Competitor gaps and writer notes.
+- Proof constraints and evidence plan.
+
+Do not change a brief-approved outline unless the user approves the deviation.
 
 If brand context is not configured and the preamble reported `BRAND: not configured`,
 ask these questions before writing:
@@ -419,9 +477,28 @@ Analyze top 3-5 search results for:
 If browse is not available, use WebSearch if available, or ask the user:
 > "Any reference articles or competitor content I should look at?"
 
+## Source And Claim Rules
+
+Create:
+
+| Source ID | Source | What it supports | Confidence | Notes |
+|-----------|--------|------------------|------------|-------|
+
+| Claim | Source ID or assumption | Risk | Draft wording | Status |
+|-------|-------------------------|------|---------------|--------|
+
+Rules:
+- No invented stats, customer claims, market claims, competitor claims, or named
+  proof points.
+- Mark missing proof as `[source needed]` or `ASSUMPTION`.
+- Use ICP pains, objections, buying triggers, messaging terms, disqualifiers,
+  positioning pillars, allowed claims, and claims to avoid when available.
+- Use `voice.channel_rules.longform` and the avoid list from brand context.
+
 ## Step 2: Outline
 
 Present an outline before writing. Apply the structure for the detected content type (see **Content Type Templates** below).
+If a brief exists, present the brief outline plus any proposed deviations.
 
 ```
 Title: {title with target keyword}
@@ -456,6 +533,10 @@ Write the full content following these rules:
 
 ### SEO Integration
 
+Use intent-led SEO. Match search intent, SERP format, snippet target, internal
+links, schema opportunities, title/meta variants, slug, freshness/update notes,
+and conversion goal from the brief or research.
+
 **Primary keyword placement:**
 - In the title (within first 60 characters)
 - In the first 100 words of body copy
@@ -464,7 +545,7 @@ Write the full content following these rules:
 - In the URL slug suggestion
 
 **Semantic keyword variations:**
-- Identify 3-5 related terms and LSI keywords that co-occur with the primary keyword
+- Identify 3-5 related terms and entities that co-occur with the primary keyword
 - Distribute them across the body without clustering
 - Never repeat the exact primary keyword phrase more than once every 200 words
 
@@ -595,6 +676,22 @@ Apply the matching structure for the content type identified in Setup.
 Save to the file path the user specifies, or use AskUserQuestion:
 > "Where should I save this? (default: `content/{slug}-{date}.md`)"
 
+Saved drafts must include a metadata block:
+
+```markdown
+## Production Metadata
+
+- Source inventory: {source IDs}
+- Claim ledger: {claims and status}
+- Target persona: {persona}
+- Positioning pillar: {pillar}
+- CTA: {CTA and destination}
+- Internal links: {links}
+- Repurpose anchors: {pull quotes, stats, sections}
+- Edit notes: {notes for /m-edit}
+- Unresolved approvals: {approvals/source needed}
+```
+
 ## Step 4: Self-Edit
 
 Review the draft against brand voice and the rules above. Check each item:
@@ -609,6 +706,9 @@ Review the draft against brand voice and the rules above. Check each item:
 8. **CTA clarity**: Is the call to action a single, specific action with an imperative verb?
 9. **SEO check**: Confirm primary keyword appears in title, first 100 words, and at least one H2. Confirm meta description is under 155 characters.
 10. **Flesch target**: Estimate grade level. Is it within range for the declared audience?
+11. **Outline adherence**: If a brief exists, list any deviations and why.
+12. **Claim support**: Every statistic, proof point, customer claim, market claim,
+    and competitor claim has source/proof or is marked `[source needed]`.
 
 Fix issues inline without asking. This is a quality pass, not a rewrite. If more than 20% of the draft needs to change, flag it and ask the user before rewriting.
 
@@ -620,6 +720,9 @@ Report:
 - Target keyword
 - Flesch-Kincaid grade level estimate
 - File path where saved
+- Readiness status: DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT
+- Open source or approval gaps
+- Handoffs: /m-edit, /m-seo, /m-repurpose with the saved file path
 
 Suggest next steps:
 - "Run `/m-edit` for a deeper copy edit against your brand voice"
@@ -632,18 +735,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-write","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-write","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-write"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
