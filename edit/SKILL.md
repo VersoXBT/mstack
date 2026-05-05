@@ -396,6 +396,28 @@ Load the draft content. Confirm:
 - Approximate length (word count, paragraph count)
 - Any specific instructions from the user (e.g., "preserve the intro", "tighten it by 20%")
 
+## Edit Control Rules
+
+Default to a targeted edit, not a rewrite. The priority order is:
+
+1. User instructions.
+2. Brand context and avoid list.
+3. Channel norms for the content type.
+4. This skill's editing defaults.
+5. General mstack voice.
+
+Preserve intent:
+- Do not add new claims, proof, offers, pricing, guarantees, or compliance meaning.
+- Do not change the audience, funnel stage, or CTA destination unless the user asks.
+- Do not remove legal, risk, or product-accuracy qualifiers unless they are clearly filler.
+- If a full rewrite would be better, recommend it and explain why, but do not perform
+  it unless the user chose full edit or explicitly approves.
+
+Use an edit budget:
+- Word swaps, sentence tightening, paragraph splits, and clear grammar fixes are safe.
+- Headline, CTA, section reorder, or offer changes need a short rationale.
+- Full rewrites require explicit approval.
+
 If the user didn't specify what to focus on, use AskUserQuestion:
 > "What's most important to you for this edit?
 > A) Brand voice alignment — make it sound like us
@@ -408,6 +430,17 @@ STOP and wait.
 ## Step 2: Headline / Title Review
 
 Analyze the headline or subject line before touching body copy.
+
+Apply channel-specific checks:
+- Blog/SEO: search intent match, primary keyword near the front, under 60 chars
+  when the title is meant for SERP display.
+- Landing page: above-fold promise, audience fit, proof/CTA alignment, no mismatch
+  between headline and offer.
+- Email: subject and preview text work together, no spammy phrasing, no false
+  urgency, mobile truncation considered.
+- Social: hook fits platform norms, first line earns attention, no engagement-bait
+  filler.
+- Ads: platform limits, claim support, CTA clarity, and landing-page message match.
 
 **Delivery check:**
 Does the title promise what the content actually delivers? Map the headline claim to the body conclusion. Flag mismatches.
@@ -491,6 +524,9 @@ Beyond individual words, flag these sentence-level patterns:
 - **Certainty hedging pairs:** "may or may not", "can or cannot", "whether or not" — often signals AI trying to appear balanced
 
 List every AI vocabulary and pattern violation found with the approximate line number.
+Do not replace every blacklist hit blindly. First decide whether the phrase is
+actually hollow, off-brand, inaccurate, or making the sentence weaker. Keep terms
+that are precise in context, especially in technical, legal, or product copy.
 
 ## Step 4: Readability Check
 
@@ -558,6 +594,10 @@ Now apply edits. Follow these rules:
 1. **Change as little as possible.** Preserve the author's voice and structure.
 2. **Fix violations, don't rewrite.** If a sentence uses an avoid-list word, swap the word. Don't rephrase the whole paragraph.
 3. **Show your work.** For every change, note the category and reason.
+4. **Respect channel constraints.** Email, social, ads, landing pages, and blogs
+   have different standards. Do not apply SEO headline rules to a social post.
+5. **Preserve unsupported-claim boundaries.** If a stronger version would require
+   proof, mark it as a recommendation instead of silently adding it.
 
 Format changes as a tracked-change log:
 
@@ -628,6 +668,11 @@ Estimated FK grade: {grade} (target: {target for content type})
 Overall: {one sentence on draft quality and primary edit direction}
 ```
 
+Also include:
+- What I did not change: {claims, offer, CTA destination, compliance copy, or
+  structure intentionally preserved}
+- Rewrite risk: {low / medium / high} with one sentence.
+
 Use AskUserQuestion:
 > "Here are the edits with explanations. Want me to:
 > A) Apply them all to the file
@@ -656,18 +701,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-edit","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-edit","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-edit"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
