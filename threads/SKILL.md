@@ -363,6 +363,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Setup
 
 Check for existing content that could fuel a thread:
@@ -376,6 +414,8 @@ find . -name "*.md" -path "*/content/*" -o -name "*.md" -path "*/blog/*" 2>/dev/
 Parse the user's request. Determine:
 - Topic, insight, or existing content piece to base the thread on
 - Thread goal (educate, share a take, announce, build audience)
+- Platform: Twitter/X thread, LinkedIn post thread/carousel, or both
+- Source URL/path, author/date, destination URL, and campaign slug when available
 
 If the topic is not clear, use AskUserQuestion:
 > "What should this thread be about?
@@ -388,6 +428,39 @@ Then ask:
 > "What's the core insight or main point you want readers to walk away with?"
 
 STOP and wait.
+
+## Source Intake And Claim Ledger
+
+Before writing, capture:
+
+| Field | Value |
+|-------|-------|
+| Source URL/path | {source} |
+| Author/date | {author/date} |
+| Audience | {audience} |
+| Support points | {3-5 support points} |
+| Destination URL | {URL} |
+| Campaign slug | {slug} |
+
+Claim ledger:
+
+| Claim | Proof/source | Risk | Allowed wording | Tweet/post IDs |
+|-------|--------------|------|-----------------|----------------|
+
+Rules:
+- Remove or mark unsupported factual claims as `ASSUMPTION/source needed`.
+- No invented stats, examples, or causal claims.
+- Every factual tweet or LinkedIn section references a claim row internally.
+
+## Platform Limits And Tracking
+
+- X default posts: 280 characters. Links count through t.co; budget 23 chars for
+  each URL. X Premium longer posts are optional and must be explicitly labeled.
+- LinkedIn posts: max 3,000 characters. First fold matters; keep the opening
+  tight. For carousel mode, produce slide-by-slide copy.
+- UTM: `utm_source={platform}`, `utm_medium=social`,
+  `utm_campaign={campaign-slug}`, `utm_content={asset-id}`.
+- Separate copy from tracked URL metadata.
 
 ## Step 1: Thread Architecture
 
@@ -448,6 +521,11 @@ Write 3 hook options using different formulas:
 🧵
 ```
 {char count}/280
+
+Score hooks:
+
+| Hook | Specificity | Tension | Credibility | Audience fit | Claim support | Clickbait risk | Recommendation |
+|------|-------------|---------|-------------|--------------|---------------|----------------|----------------|
 
 **Option B — [formula name]:**
 ```
@@ -535,6 +613,19 @@ Thread rules applied:
 - Numbers and data used where available
 - No emojis unless brand.yaml allows them
 
+Also create two full-thread variants by angle:
+- Variant A: recommended angle.
+- Variant B: educational/framework angle.
+- Variant C: story/contrarian angle.
+
+## LinkedIn Native Output
+
+If LinkedIn is selected, create:
+- LinkedIn post-thread version: 1 post up to 3,000 chars with strong first fold,
+  section breaks, one CTA, and link placement plan.
+- LinkedIn carousel outline: 6-10 slides, slide title, body, visual note, CTA slide.
+- First comment copy if link belongs in comments.
+
 ## Step 4: Visual Elements
 
 Suggest media placements that increase engagement or clarity. Images added to tweets
@@ -552,6 +643,17 @@ comparisons, product screenshots, and social proof.
 
 Rule: suggest visuals only where they genuinely add information the tweet text cannot.
 Do not suggest decorative images.
+
+## CTA And Engagement Plan
+
+Include:
+- CTA stage: awareness, consideration, decision, retention.
+- Link placement: main post, self-reply, first comment, or no link.
+- Destination URL and UTM link.
+- 5 likely replies or objections.
+- 3 response drafts.
+- First 30-60 minute action plan.
+- When to use `/m-engage`.
 
 ## Step 5: Review
 
@@ -575,6 +677,11 @@ Save the thread with:
 - Hook formula used (for future reference)
 - Media placement suggestions inline
 - Self-reply content if applicable
+- Source inventory and claim ledger
+- LinkedIn variant if selected
+- Campaign and UTM metadata
+- Status: `draft`, `approved`, or `scheduled`
+- Reviewer/owner and calendar-ready row fields
 
 ## Completion
 
@@ -583,11 +690,15 @@ Report:
 - Hook formula used: {formula name}
 - Engagement mechanic: {retweet / reply / bookmark — which was designed for}
 - Topic: {topic}
+- Approval status: {draft/approved/scheduled}
+- Tracking: {campaign slug and UTM links}
 - File saved to: {path}
 
 Suggest next steps:
 - "Run `/m-social` to create single-post versions for LinkedIn, Reddit, and Instagram"
 - "Run `/m-calendar` to schedule this thread in your content calendar"
+- "Run `/m-repurpose` to turn the thread into email, carousel, and short video assets"
+- "Run `/m-engage` with this post context after replies arrive"
 
 ## Capture Learnings
 
@@ -595,18 +706,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-threads","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-threads","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-threads"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.

@@ -21,6 +21,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 ## Setup
 
 Check for existing content that could fuel a thread:
@@ -34,6 +36,8 @@ find . -name "*.md" -path "*/content/*" -o -name "*.md" -path "*/blog/*" 2>/dev/
 Parse the user's request. Determine:
 - Topic, insight, or existing content piece to base the thread on
 - Thread goal (educate, share a take, announce, build audience)
+- Platform: Twitter/X thread, LinkedIn post thread/carousel, or both
+- Source URL/path, author/date, destination URL, and campaign slug when available
 
 If the topic is not clear, use AskUserQuestion:
 > "What should this thread be about?
@@ -46,6 +50,39 @@ Then ask:
 > "What's the core insight or main point you want readers to walk away with?"
 
 STOP and wait.
+
+## Source Intake And Claim Ledger
+
+Before writing, capture:
+
+| Field | Value |
+|-------|-------|
+| Source URL/path | {source} |
+| Author/date | {author/date} |
+| Audience | {audience} |
+| Support points | {3-5 support points} |
+| Destination URL | {URL} |
+| Campaign slug | {slug} |
+
+Claim ledger:
+
+| Claim | Proof/source | Risk | Allowed wording | Tweet/post IDs |
+|-------|--------------|------|-----------------|----------------|
+
+Rules:
+- Remove or mark unsupported factual claims as `ASSUMPTION/source needed`.
+- No invented stats, examples, or causal claims.
+- Every factual tweet or LinkedIn section references a claim row internally.
+
+## Platform Limits And Tracking
+
+- X default posts: 280 characters. Links count through t.co; budget 23 chars for
+  each URL. X Premium longer posts are optional and must be explicitly labeled.
+- LinkedIn posts: max 3,000 characters. First fold matters; keep the opening
+  tight. For carousel mode, produce slide-by-slide copy.
+- UTM: `utm_source={platform}`, `utm_medium=social`,
+  `utm_campaign={campaign-slug}`, `utm_content={asset-id}`.
+- Separate copy from tracked URL metadata.
 
 ## Step 1: Thread Architecture
 
@@ -106,6 +143,11 @@ Write 3 hook options using different formulas:
 🧵
 ```
 {char count}/280
+
+Score hooks:
+
+| Hook | Specificity | Tension | Credibility | Audience fit | Claim support | Clickbait risk | Recommendation |
+|------|-------------|---------|-------------|--------------|---------------|----------------|----------------|
 
 **Option B — [formula name]:**
 ```
@@ -193,6 +235,19 @@ Thread rules applied:
 - Numbers and data used where available
 - No emojis unless brand.yaml allows them
 
+Also create two full-thread variants by angle:
+- Variant A: recommended angle.
+- Variant B: educational/framework angle.
+- Variant C: story/contrarian angle.
+
+## LinkedIn Native Output
+
+If LinkedIn is selected, create:
+- LinkedIn post-thread version: 1 post up to 3,000 chars with strong first fold,
+  section breaks, one CTA, and link placement plan.
+- LinkedIn carousel outline: 6-10 slides, slide title, body, visual note, CTA slide.
+- First comment copy if link belongs in comments.
+
 ## Step 4: Visual Elements
 
 Suggest media placements that increase engagement or clarity. Images added to tweets
@@ -210,6 +265,17 @@ comparisons, product screenshots, and social proof.
 
 Rule: suggest visuals only where they genuinely add information the tweet text cannot.
 Do not suggest decorative images.
+
+## CTA And Engagement Plan
+
+Include:
+- CTA stage: awareness, consideration, decision, retention.
+- Link placement: main post, self-reply, first comment, or no link.
+- Destination URL and UTM link.
+- 5 likely replies or objections.
+- 3 response drafts.
+- First 30-60 minute action plan.
+- When to use `/m-engage`.
 
 ## Step 5: Review
 
@@ -233,6 +299,11 @@ Save the thread with:
 - Hook formula used (for future reference)
 - Media placement suggestions inline
 - Self-reply content if applicable
+- Source inventory and claim ledger
+- LinkedIn variant if selected
+- Campaign and UTM metadata
+- Status: `draft`, `approved`, or `scheduled`
+- Reviewer/owner and calendar-ready row fields
 
 ## Completion
 
@@ -241,11 +312,15 @@ Report:
 - Hook formula used: {formula name}
 - Engagement mechanic: {retweet / reply / bookmark — which was designed for}
 - Topic: {topic}
+- Approval status: {draft/approved/scheduled}
+- Tracking: {campaign slug and UTM links}
 - File saved to: {path}
 
 Suggest next steps:
 - "Run `/m-social` to create single-post versions for LinkedIn, Reddit, and Instagram"
 - "Run `/m-calendar` to schedule this thread in your content calendar"
+- "Run `/m-repurpose` to turn the thread into email, carousel, and short video assets"
+- "Run `/m-engage` with this post context after replies arrive"
 
 {{OPERATIONAL_LEARNING}}
 
