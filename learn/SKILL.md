@@ -316,14 +316,38 @@ Every learning belongs to one of these marketing-specific types:
 | `audience` | Behavioral patterns, preferences, objections, feedback signals |
 | `operational` | Tool quirks, API limits, workflow bottlenecks, process improvements |
 
-Confidence score: 1–5 (1 = anecdotal, 5 = replicated across multiple runs/campaigns).
+Confidence score: 1–10 (1 = weak anecdote, 10 = repeatedly verified or
+explicit user preference).
+
+Canonical JSONL schema:
+
+```json
+{
+  "id": "learn-{date}-{short-key}",
+  "skill": "m-learn",
+  "type": "content|seo|social|ads|audience|operational",
+  "key": "short-stable-key",
+  "insight": "one specific reusable insight",
+  "confidence": 7,
+  "source": "observed|user-stated|inferred|cross-model",
+  "scope": "project|cross-project",
+  "evidence": [{"source":"", "metric_window":"", "baseline":"", "result":""}],
+  "applies_to": ["m-write", "m-social"],
+  "status": "active",
+  "supersedes": [],
+  "files": []
+}
+```
+
+Storage is append-only JSONL. Updates, pruning, and deletes are written as newer
+JSON records with the same `key` and `type`, `supersedes`, or `status:"deleted"`.
 
 ## View All Learnings
 
 If user chose A:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-search "" 2>/dev/null || \
+~/.claude/skills/mstack/bin/mstack-learnings-search --limit 50 2>/dev/null || \
   cat "$LEARNINGS_FILE" 2>/dev/null || \
   echo "No learnings found."
 ```
@@ -353,16 +377,16 @@ Use AskUserQuestion:
 > - Question (e.g. 'what content format works best', 'which channels drive signups', 'LinkedIn posting patterns that increased reach')"
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-search "{search term}" 2>/dev/null || \
+~/.claude/skills/mstack/bin/mstack-learnings-search --query "{search term}" --limit 20 2>/dev/null || \
   grep -i "{search term}" "$LEARNINGS_FILE" 2>/dev/null || \
   echo "No matches found."
 ```
 
-Display matching entries with full context. After results, check the global learnings store for cross-project signals:
+Display matching entries with full context. For cross-project signals, use the
+opt-in search flag, not a global file:
 
 ```bash
-GLOBAL_LEARNINGS="${MSTACK_HOME:-$HOME/.mstack}/global/learnings.jsonl"
-grep -i "{search term}" "$GLOBAL_LEARNINGS" 2>/dev/null || true
+~/.claude/skills/mstack/bin/mstack-learnings-search --query "{search term}" --limit 20 --cross-project 2>/dev/null || true
 ```
 
 If a cross-project match exists, surface it clearly:
@@ -392,11 +416,10 @@ Present flagged entries to the user:
 
 STOP and wait for confirmation before removing anything.
 
-Remove approved entries:
+Remove approved entries by tombstone record, not raw line deletion:
 ```bash
-# Back up first
 cp "$LEARNINGS_FILE" "${LEARNINGS_FILE}.bak"
-# Remove approved lines — edit file to exclude flagged entries
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-learn","type":"{type}","key":"{key}","insight":"Deleted stale learning: {reason}","confidence":10,"source":"user-stated","status":"deleted","supersedes":["{id-or-key}"]}'
 ```
 
 Report: "{N} entries removed. {M} entries remain. Backup saved to {path}.bak"
@@ -461,14 +484,20 @@ Use AskUserQuestion:
 > 1. What you tried or observed (be specific: channel, format, audience)
 > 2. The result or insight (include numbers if available)
 > 3. Category: content / seo / social / ads / audience / operational
-> 4. Confidence score 1–5 (1 = one-off observation, 5 = replicated multiple times)"
+> 4. Confidence score 1–10
+> 5. Source/evidence and which skills it should affect"
 
-Format and append:
+Before writing, check for existing related entries:
 ```bash
-cat >> "$LEARNINGS_FILE" << EOF
-## {date} — {type} — confidence:{score}
-{learning text}
-EOF
+~/.claude/skills/mstack/bin/mstack-learnings-search --query "{key or topic}" --type "{type}" --limit 5 2>/dev/null || true
+```
+
+Ask whether to add new, update/supersede, or skip if a close duplicate exists.
+
+Format as JSON and append with the logger:
+
+```bash
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-{date}-{key}","skill":"m-learn","type":"{type}","key":"{short-key}","insight":"{learning text}","confidence":{score},"source":"{source}","scope":"project","evidence":[{"source":"{source detail}","metric_window":"{window}","baseline":"{baseline}","result":"{result}"}],"applies_to":["{skill}"],"status":"active","supersedes":[],"files":[]}'
 ```
 
 After appending, check if this learning reinforces or contradicts an existing entry. If it does, surface the related entry so the user can consider updating or pruning the older one.
@@ -489,18 +518,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-learn","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-learn","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-learn"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.

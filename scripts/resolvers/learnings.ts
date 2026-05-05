@@ -2,8 +2,9 @@
  * Learnings resolver — cross-skill institutional memory
  *
  * Learnings are stored per-project at ~/.mstack/projects/{slug}/learnings.jsonl.
- * Each entry is a JSONL line with: ts, skill, type, key, insight, confidence,
- * source, branch, commit, files[].
+ * Each entry is a JSONL line with: ts, id, skill, type, key, insight,
+ * confidence, source, scope, evidence[], applies_to[], status, supersedes[],
+ * branch, commit, files[].
  *
  * Storage is append-only. Duplicates (same key+type) are resolved at read time
  * by mstack-learnings-search ("latest winner" per key+type).
@@ -76,18 +77,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 \`\`\`bash
-${binDir}/mstack-learnings-log '{"skill":"${ctx.skillName}","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+${binDir}/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"${ctx.skillName}","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["${ctx.skillName}"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 \`\`\`
 
-**Types:** \`pattern\` (reusable approach), \`pitfall\` (what NOT to do), \`preference\`
-(user stated), \`architecture\` (structural decision), \`tool\` (library/framework insight),
-\`operational\` (project environment/CLI/workflow knowledge).
+**Types:** \`content\`, \`seo\`, \`social\`, \`ads\`, \`audience\`, \`operational\`.
+Use \`operational\` for project environment, CLI, or workflow knowledge.
 
 **Sources:** \`observed\` (you found this in the code), \`user-stated\` (user told you),
 \`inferred\` (AI deduction), \`cross-model\` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
