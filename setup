@@ -176,13 +176,22 @@ link_dir_contents() {
   if [ -L "$dst" ]; then
     rm -f "$dst"
   fi
-  mkdir -p "$dst"
-  local nested="$dst/$(basename "$src")"
-  if [ -f "$dst/.mstack-managed" ] && [ -d "$nested" ]; then
-    rm -rf "$nested"
+  local parent tmp backup
+  parent="$(dirname "$dst")"
+  mkdir -p "$parent"
+  tmp="$(mktemp -d "$parent/.mstack-copy.XXXXXX")"
+  cp -R "$src"/. "$tmp"/
+  touch "$tmp/.mstack-managed"
+  if [ -e "$dst" ]; then
+    if [ ! -f "$dst/.mstack-managed" ]; then
+      backup="$dst.mstack-backup-$(date +%Y%m%d-%H%M%S)"
+      mv "$dst" "$backup"
+      echo "Backed up unmanaged directory: $backup"
+    else
+      rm -rf "$dst"
+    fi
   fi
-  cp -R "$src"/. "$dst"/
-  touch "$dst/.mstack-managed"
+  mv "$tmp" "$dst"
 }
 
 install_claude() {

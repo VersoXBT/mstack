@@ -277,38 +277,49 @@ plan's living status.
 
 ## Setup: Detect Install Location
 
-Detect whether mstack is vendored (project-local) or globally installed, and
+Detect whether mstack is installed for Claude, global Codex, or local Codex, and
 capture the working directory so every later step uses the same path.
 
 ```bash
-# Vendored install takes priority over global
-VENDORED_DIR="$(pwd)/.claude/skills/mstack"
-GLOBAL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/mstack"
+HOST="${MSTACK_HOST:-}"
+INSTALL_DIR="${MSTACK_ROOT:-}"
+INSTALL_TYPE=""
+SETUP_HOST=""
 
-if [ -d "$VENDORED_DIR/.git" ]; then
-  INSTALL_DIR="$VENDORED_DIR"
-  INSTALL_TYPE="vendored"
-elif [ -d "$GLOBAL_DIR/.git" ]; then
-  INSTALL_DIR="$GLOBAL_DIR"
-  INSTALL_TYPE="global"
-else
-  # Broader fallback search
-  for candidate in \
-    "$HOME/.claude/skills/mstack" \
-    "$HOME/.config/claude/skills/mstack"; do
-    if [ -d "$candidate/.git" ]; then
-      INSTALL_DIR="$candidate"
-      INSTALL_TYPE="global"
-      break
-    fi
-  done
+if [ -n "$INSTALL_DIR" ] && [ -d "$INSTALL_DIR/.git" ]; then
+  INSTALL_TYPE="override"
 fi
 
 if [ -z "$INSTALL_DIR" ]; then
-  echo "ERROR: mstack not found. Expected vendored at .claude/skills/mstack or global at $GLOBAL_DIR"
+  CANDIDATES=(
+    "claude|global|$HOME/.claude/skills/mstack"
+    "codex|global|$HOME/.codex/skills/mstack"
+    "codex|local|$(pwd)/.agents/skills/mstack"
+    "claude|local|$(pwd)/.claude/skills/mstack"
+  )
+  MATCHES=()
+  for item in "${CANDIDATES[@]}"; do
+    IFS='|' read -r h t p <<< "$item"
+    [ -n "$HOST" ] && [ "$HOST" != "$h" ] && continue
+    [ -d "$p/.git" ] && MATCHES+=("$item")
+  done
+  if [ "${#MATCHES[@]}" -eq 1 ]; then
+    IFS='|' read -r SETUP_HOST INSTALL_TYPE INSTALL_DIR <<< "${MATCHES[0]}"
+  elif [ "${#MATCHES[@]}" -gt 1 ]; then
+    printf '%s\n' "ERROR: multiple mstack installs found. Set MSTACK_HOST or MSTACK_ROOT."
+    printf '%s\n' "${MATCHES[@]}"
+    exit 1
+  fi
+fi
+
+if [ -z "$INSTALL_DIR" ]; then
+  echo "ERROR: mstack not found. Expected ~/.claude/skills/mstack, ~/.codex/skills/mstack, or .agents/.claude local install."
   exit 1
 fi
 
+[ -n "$SETUP_HOST" ] || SETUP_HOST="${HOST:-all}"
+
+echo "HOST:         $SETUP_HOST"
 echo "INSTALL_TYPE: $INSTALL_TYPE"
 echo "INSTALL_DIR:  $INSTALL_DIR"
 ```
@@ -380,6 +391,12 @@ git diff --name-status HEAD..origin/main 2>/dev/null | head -40
 echo ""
 echo "=== Diff summary ==="
 git diff --stat HEAD..origin/main 2>/dev/null | tail -5
+
+echo ""
+echo "=== Local status ==="
+git status --short
+echo "Ahead/behind: $(git rev-list --left-right --count HEAD...origin/main 2>/dev/null)"
+echo "Planned setup command: bash ./setup --host $SETUP_HOST"
 ```
 
 Present the changelog clearly, then use AskUserQuestion:
@@ -424,6 +441,7 @@ fi
 cd "$INSTALL_DIR"
 PRE_UPGRADE_REF=$(git rev-parse HEAD)
 echo "$PRE_UPGRADE_REF" > "$BACKUP_DIR/pre-upgrade-ref.txt"
+echo "$BACKUP_DIR" > "$HOME/.mstack/backups/latest"
 echo "Pre-upgrade commit: $PRE_UPGRADE_REF"
 echo "Backup complete: $BACKUP_DIR"
 ```
@@ -433,19 +451,23 @@ echo "Backup complete: $BACKUP_DIR"
 ```bash
 cd "$INSTALL_DIR"
 
-# Stash any local modifications so the pull is clean
-git stash push -m "pre-upgrade stash $(date +%Y%m%d-%H%M%S)" 2>/dev/null
+if [ -n "$(git status --short)" ]; then
+  echo "ERROR: local changes present. Stash explicitly with git stash push -u before upgrading, or commit them."
+  git status --short
+  exit 1
+fi
 
 # Preview the exact diff before applying
 echo "=== Final diff preview (HEAD..origin/main) ==="
 git diff HEAD..origin/main --stat 2>/dev/null
 
-# Pull
-git pull origin main 2>&1
+# Fast-forward only
+BRANCH=$(git branch --show-current 2>/dev/null || echo main)
+git merge --ff-only "origin/${BRANCH:-main}" 2>&1
 PULL_STATUS=$?
 
 if [ $PULL_STATUS -ne 0 ]; then
-  echo "ERROR: git pull failed (exit $PULL_STATUS). Rollback instructions below."
+  echo "ERROR: fast-forward upgrade failed (exit $PULL_STATUS). Rollback instructions below."
   echo "To revert: cd $INSTALL_DIR && git reset --hard $PRE_UPGRADE_REF"
   exit 1
 fi
@@ -467,9 +489,13 @@ Re-run setup to regenerate skills:
 cd "$INSTALL_DIR"
 
 if [ -x "./setup" ]; then
-  bash ./setup 2>&1
+  bash ./setup --host "$SETUP_HOST" 2>&1
   SETUP_STATUS=$?
-  [ $SETUP_STATUS -eq 0 ] && echo "Setup: success" || echo "Setup: failed (exit $SETUP_STATUS)"
+  if [ $SETUP_STATUS -ne 0 ]; then
+    echo "ERROR: setup failed (exit $SETUP_STATUS)"
+    exit $SETUP_STATUS
+  fi
+  echo "Setup: success"
 elif [ -x "./install.sh" ]; then
   bash ./install.sh 2>&1
 else
@@ -496,11 +522,13 @@ git status --short 2>/dev/null
 
 echo ""
 echo "=== Skill count ==="
-# Count registered skills in both install locations
-GLOBAL_COUNT=$(ls "$HOME/.claude/skills/" 2>/dev/null | wc -l | tr -d ' ')
-VENDORED_COUNT=$(ls "$(pwd)/.claude/skills/" 2>/dev/null | wc -l | tr -d ' ')
-echo "Global skills:   $GLOBAL_COUNT"
-echo "Vendored skills: $VENDORED_COUNT"
+# Count registered skills in host install locations
+CLAUDE_COUNT=$(ls "$HOME/.claude/skills/" 2>/dev/null | wc -l | tr -d ' ')
+CODEX_COUNT=$(ls "$HOME/.codex/skills/" 2>/dev/null | wc -l | tr -d ' ')
+LOCAL_CODEX_COUNT=$(ls "$(pwd)/.agents/skills/" 2>/dev/null | wc -l | tr -d ' ')
+echo "Claude skills:      $CLAUDE_COUNT"
+echo "Codex skills:       $CODEX_COUNT"
+echo "Local Codex skills: $LOCAL_CODEX_COUNT"
 
 echo ""
 echo "=== Config survived? ==="
@@ -512,9 +540,8 @@ fi
 
 echo ""
 echo "=== Test suite ==="
-if command -v bun >/dev/null 2>&1 && [ -f "package.json" ] && \
-   grep -q '"test"' package.json 2>/dev/null; then
-  bun test 2>&1 | tail -20
+if command -v bun >/dev/null 2>&1 && [ -f "package.json" ] && grep -q '"test"' package.json 2>/dev/null; then
+  bun test 2>&1
   TEST_STATUS=$?
   [ $TEST_STATUS -eq 0 ] && echo "Tests: PASSED" || echo "Tests: FAILED (exit $TEST_STATUS)"
 else
@@ -531,7 +558,8 @@ If any verification step fails, provide these rollback instructions:
 cd "$INSTALL_DIR"
 
 # Read the saved ref
-PRE_UPGRADE_REF=$(cat "$HOME/.mstack/backups/pre-upgrade-$(ls -t "$HOME/.mstack/backups/" | head -1)/pre-upgrade-ref.txt" 2>/dev/null)
+LATEST_BACKUP=$(cat "$HOME/.mstack/backups/latest" 2>/dev/null || true)
+PRE_UPGRADE_REF=$(cat "$LATEST_BACKUP/pre-upgrade-ref.txt" 2>/dev/null)
 
 if [ -n "$PRE_UPGRADE_REF" ]; then
   echo "Rolling back to: $PRE_UPGRADE_REF"
@@ -549,7 +577,7 @@ if [ ! -f "$HOME/.mstack/config.yaml" ] && [ -n "$BACKUP_DIR" ]; then
 fi
 
 # Re-run setup after rollback
-bash ./setup 2>&1 || echo "Setup failed after rollback — check manually"
+bash ./setup --host "$SETUP_HOST" 2>&1 || echo "Setup failed after rollback — check manually"
 ```
 
 ## Completion
