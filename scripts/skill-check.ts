@@ -118,7 +118,12 @@ for (const hostConfig of getExternalHosts()) {
 
 import { ALL_HOST_CONFIGS } from '../hosts/index';
 
+const requiredFreshHosts = new Set(['claude', 'codex']);
 for (const hostConfig of ALL_HOST_CONFIGS) {
+  const hostDir = path.join(ROOT, hostConfig.hostSubdir, 'skills');
+  if (hostConfig.name !== 'claude' && !requiredFreshHosts.has(hostConfig.name) && !fs.existsSync(hostDir)) {
+    continue;
+  }
   const hostFlag = hostConfig.name === 'claude' ? '' : ` --host ${hostConfig.name}`;
   console.log(`\n  Freshness (${hostConfig.displayName}):`);
   try {

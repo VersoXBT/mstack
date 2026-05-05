@@ -13,6 +13,7 @@ import { generateLearningsSearch, generateLearningsLog } from './learnings';
 import { resolveBrandContext } from './brand';
 import { resolveBrowseOptional } from './browse-optional';
 import { resolveApiKeys } from './api-keys';
+import { resolvePrivacyNote } from './privacy';
 
 export const RESOLVERS: Record<string, ResolverFn> = {
   PREAMBLE: generatePreamble,
@@ -22,5 +23,5 @@ export const RESOLVERS: Record<string, ResolverFn> = {
   API_KEYS: resolveApiKeys,
   LEARNINGS_SEARCH: generateLearningsSearch,
   OPERATIONAL_LEARNING: generateLearningsLog,
-  TELEMETRY: generatePreamble,
+  PRIVACY_NOTE: resolvePrivacyNote,
 };

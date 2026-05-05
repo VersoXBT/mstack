@@ -1,22 +1,13 @@
 #!/usr/bin/env bash
-# mstack-relink — re-create skill symlinks based on skill_prefix config
-#
-# Usage:
-#   mstack-relink
-#
-# Env overrides (for testing):
-#   MSTACK_STATE_DIR   — override ~/.mstack state directory
-#   MSTACK_INSTALL_DIR — override mstack install directory
-#   MSTACK_SKILLS_DIR  — override target skills directory
+# mstack-relink - recreate Claude skill links from SKILL.md frontmatter names
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MSTACK_CONFIG="${SCRIPT_DIR}/mstack-config"
 
-# Detect install dir
 INSTALL_DIR="${MSTACK_INSTALL_DIR:-}"
 if [ -z "$INSTALL_DIR" ]; then
-  if [ -d "$HOME/.claude/skills/mstack" ]; then
+  if [ -f "$HOME/.claude/skills/mstack/bin/mstack-relink" ]; then
     INSTALL_DIR="$HOME/.claude/skills/mstack"
   elif [ -d "${SCRIPT_DIR}/.." ] && [ -f "${SCRIPT_DIR}/../setup" ]; then
     INSTALL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -25,66 +16,60 @@ fi
 
 if [ -z "$INSTALL_DIR" ] || [ ! -d "$INSTALL_DIR" ]; then
   echo "Error: mstack install directory not found." >&2
-  echo "Run: cd ~/.claude/skills/mstack && ./setup" >&2
   exit 1
 fi
 
-# Detect target skills dir
-SKILLS_DIR="${MSTACK_SKILLS_DIR:-$(dirname "$INSTALL_DIR")}"
-[ -d "$SKILLS_DIR" ] || mkdir -p "$SKILLS_DIR"
+SKILLS_DIR="${MSTACK_SKILLS_DIR:-$HOME/.claude/skills}"
+mkdir -p "$SKILLS_DIR"
 
-# Read prefix setting
-PREFIX=$("$MSTACK_CONFIG" get skill_prefix 2>/dev/null || echo "false")
+PREFIX="$("$MSTACK_CONFIG" get skill_prefix 2>/dev/null || echo true)"
+[ -n "$PREFIX" ] || PREFIX=true
 
-# Helper: remove old skill entry (symlink or real directory with symlinked SKILL.md)
-_cleanup_skill_entry() {
-  local entry="$1"
-  if [ -L "$entry" ]; then
-    rm -f "$entry"
-  elif [ -d "$entry" ] && [ -L "$entry/SKILL.md" ]; then
-    rm -rf "$entry"
+skill_name_from_file() {
+  awk -F': *' '/^name:/{print $2; exit}' "$1" | tr -d '\r'
+}
+
+public_skill_name() {
+  local name="$1"
+  if [ "$PREFIX" = "true" ]; then
+    printf '%s\n' "$name"
+    return
+  fi
+  case "$name" in
+    mstack) printf '%s\n' "$name" ;;
+    m-*) printf '%s\n' "${name#m-}" ;;
+    *) printf '%s\n' "$name" ;;
+  esac
+}
+
+link_file() {
+  local src="$1"
+  local dst="$2"
+  mkdir -p "$(dirname "$dst")"
+  if [ -L "$dst" ] || [ -f "$dst" ]; then
+    rm -f "$dst"
+  fi
+  if ! ln -s "$src" "$dst" 2>/dev/null; then
+    cp "$src" "$dst"
   fi
 }
 
-# Discover skills (directories with SKILL.md, excluding meta dirs)
-SKILL_COUNT=0
-for skill_dir in "$INSTALL_DIR"/*/; do
-  [ -d "$skill_dir" ] || continue
-  skill=$(basename "$skill_dir")
-  # Skip non-skill directories
-  case "$skill" in bin|browse|design|docs|extension|lib|node_modules|scripts|test|.git|.github) continue ;; esac
-  [ -f "$skill_dir/SKILL.md" ] || continue
+COUNT=0
+if [ -f "$INSTALL_DIR/SKILL.md" ]; then
+  link_file "$INSTALL_DIR/SKILL.md" "$SKILLS_DIR/mstack/SKILL.md"
+fi
 
-  if [ "$PREFIX" = "true" ]; then
-    # Don't double-prefix directories already named mstack-*
-    case "$skill" in
-      mstack-*) link_name="$skill" ;;
-      *)        link_name="mstack-$skill" ;;
-    esac
-    # Remove old flat entry if it exists (and isn't the same as the new link)
-    [ "$link_name" != "$skill" ] && _cleanup_skill_entry "$SKILLS_DIR/$skill"
-  else
-    link_name="$skill"
-    # Don't remove mstack-* dirs that are their real name (e.g., mstack-upgrade)
-    case "$skill" in
-      mstack-*) ;; # Already the real name, no old prefixed link to clean
-      *)        _cleanup_skill_entry "$SKILLS_DIR/mstack-$skill" ;;
-    esac
-  fi
-  target="$SKILLS_DIR/$link_name"
-  # Upgrade old directory symlinks to real directories
-  [ -L "$target" ] && rm -f "$target"
-  # Create real directory with symlinked SKILL.md (absolute path)
-  mkdir -p "$target"
-  ln -snf "$INSTALL_DIR/$skill/SKILL.md" "$target/SKILL.md"
-  SKILL_COUNT=$((SKILL_COUNT + 1))
+for file in "$INSTALL_DIR"/*/SKILL.md; do
+  [ -f "$file" ] || continue
+  name="$(skill_name_from_file "$file")"
+  [ -n "$name" ] || continue
+  link_name="$(public_skill_name "$name")"
+  link_file "$file" "$SKILLS_DIR/$link_name/SKILL.md"
+  COUNT=$((COUNT + 1))
 done
 
-# Patch SKILL.md name: fields to match prefix setting
-"$INSTALL_DIR/bin/mstack-patch-names" "$INSTALL_DIR" "$PREFIX"
-
 if [ "$PREFIX" = "true" ]; then
-  echo "Relinked $SKILL_COUNT skills as mstack-*"
+  echo "Relinked $COUNT skills as /m-* names"
 else
-  echo "Relinked $SKILL_COUNT skills as flat names"
+  echo "Relinked $COUNT skills as short names"
 fi

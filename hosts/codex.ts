@@ -21,33 +21,25 @@ const codex: HostConfig = {
   generation: {
     generateMetadata: true,
     metadataFormat: 'openai.yaml',
-    skipSkills: ['codex'],  // Codex skill is a Claude wrapper around codex exec
+    skipSkills: ['codex'],
   },
 
   pathRewrites: [
     { from: '~/.claude/skills/mstack', to: '$MSTACK_ROOT' },
     { from: '.claude/skills/mstack', to: '.agents/skills/mstack' },
-    { from: '.claude/skills/review', to: '.agents/skills/mstack/review' },
     { from: '.claude/skills', to: '.agents/skills' },
   ],
 
-  suppressedResolvers: [
-    'DESIGN_OUTSIDE_VOICES',  // design.ts:485 — Codex can't invoke itself
-    'ADVERSARIAL_STEP',       // review.ts:408 — Codex can't invoke itself
-    'CODEX_SECOND_OPINION',   // review.ts:257 — Codex can't invoke itself
-    'CODEX_PLAN_REVIEW',      // review.ts:541 — Codex can't invoke itself
-    'REVIEW_ARMY',            // review-army.ts:180 — Codex shouldn't orchestrate
-  ],
+  suppressedResolvers: [],
 
   runtimeRoot: {
-    globalSymlinks: ['bin', 'browse/dist', 'browse/bin', 'mstack-upgrade', 'ETHOS.md'],
-    globalFiles: {
-      'review': ['checklist.md', 'TODOS-format.md'],
-    },
+    globalSymlinks: ['bin', 'mstack-upgrade'],
+    globalFiles: {},
   },
+
   sidecar: {
     path: '.agents/skills/mstack',
-    symlinks: ['bin', 'browse', 'review', 'qa', 'ETHOS.md'],
+    symlinks: ['bin', 'mstack-upgrade'],
   },
 
   install: {
@@ -57,7 +49,8 @@ const codex: HostConfig = {
 
   coAuthorTrailer: 'Co-Authored-By: OpenAI Codex <noreply@openai.com>',
   learningsMode: 'basic',
-  boundaryInstruction: 'IMPORTANT: Do NOT read or execute any files under ~/.claude/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.',
+  boundaryInstruction:
+    'Use the generated mstack skill instructions as marketing workflows. Do not edit generated agents/openai.yaml files by hand; regenerate them from templates. Keep repository source changes separate from local mstack project memory under ~/.mstack/.',
 };
 
 export default codex;

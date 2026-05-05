@@ -1,0 +1,81 @@
+---
+name: m-campaign
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Integrated campaign builder for marketing operators. Turns a goal, offer, audience,
+  and channel mix into a campaign brief, messaging map, asset list, launch sequence,
+  measurement plan, and risk checklist. Use when asked to plan a campaign, coordinate
+  multi-channel marketing, or turn a strategy into execution.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+# Campaign Builder
+
+## Inputs
+
+Identify the campaign frame:
+- Business goal: pipeline, signups, retention, reactivation, waitlist, revenue, awareness.
+- Audience segment and buying stage.
+- Offer, promise, proof, and objection.
+- Channels: email, paid social, organic social, SEO/content, landing page, partners, community.
+- Dates, budget, owner, and constraints.
+
+If any input is missing, draft with explicit assumptions unless it would change the
+offer, audience, compliance posture, or launch date.
+
+## Workflow
+
+1. Define the campaign bet in one sentence.
+2. Build the message map:
+   - Core promise.
+   - Primary pain.
+   - Proof points.
+   - Objections and replies.
+   - CTA.
+3. Create channel roles:
+   - Capture intent.
+   - Create demand.
+   - Nurture.
+   - Convert.
+   - Retarget or follow up.
+4. Produce the asset list with owner, purpose, status, and dependency.
+5. Create a launch sequence with dates or relative timing.
+6. Define measurement:
+   - North-star campaign metric.
+   - Channel metrics.
+   - Leading indicators.
+   - Decision thresholds.
+7. Add a risk checklist:
+   - Message risk.
+   - Audience mismatch.
+   - Tracking gap.
+   - Legal/compliance risk.
+   - Creative production bottleneck.
+
+## Output Format
+
+Return:
+- Campaign bet.
+- Audience and offer.
+- Message map.
+- Channel plan.
+- Asset matrix.
+- Launch sequence.
+- Measurement plan.
+- Risks and fixes.
+- Next three actions.
+
+{{PRIVACY_NOTE}}
+
+## Completion
+
+End with `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, or `NEEDS_CONTEXT`.

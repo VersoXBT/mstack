@@ -50,8 +50,9 @@ function externalSkillName(skillDir: string, frontmatterName?: string): string {
   // Use frontmatter name when it differs from directory name (e.g., run-tests/ with name: test)
   const baseName = frontmatterName && frontmatterName !== skillDir ? frontmatterName : skillDir;
   // Don't double-prefix: mstack-upgrade → mstack-upgrade (not mstack-mstack-upgrade)
+  if (baseName.startsWith('m-')) return baseName;
   if (baseName.startsWith('mstack-')) return baseName;
-  return `mstack-${baseName}`;
+  return `m-${baseName}`;
 }
 
 function extractNameAndDescription(content: string): { name: string; description: string } {
@@ -315,7 +316,7 @@ function processExternalHost(
 
   const name = externalSkillName(skillDir === '.' ? '' : skillDir, frontmatterName);
   const outputDir = path.join(ROOT, hostConfig.hostSubdir, 'skills', name);
-  fs.mkdirSync(outputDir, { recursive: true });
+  if (!DRY_RUN) fs.mkdirSync(outputDir, { recursive: true });
   const outputPath = path.join(outputDir, 'SKILL.md');
 
   // Guard against symlink loops
@@ -356,7 +357,7 @@ function processExternalHost(
   }
 
   // Config-driven: generate metadata (e.g., openai.yaml for Codex)
-  if (hostConfig.generation.generateMetadata && !symlinkLoop) {
+  if (hostConfig.generation.generateMetadata && !symlinkLoop && !DRY_RUN) {
     const agentsDir = path.join(outputDir, 'agents');
     fs.mkdirSync(agentsDir, { recursive: true });
     const shortDescription = condenseOpenAIShortDescription(extractedDescription);
@@ -530,7 +531,7 @@ Injected by the orchestrator for complete feature builds. Append to existing CLA
 1. Read CLAUDE.md and understand the project context.
 2. Run /autoplan to review your approach (CEO + eng + design review pipeline).
 3. Implement the approved plan. Follow the planning discipline above.
-4. Run /ship to create a PR with tests, changelog, and version bump.
+4. Run /m-launch or /m-campaign to turn the plan into a launch-ready marketing workflow.
 5. Report back: PR URL, what shipped, decisions made, anything uncertain.
 
 Do not ask for human input until the PR is ready for review.

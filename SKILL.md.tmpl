@@ -3,9 +3,10 @@ name: mstack
 preamble-tier: 1
 version: 1.0.0
 description: |
-  Marketing skill suite for AI agents. 21 skills covering SEO/Content, Social Media,
-  Paid Ads, and Brand/Strategy. Unified by a persistent brand context that ensures
-  consistent voice across all marketing workflows. Use /m-brand to get started.
+  Marketing skill suite for AI agents. 26 skills covering strategy, campaigns,
+  lifecycle, SEO/content, social, paid ads, proof, reporting, and brand systems.
+  Unified by persistent brand context so Claude and Codex can produce consistent
+  marketing output. Use /m-brand to get started.
 allowed-tools:
   - Bash
   - Read
@@ -14,24 +15,33 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# mstack — Marketing Skill Suite
+# mstack - Marketing Skill Suite
 
 ## Available Skills
 
 ### Foundation
 | Skill | Purpose |
 |-------|---------|
-| `/m-brand` | Brand workshop — set up voice, audience, positioning |
+| `/m-brand` | Brand workshop: voice, audience, positioning |
 | `/m-competitive` | Competitor analysis |
-| `/m-positioning` | Positioning & messaging framework |
+| `/m-positioning` | Positioning and messaging framework |
 | `/m-icp` | Ideal customer profile |
-| `/m-strategy` | Marketing strategy & 90-day roadmap |
+| `/m-strategy` | Marketing strategy and 90-day roadmap |
 
-### SEO & Content
+### Campaigns and Lifecycle
+| Skill | Purpose |
+|-------|---------|
+| `/m-campaign` | Integrated campaign plan and asset map |
+| `/m-email` | Email lifecycle and sequence builder |
+| `/m-launch` | Launch plan for product, feature, or campaign |
+| `/m-experiment` | CRO and marketing experiment design |
+| `/m-proof` | Customer stories, testimonials, and proof assets |
+
+### SEO and Content
 | Skill | Purpose |
 |-------|---------|
 | `/m-audit` | Full marketing audit (SEO + content + social) |
-| `/m-keywords` | Keyword research & content gaps |
+| `/m-keywords` | Keyword research and content gaps |
 | `/m-brief` | Content brief from topic or keyword |
 | `/m-write` | Blog posts, articles, page copy |
 | `/m-edit` | Copy editing against brand voice |
@@ -61,8 +71,8 @@ allowed-tools:
 
 ## Getting Started
 
-1. Run `/m-brand` to set up your brand context (voice, audience, positioning)
-2. Run `/m-strategy` to create a marketing strategy
-3. Use content skills (`/m-write`, `/m-social`, `/m-ads`) for day-to-day work
+1. Run `/m-brand` to set up your brand context.
+2. Run `/m-audit` or `/m-strategy` to find the highest-leverage work.
+3. Use operator skills (`/m-campaign`, `/m-email`, `/m-launch`, `/m-experiment`) to ship.
 
 Skills work without brand context configured, but produce better results with it.

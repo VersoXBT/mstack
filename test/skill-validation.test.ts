@@ -16,7 +16,9 @@ describe('skill validation', () => {
       'audit', 'keywords', 'brief', 'write', 'edit', 'seo',
       'social', 'threads', 'engage',
       'ads', 'landing',
-      'repurpose', 'calendar', 'report', 'learn', 'mstack-upgrade',
+      'repurpose', 'calendar', 'report',
+      'campaign', 'email', 'launch', 'experiment', 'proof',
+      'learn', 'mstack-upgrade',
     ];
     for (const skill of expected) {
       expect(SKILL_DIRS).toContain(skill);
@@ -51,9 +53,9 @@ describe('skill validation', () => {
         }
       });
 
-      test('includes {{TELEMETRY}}', () => {
+      test('includes {{PRIVACY_NOTE}}', () => {
         const body = getSkillBody(tmplPath);
-        expect(body).toContain('{{TELEMETRY}}');
+        expect(body).toContain('{{PRIVACY_NOTE}}');
       });
 
       test('has Completion section', () => {

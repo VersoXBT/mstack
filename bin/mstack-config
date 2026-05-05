@@ -1,81 +1,69 @@
 #!/usr/bin/env bash
-# mstack-config — read/write ~/.mstack/config.yaml
-#
-# Usage:
-#   mstack-config get <key>          — read a config value
-#   mstack-config set <key> <value>  — write a config value
-#   mstack-config list               — show all config
-#
-# Env overrides (for testing):
-#   MSTACK_STATE_DIR  — override ~/.mstack state directory
+# mstack-config - read/write ~/.mstack/config.yaml
 set -euo pipefail
 
 STATE_DIR="${MSTACK_STATE_DIR:-$HOME/.mstack}"
 CONFIG_FILE="$STATE_DIR/config.yaml"
 
-# Annotated header for new config files. Written once on first `set`.
-CONFIG_HEADER='# mstack configuration — edit freely, changes take effect on next skill run.
+CONFIG_HEADER='# mstack configuration - edit freely, changes take effect on next skill run.
 # Docs: https://github.com/VersoXBT/mstack
 #
-# ─── Behavior ────────────────────────────────────────────────────────
-# proactive: true           # Auto-invoke skills when your request matches one.
-#                           # Set to false to only run skills you type explicitly.
+# Behavior
+# proactive: true           # Auto-suggest skills when your request matches one.
+# routing_declined: false   # Skip project routing prompt when true.
 #
-# routing_declined: false   # Set to true to skip the CLAUDE.md routing injection
-#                           # prompt. Set back to false to be asked again.
+# Privacy
+# telemetry: off            # Compatibility key. mstack sends no telemetry.
 #
-# ─── Telemetry ───────────────────────────────────────────────────────
-# telemetry: anonymous      # off | anonymous | community
-#                           #   off       — no data sent, no local analytics
-#                           #   anonymous — counter only, no device ID
-#                           #   community — usage data + stable device ID
+# Updates
+# auto_upgrade: false       # true = silently upgrade on session start.
+# update_check: false       # false = suppress network version checks.
 #
-# ─── Updates ─────────────────────────────────────────────────────────
-# auto_upgrade: false       # true = silently upgrade on session start
-# update_check: true        # false = suppress version check notifications
+# Skill naming
+# skill_prefix: true        # true = /m-write, /m-audit, /m-ads.
+#                           # false = /write, /audit, /ads.
 #
-# ─── Skill naming ────────────────────────────────────────────────────
-# skill_prefix: false       # true = namespace skills as /m-write, /m-audit, /m-ads
-#                           # false = short names /write, /audit, /ads
-#
-# ─── Advanced ────────────────────────────────────────────────────────
-# mstack_contributor: false # true = file field reports when mstack misbehaves
+# Advanced
+# browse_path: ""           # Optional browser helper path.
+# default_language: "en"    # Default output language.
 #
 '
+
+get_value() {
+  local key="$1"
+  grep -E "^${key}:" "$CONFIG_FILE" 2>/dev/null | tail -1 | sed "s/^${key}:[[:space:]]*//" | tr -d '\r' || true
+}
+
+validate_key() {
+  local key="$1"
+  if ! printf '%s' "$key" | grep -qE '^[a-zA-Z0-9_]+$'; then
+    echo "Error: key must contain only alphanumeric characters and underscores" >&2
+    exit 1
+  fi
+}
 
 case "${1:-}" in
   get)
     KEY="${2:?Usage: mstack-config get <key>}"
-    # Validate key (alphanumeric + underscore only)
-    if ! printf '%s' "$KEY" | grep -qE '^[a-zA-Z0-9_]+$'; then
-      echo "Error: key must contain only alphanumeric characters and underscores" >&2
-      exit 1
-    fi
-    grep -E "^${KEY}:" "$CONFIG_FILE" 2>/dev/null | tail -1 | awk '{print $2}' | tr -d '[:space:]' || true
+    validate_key "$KEY"
+    get_value "$KEY"
     ;;
   set)
     KEY="${2:?Usage: mstack-config set <key> <value>}"
     VALUE="${3:?Usage: mstack-config set <key> <value>}"
-    # Validate key (alphanumeric + underscore only)
-    if ! printf '%s' "$KEY" | grep -qE '^[a-zA-Z0-9_]+$'; then
-      echo "Error: key must contain only alphanumeric characters and underscores" >&2
-      exit 1
-    fi
+    validate_key "$KEY"
     mkdir -p "$STATE_DIR"
-    # Write annotated header on first creation
     if [ ! -f "$CONFIG_FILE" ]; then
       printf '%s' "$CONFIG_HEADER" > "$CONFIG_FILE"
     fi
-    # Escape sed special chars in value and drop embedded newlines
     ESC_VALUE="$(printf '%s' "$VALUE" | head -1 | sed 's/[&/\]/\\&/g')"
     if grep -qE "^${KEY}:" "$CONFIG_FILE" 2>/dev/null; then
-      # Portable in-place edit (BSD sed uses -i '', GNU sed uses -i without arg)
-      _tmpfile="$(mktemp "${CONFIG_FILE}.XXXXXX")"
-      sed "/^${KEY}:/s/.*/${KEY}: ${ESC_VALUE}/" "$CONFIG_FILE" > "$_tmpfile" && mv "$_tmpfile" "$CONFIG_FILE"
+      tmpfile="$(mktemp "${CONFIG_FILE}.XXXXXX")"
+      sed "/^${KEY}:/s/.*/${KEY}: ${ESC_VALUE}/" "$CONFIG_FILE" > "$tmpfile"
+      mv "$tmpfile" "$CONFIG_FILE"
     else
-      echo "${KEY}: ${VALUE}" >> "$CONFIG_FILE"
+      printf '%s: %s\n' "$KEY" "$VALUE" >> "$CONFIG_FILE"
     fi
-    # Auto-relink skills when prefix setting changes (skip during setup to avoid recursive call)
     if [ "$KEY" = "skill_prefix" ] && [ -z "${MSTACK_SETUP_RUNNING:-}" ]; then
       MSTACK_RELINK="$(dirname "$0")/mstack-relink"
       [ -x "$MSTACK_RELINK" ] && "$MSTACK_RELINK" || true

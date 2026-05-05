@@ -1,11 +1,12 @@
 import type { TemplateContext } from './types';
 
-export function resolveBrandContext(_ctx: TemplateContext): string {
+export function resolveBrandContext(ctx: TemplateContext): string {
+  const binDir = ctx.paths.binDir;
   return `
 ## Brand Context (run this check)
 
 \`\`\`bash
-eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
+eval "$(${binDir}/mstack-slug 2>/dev/null)" 2>/dev/null || true
 _BRAND_FILE="\${MSTACK_HOME:-$HOME/.mstack}/projects/\${SLUG:-unknown}/brand.yaml"
 if [ -f "$_BRAND_FILE" ]; then
   echo "BRAND: loaded from $_BRAND_FILE"

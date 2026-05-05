@@ -1,0 +1,88 @@
+---
+name: m-launch
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Launch planning workflow for product, feature, community, content, and campaign
+  launches. Produces positioning, launch narrative, readiness checklist, timeline,
+  channel plan, asset map, internal enablement, metrics, and post-launch review plan.
+  Use when asked to launch something or prepare a go-to-market rollout.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+# Launch Planner
+
+## Inputs
+
+Collect:
+- What is launching.
+- Who it is for.
+- Why now.
+- Existing demand or audience.
+- Release date or target window.
+- Channels and constraints.
+- Proof, assets, and product readiness.
+
+If timing is unknown, create a relative launch plan: T-14, T-7, launch day, T+7,
+T+30.
+
+## Workflow
+
+1. Define the launch thesis:
+   - Audience.
+   - Pain or desire.
+   - New capability.
+   - Reason to act now.
+2. Create the positioning:
+   - One-line announcement.
+   - Category.
+   - Differentiator.
+   - Proof.
+3. Build the readiness checklist:
+   - Product.
+   - Website or landing page.
+   - Tracking.
+   - Support.
+   - Sales or community enablement.
+   - Creative assets.
+4. Create the timeline:
+   - Pre-launch.
+   - Launch day.
+   - Post-launch follow-up.
+5. Map channels:
+   - Owned.
+   - Earned.
+   - Paid.
+   - Partner/community.
+6. Add internal enablement:
+   - FAQ.
+   - Objection handling.
+   - Announcement snippets.
+7. Define metrics and post-launch review.
+
+## Output Format
+
+Return:
+- Launch thesis.
+- Positioning and narrative.
+- Timeline.
+- Channel plan.
+- Asset checklist.
+- Internal enablement.
+- Metrics.
+- Risks and mitigations.
+- Next actions.
+
+{{PRIVACY_NOTE}}
+
+## Completion
+
+End with `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, or `NEEDS_CONTEXT`.

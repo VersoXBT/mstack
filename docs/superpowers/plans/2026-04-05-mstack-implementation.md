@@ -963,7 +963,7 @@ Suggest next steps:
 
 {{OPERATIONAL_LEARNING}}
 
-{{TELEMETRY}}
+{{PRIVACY_NOTE}}
 ```
 
 - [ ] **Step 2: Create brand directory**
@@ -1134,7 +1134,7 @@ Suggest next steps:
 
 {{OPERATIONAL_LEARNING}}
 
-{{TELEMETRY}}
+{{PRIVACY_NOTE}}
 ```
 
 - [ ] **Step 2: Create directory and save**
@@ -1315,7 +1315,7 @@ Suggest next steps:
 
 {{OPERATIONAL_LEARNING}}
 
-{{TELEMETRY}}
+{{PRIVACY_NOTE}}
 ```
 
 - [ ] **Step 2: Create directory and save**
@@ -1498,7 +1498,7 @@ Suggest next steps:
 
 {{OPERATIONAL_LEARNING}}
 
-{{TELEMETRY}}
+{{PRIVACY_NOTE}}
 ```
 
 - [ ] **Step 2: Create directory and save**
@@ -1569,7 +1569,7 @@ allowed-tools:
 [Report results, suggest next skills]
 
 {{OPERATIONAL_LEARNING}}
-{{TELEMETRY}}
+{{PRIVACY_NOTE}}
 ```
 
 Here's the specific content for each skill:
@@ -1792,9 +1792,9 @@ describe('skill validation', () => {
         }
       });
 
-      test('includes {{TELEMETRY}}', () => {
+      test('includes {{PRIVACY_NOTE}}', () => {
         const body = getSkillBody(tmplPath);
-        expect(body).toContain('{{TELEMETRY}}');
+        expect(body).toContain('{{PRIVACY_NOTE}}');
       });
 
       test('has Completion section', () => {

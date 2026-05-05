@@ -1,22 +1,67 @@
 #!/usr/bin/env bash
-# mstack setup — marketing skill suite for AI agents
+# mstack setup - marketing skill suite for AI agents
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-MSTACK_DIR="$HOME/.mstack"
+MSTACK_DIR="${MSTACK_STATE_DIR:-$HOME/.mstack}"
 CONFIG_FILE="$MSTACK_DIR/config.yaml"
 MSTACK_CONFIG="$SCRIPT_DIR/bin/mstack-config"
+export MSTACK_SETUP_RUNNING=1
 
-# Platform detection
+usage() {
+  cat <<'EOF'
+Usage: ./setup [--host auto|claude|codex|all]
+
+Hosts:
+  auto    Install for detected local hosts. This is the default.
+  claude  Install Claude Code skills under ~/.claude/skills.
+  codex   Install Codex skills under ~/.codex/skills.
+  all     Install both Claude and Codex outputs.
+EOF
+}
+
+REQUESTED_HOST="auto"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --host)
+      REQUESTED_HOST="${2:?--host requires auto|claude|codex|all}"
+      shift 2
+      ;;
+    --host=*)
+      REQUESTED_HOST="${1#--host=}"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+case "$REQUESTED_HOST" in
+  auto|claude|codex|all) ;;
+  *)
+    echo "Unknown host '$REQUESTED_HOST'. Use auto, claude, codex, or all." >&2
+    exit 1
+    ;;
+esac
+
 PLATFORM="linux"
 case "$(uname -s)" in
   Darwin) PLATFORM="macos" ;;
   MINGW*|MSYS*|CYGWIN*|Windows_NT) PLATFORM="windows" ;;
 esac
-echo "mstack setup — marketing skill suite for AI agents"
-echo "Platform: $PLATFORM"; echo ""
 
-# Init config
+echo "mstack setup - marketing skill suite for AI agents"
+echo "Platform: $PLATFORM"
+echo "Requested host: $REQUESTED_HOST"
+echo ""
+
 mkdir -p "$MSTACK_DIR"
 if [ ! -f "$CONFIG_FILE" ]; then
   cat > "$CONFIG_FILE" <<'EOF'
@@ -24,84 +69,211 @@ if [ ! -f "$CONFIG_FILE" ]; then
 proactive: true
 skill_prefix: true
 auto_upgrade: false
+update_check: false
+telemetry: off
 browse_path: ""
 default_language: "en"
+routing_declined: false
 EOF
   echo "Created config at $CONFIG_FILE"
 fi
 
-# Skill prefix prompt (asks once, saves to config, touches sentinel)
-PREFIX_PROMPTED="$MSTACK_DIR/.prefix-prompted"
-SKILL_PREFIX=1
-_saved="$("$MSTACK_CONFIG" get skill_prefix 2>/dev/null || true)"
-if [ ! -f "$PREFIX_PROMPTED" ] && [ -z "$_saved" ] && [ -t 0 ]; then
-  echo "Skill naming: how should mstack skills appear?"
-  echo "  A) Prefixed:  /m-write, /m-edit, /m-brand  (default)"
-  echo "  B) Short:     /write,   /edit,   /brand"
-  printf "Choice [A/B] (auto-selects A in 10s): "
-  read -t 10 -r _choice </dev/tty 2>/dev/null || _choice=""
-  case "$_choice" in [Bb]) SKILL_PREFIX=0 ;; *) SKILL_PREFIX=1 ;; esac
-  "$MSTACK_CONFIG" set skill_prefix "$([ "$SKILL_PREFIX" -eq 1 ] && echo true || echo false)" 2>/dev/null || true
-elif [ "$_saved" = "false" ]; then
-  SKILL_PREFIX=0
-fi
-touch "$PREFIX_PROMPTED"
+set_config_key() {
+  local key="$1"
+  local value="$2"
+  mkdir -p "$MSTACK_DIR"
+  if grep -qE "^${key}:" "$CONFIG_FILE" 2>/dev/null; then
+    local tmp
+    tmp="$(mktemp "${CONFIG_FILE}.XXXXXX")"
+    sed "/^${key}:/s/.*/${key}: ${value}/" "$CONFIG_FILE" > "$tmp"
+    mv "$tmp" "$CONFIG_FILE"
+  else
+    printf '%s: %s\n' "$key" "$value" >> "$CONFIG_FILE"
+  fi
+}
 
-# Host detection
+ensure_config_key() {
+  local key="$1"
+  local value="$2"
+  if ! grep -qE "^${key}:" "$CONFIG_FILE" 2>/dev/null; then
+    printf '%s: %s\n' "$key" "$value" >> "$CONFIG_FILE"
+  fi
+}
+
+ensure_config_key proactive true
+ensure_config_key skill_prefix true
+ensure_config_key auto_upgrade false
+ensure_config_key browse_path '""'
+ensure_config_key default_language '"en"'
+ensure_config_key routing_declined false
+set_config_key telemetry off
+set_config_key update_check false
+
+detect_hosts() {
+  local detected=()
+  command -v claude >/dev/null 2>&1 && detected+=("claude")
+  command -v codex >/dev/null 2>&1 && detected+=("codex")
+  if [ "${#detected[@]}" -eq 0 ]; then
+    detected=("claude")
+    echo "No AI agent CLI detected, defaulting to claude."
+  fi
+  printf '%s\n' "${detected[@]}"
+}
+
 HOSTS=()
-command -v claude   >/dev/null 2>&1 && HOSTS+=("claude")
-command -v codex    >/dev/null 2>&1 && HOSTS+=("codex")
-command -v kiro-cli >/dev/null 2>&1 && HOSTS+=("kiro")
-[ "${#HOSTS[@]}" -eq 0 ] && HOSTS=("claude") && echo "No AI agent CLI detected — defaulting to claude"
-echo "Detected hosts: ${HOSTS[*]}"; echo ""
+case "$REQUESTED_HOST" in
+  auto) while IFS= read -r h; do HOSTS+=("$h"); done < <(detect_hosts) ;;
+  all) HOSTS=("claude" "codex") ;;
+  *) HOSTS=("$REQUESTED_HOST") ;;
+esac
 
-# Generate skill docs (bun required; otherwise use pre-generated SKILL.md files)
+echo "Selected hosts: ${HOSTS[*]}"
+echo ""
+
 if command -v bun >/dev/null 2>&1; then
   for host in "${HOSTS[@]}"; do
     echo "Generating skill docs for $host..."
-    (cd "$SCRIPT_DIR" && bun run scripts/gen-skill-docs.ts --host "$host") || true
+    (cd "$SCRIPT_DIR" && bun run scripts/gen-skill-docs.ts --host "$host")
   done
 else
-  echo "bun not found — using pre-generated SKILL.md files"
+  echo "bun not found, using checked-in SKILL.md files where available."
 fi
 
-# Create skill symlink directories under ~/.claude/skills/
-SKILLS=(brand competitive positioning icp strategy audit
-        keywords brief write edit seo social threads
-        engage ads landing repurpose calendar report
-        learn mstack-upgrade)
-CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
-mkdir -p "$CLAUDE_SKILLS_DIR"
-echo ""; echo "Creating skill symlinks in $CLAUDE_SKILLS_DIR..."
-for skill in "${SKILLS[@]}"; do
-  if [ "$SKILL_PREFIX" -eq 1 ]; then
-    case "$skill" in mstack-*) link_name="$skill" ;; *) link_name="m-$skill" ;; esac
-  else
-    link_name="$skill"
+skill_name_from_file() {
+  awk -F': *' '/^name:/{print $2; exit}' "$1" | tr -d '\r'
+}
+
+public_skill_name() {
+  local name="$1"
+  local prefix="$2"
+  if [ "$prefix" = "true" ]; then
+    printf '%s\n' "$name"
+    return
   fi
-  mkdir -p "$CLAUDE_SKILLS_DIR/$link_name"
-  if [ -f "$SCRIPT_DIR/$skill/SKILL.md" ]; then
-    ln -sf "$SCRIPT_DIR/$skill/SKILL.md" "$CLAUDE_SKILLS_DIR/$link_name/SKILL.md"
+  case "$name" in
+    mstack) printf '%s\n' "$name" ;;
+    m-*) printf '%s\n' "${name#m-}" ;;
+    *) printf '%s\n' "$name" ;;
+  esac
+}
+
+link_file() {
+  local src="$1"
+  local dst="$2"
+  mkdir -p "$(dirname "$dst")"
+  if [ -L "$dst" ] || [ -f "$dst" ]; then
+    rm -f "$dst"
+  fi
+  if ln -s "$src" "$dst" 2>/dev/null; then
+    return
+  fi
+  cp "$src" "$dst"
+}
+
+link_dir_contents() {
+  local src="$1"
+  local dst="$2"
+  if [ -L "$dst" ]; then
+    rm -f "$dst"
+  fi
+  mkdir -p "$dst"
+  local nested="$dst/$(basename "$src")"
+  if [ -f "$dst/.mstack-managed" ] && [ -d "$nested" ]; then
+    rm -rf "$nested"
+  fi
+  cp -R "$src"/. "$dst"/
+  touch "$dst/.mstack-managed"
+}
+
+install_claude() {
+  local prefix
+  prefix="$("$MSTACK_CONFIG" get skill_prefix 2>/dev/null || echo true)"
+  [ -n "$prefix" ] || prefix=true
+
+  local skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+  local runtime_dir="$skills_dir/mstack"
+  mkdir -p "$runtime_dir"
+  link_file "$SCRIPT_DIR/SKILL.md" "$runtime_dir/SKILL.md"
+  link_dir_contents "$SCRIPT_DIR/bin" "$runtime_dir/bin"
+  link_dir_contents "$SCRIPT_DIR/mstack-upgrade" "$runtime_dir/mstack-upgrade"
+
+  echo ""
+  echo "Installing Claude skills in $skills_dir..."
+  local count=0
+  local file name link_name
+  for file in "$SCRIPT_DIR"/*/SKILL.md; do
+    [ -f "$file" ] || continue
+    name="$(skill_name_from_file "$file")"
+    [ -n "$name" ] || continue
+    link_name="$(public_skill_name "$name" "$prefix")"
+    link_file "$file" "$skills_dir/$link_name/SKILL.md"
     echo "  /$link_name"
-  fi
+    count=$((count + 1))
+  done
+  echo "Claude skills installed: $count plus /mstack"
+}
+
+prepare_codex_sidecar() {
+  local sidecar="$SCRIPT_DIR/.agents/skills/mstack"
+  mkdir -p "$sidecar"
+  [ -f "$SCRIPT_DIR/.agents/skills/mstack/SKILL.md" ] || link_file "$SCRIPT_DIR/SKILL.md" "$sidecar/SKILL.md"
+  link_dir_contents "$SCRIPT_DIR/bin" "$sidecar/bin"
+  link_dir_contents "$SCRIPT_DIR/mstack-upgrade" "$sidecar/mstack-upgrade"
+}
+
+install_codex() {
+  prepare_codex_sidecar
+  local source_dir="$SCRIPT_DIR/.agents/skills"
+  local target_dir="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+  mkdir -p "$target_dir"
+
+  echo ""
+  echo "Installing Codex skills in $target_dir..."
+  local count=0
+  local dir name
+  for dir in "$source_dir"/*; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$dir")"
+    [ -f "$dir/SKILL.md" ] || continue
+    link_file "$dir/SKILL.md" "$target_dir/$name/SKILL.md"
+    if [ -f "$dir/agents/openai.yaml" ]; then
+      link_file "$dir/agents/openai.yaml" "$target_dir/$name/agents/openai.yaml"
+    fi
+    if [ "$name" = "mstack" ]; then
+      link_dir_contents "$SCRIPT_DIR/bin" "$target_dir/$name/bin"
+      link_dir_contents "$SCRIPT_DIR/mstack-upgrade" "$target_dir/$name/mstack-upgrade"
+    fi
+    echo "  $name"
+    count=$((count + 1))
+  done
+  echo "Codex skills installed: $count"
+}
+
+for host in "${HOSTS[@]}"; do
+  case "$host" in
+    claude) install_claude ;;
+    codex) install_codex ;;
+  esac
 done
 
-# Detect gstack browse binary, save path to config
 GSTACK_BROWSE="$HOME/.claude/skills/gstack/browse/dist/browse"
 if [ -x "$GSTACK_BROWSE" ]; then
-  echo ""; echo "gstack browse found: $GSTACK_BROWSE"
+  echo ""
+  echo "gstack browse found: $GSTACK_BROWSE"
   "$MSTACK_CONFIG" set browse_path "$GSTACK_BROWSE" 2>/dev/null || true
 fi
 
-# Marketing API key check (informational)
-echo ""; echo "Marketing API keys:"
-for key in SEMRUSH_API_KEY AHREFS_API_KEY GA4_CREDENTIALS SEARCH_CONSOLE_CREDENTIALS; do
+echo ""
+echo "Marketing data credentials:"
+for key in SEMRUSH_API_KEY AHREFS_API_KEY GA4_CREDENTIALS GA4_PROPERTY_ID SEARCH_CONSOLE_CREDENTIALS GSC_SITE_URL OPENAI_API_KEY; do
   [ -n "${!key:-}" ] && echo "  $key: set" || echo "  $key: not set"
 done
 
-# Summary
-prefix_label="$([ "$SKILL_PREFIX" -eq 1 ] && echo "prefixed (/m-*)" || echo "short")"
-echo ""; echo "mstack setup complete!"
-echo "  Config:  $CONFIG_FILE"
-echo "  Skills:  $CLAUDE_SKILLS_DIR  ($prefix_label)"
-echo ""; echo "Type /m-write (or /write) in Claude Code to get started."
+echo ""
+echo "mstack setup complete."
+echo "  Config: $CONFIG_FILE"
+echo "  Telemetry: off"
+echo "  Update check: false"
+echo "  Hosts: ${HOSTS[*]}"
+echo ""
+echo "Start with /m-brand, then use /m-audit, /m-write, /m-seo, or /m-report."

@@ -2,19 +2,16 @@ import type { TemplateContext } from './types';
 import { getHostConfig } from '../../hosts/index';
 
 /**
- * Preamble architecture — why every skill needs this
+ * Preamble architecture.
  *
- * Each skill runs independently via `claude -p`. There is no shared loader.
- * The preamble provides: update checks, session tracking, user preferences,
- * repo mode detection, and telemetry.
- *
- * Telemetry data flow:
- *   1. Always: local JSONL append to ~/.mstack/analytics/ (inline, inspectable)
- *   2. If _TEL != "off" AND binary exists: mstack-telemetry-log for remote reporting
+ * Each skill runs independently through the host agent. There is no shared
+ * loader, so the preamble provides update checks, preferences, repo mode,
+ * project memory, and host-specific routing. It does not emit telemetry.
  */
 
 function generatePreambleBash(ctx: TemplateContext): string {
   const hostConfig = getHostConfig(ctx.host);
+  const routingFile = ctx.host === 'codex' ? 'AGENTS.md' : 'CLAUDE.md';
   const runtimeRoot = hostConfig.usesEnvVars
     ? `_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 MSTACK_ROOT="$HOME/${hostConfig.globalRoot}"
@@ -45,7 +42,6 @@ echo "SKILL_PREFIX: $_SKILL_PREFIX"
 source <(${ctx.paths.binDir}/mstack-repo-mode 2>/dev/null) || true
 REPO_MODE=\${REPO_MODE:-unknown}
 echo "REPO_MODE: $REPO_MODE"
-_SESSION_ID="$$-$(date +%s)"
 # Learnings count
 eval "$(${ctx.paths.binDir}/mstack-slug 2>/dev/null)" 2>/dev/null || true
 _LEARN_FILE="\${MSTACK_HOME:-$HOME/.mstack}/projects/\${SLUG:-unknown}/learnings.jsonl"
@@ -58,11 +54,9 @@ if [ -f "$_LEARN_FILE" ]; then
 else
   echo "LEARNINGS: 0"
 fi
-# Session timeline: record skill start (local-only, never sent anywhere)
-${ctx.paths.binDir}/mstack-timeline-log '{"skill":"${ctx.skillName}","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
-# Check if CLAUDE.md has routing rules
+# Check if ${routingFile} has routing rules
 _HAS_ROUTING="no"
-if [ -f CLAUDE.md ] && grep -q "## Skill routing" CLAUDE.md 2>/dev/null; then
+if [ -f ${routingFile} ] && grep -q "## Skill routing" ${routingFile} 2>/dev/null; then
   _HAS_ROUTING="yes"
 fi
 _ROUTING_DECLINED=$(${ctx.paths.binDir}/mstack-config get routing_declined 2>/dev/null || echo "false")
@@ -74,33 +68,32 @@ echo "ROUTING_DECLINED: $_ROUTING_DECLINED"
 }
 
 function generateUpgradeCheck(ctx: TemplateContext): string {
-  return `If \`PROACTIVE\` is \`"false"\`, do not proactively suggest mstack skills AND do not
+  return `If \`PROACTIVE\` is \`"false"\`, do not proactively suggest mstack skills and do not
 auto-invoke skills based on conversation context. Only run skills the user explicitly
-types (e.g., /qa, /ship). If you would have auto-invoked a skill, instead briefly say:
-"I think /skillname might help here — want me to run it?" and wait for confirmation.
-The user opted out of proactive behavior.
+types (for example, /m-write, /m-audit, /m-campaign). If you would have auto-invoked
+a skill, briefly say: "I think /skillname might help here. Want me to run it?" and
+wait for confirmation. The user opted out of proactive behavior.
 
 If \`SKILL_PREFIX\` is \`"true"\`, the user has namespaced skill names. When suggesting
-or invoking other mstack skills, use the \`/mstack-\` prefix (e.g., \`/mstack-qa\` instead
-of \`/qa\`, \`/mstack-ship\` instead of \`/ship\`). Disk paths are unaffected — always use
-\`${ctx.paths.skillRoot}/[skill-name]/SKILL.md\` for reading skill files.
+or invoking other mstack skills, use the \`/m-\` prefix (for example, \`/m-write\`
+instead of \`/write\`, \`/m-audit\` instead of \`/audit\`). Disk paths are unaffected;
+always use \`${ctx.paths.skillRoot}/[skill-name]/SKILL.md\` for reading skill files.
 
 If output shows \`UPGRADE_AVAILABLE <old> <new>\`: read \`${ctx.paths.skillRoot}/mstack-upgrade/SKILL.md\` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If \`JUST_UPGRADED <from> <to>\`: tell user "Running mstack v{to} (just updated!)" and continue.`;
 }
-
-// Telemetry and lake intro removed — mstack does not collect any data
 
 function generateProactivePrompt(ctx: TemplateContext): string {
   return `If \`PROACTIVE_PROMPTED\` is \`no\`:
 Ask the user about proactive behavior. Use AskUserQuestion:
 
-> mstack can proactively figure out when you might need a skill while you work —
-> like suggesting /qa when you say "does this work?" or /investigate when you hit
-> a bug. We recommend keeping this on — it speeds up every part of your workflow.
+> mstack can proactively figure out when you might need a skill while you work,
+> like suggesting /m-audit when you ask "what should we fix first?", /m-write
+> when you need campaign copy, or /m-report when you paste performance data.
+> We recommend keeping this on, it speeds up marketing execution.
 
 Options:
 - A) Keep it on (recommended)
-- B) Turn it off — I'll type /commands myself
+- B) Turn it off, I'll type /commands myself
 
 If A: run \`${ctx.paths.binDir}/mstack-config set proactive true\`
 If B: run \`${ctx.paths.binDir}/mstack-config set proactive false\`
@@ -114,42 +107,44 @@ This only happens once. If \`PROACTIVE_PROMPTED\` is \`yes\`, skip this entirely
 }
 
 function generateRoutingInjection(ctx: TemplateContext): string {
+  const routingFile = ctx.host === 'codex' ? 'AGENTS.md' : 'CLAUDE.md';
+  const hostName = getHostConfig(ctx.host).displayName;
   return `If \`HAS_ROUTING\` is \`no\` AND \`ROUTING_DECLINED\` is \`false\` AND \`PROACTIVE_PROMPTED\` is \`yes\`:
-Check if a CLAUDE.md file exists in the project root. If it does not exist, create it.
+Check if a ${routingFile} file exists in the project root. If it does not exist, create it.
 
 Use AskUserQuestion:
 
-> mstack works best when your project's CLAUDE.md includes skill routing rules.
-> This tells Claude to use specialized workflows (like /ship, /investigate, /qa)
+> mstack works best when your project's ${routingFile} includes skill routing rules.
+> This tells ${hostName} to use specialized workflows (like /m-brand, /m-audit, /m-write)
 > instead of answering directly. It's a one-time addition, about 15 lines.
 
 Options:
-- A) Add routing rules to CLAUDE.md (recommended)
+- A) Add routing rules to ${routingFile} (recommended)
 - B) No thanks, I'll invoke skills manually
 
-If A: Append this section to the end of CLAUDE.md:
+If A: Append this section to the end of ${routingFile}:
 
 \`\`\`markdown
 
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+tool as your FIRST action. Do not answer directly and do not use other tools first.
 The skill has specialized workflows that produce better results than ad-hoc answers.
 
 Key routing rules:
-- Content writing, blog posts, articles → invoke m-write
-- SEO analysis, keyword research, on-page optimization → invoke m-seo
-- Social media posts, captions, engagement copy → invoke m-social
-- Ad campaigns, ad copy, paid creative → invoke m-ads
-- Marketing strategy, go-to-market, positioning → invoke m-strategy
-- Brand voice, messaging, tone guidelines → invoke m-brand
-- Competitor analysis, market research → invoke m-competitive
-- Content calendar, editorial planning → invoke m-calendar
-- Marketing report, performance summary → invoke m-report
+- Content writing, blog posts, articles -> invoke m-write
+- SEO analysis, keyword research, on-page optimization -> invoke m-seo
+- Social media posts, captions, engagement copy -> invoke m-social
+- Ad campaigns, ad copy, paid creative -> invoke m-ads
+- Marketing strategy, go-to-market, positioning -> invoke m-strategy
+- Brand voice, messaging, tone guidelines -> invoke m-brand
+- Competitor analysis, market research -> invoke m-competitive
+- Content calendar, editorial planning -> invoke m-calendar
+- Marketing report, performance summary -> invoke m-report
 \`\`\`
 
-Then commit the change: \`git add CLAUDE.md && git commit -m "chore: add mstack skill routing rules to CLAUDE.md"\`
+Then commit the change: \`git add ${routingFile} && git commit -m "chore: add mstack skill routing rules"\`
 
 If B: run \`${ctx.paths.binDir}/mstack-config set routing_declined true\`
 Say "No problem. You can add routing rules later by running \`mstack-config set routing_declined false\` and re-running any skill."
@@ -159,9 +154,9 @@ This only happens once per project. If \`HAS_ROUTING\` is \`yes\` or \`ROUTING_D
 
 function generateSpawnedSessionCheck(): string {
   return `If \`SPAWNED_SESSION\` is \`"true"\`, you are running inside a session spawned by an
-AI orchestrator (e.g., OpenClaw). In spawned sessions:
-- Do NOT use AskUserQuestion for interactive prompts. Auto-choose the recommended option.
-- Do NOT run upgrade checks or routing injection prompts.
+AI orchestrator (for example, OpenClaw). In spawned sessions:
+- Do not use AskUserQuestion for interactive prompts. Auto-choose the recommended option.
+- Do not run upgrade checks or routing injection prompts.
 - Focus on completing the task and reporting results via prose output.
 - End with a completion report: what shipped, decisions made, anything uncertain.`;
 }
@@ -169,11 +164,11 @@ AI orchestrator (e.g., OpenClaw). In spawned sessions:
 function generateAskUserFormat(_ctx: TemplateContext): string {
   return `## AskUserQuestion Format
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
-1. **Re-ground:** State the project, the current branch (use the \`_BRANCH\` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
-2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
-3. **Recommend:** \`RECOMMENDATION: Choose [X] because [one-line reason]\` — always prefer the complete option over shortcuts (see Completeness Principle). Include \`Completeness: X/10\` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: \`A) ... B) ... C) ...\` — when an option involves effort, show both scales: \`(human: ~X / CC: ~Y)\`
+Always follow this structure for every AskUserQuestion call:
+1. Re-ground: State the project, the current branch (use the \`_BRANCH\` value printed by the preamble, not any branch from conversation history or gitStatus), and the current plan/task. Use 1-2 sentences.
+2. Simplify: Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it does, not what it's called.
+3. Recommend: \`RECOMMENDATION: Choose [X] because [one-line reason]\`. Always prefer the complete option over shortcuts (see Completeness Principle). Include \`Completeness: X/10\` for each option. Calibration: 10 = complete implementation, 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher. If one is <=5, flag it.
+4. Options: Lettered options: \`A) ... B) ... C) ...\`. When an option involves effort, show both scales: \`(human: ~X / CC: ~Y)\`
 
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
@@ -183,51 +178,51 @@ Per-skill instructions may add additional formatting rules on top of this baseli
 function generateCompletenessSection(): string {
   return `## Completeness Principle
 
-AI makes thoroughness near-free. Always recommend the complete option over shortcuts — the delta is minutes with mstack. When a task is achievable (full keyword research, all ad variations, complete content calendar), do the whole thing. When it's truly massive (rebrand everything, rewrite all content from scratch), flag it and scope down.
+AI makes thoroughness near-free. Always recommend the complete option over shortcuts, the delta is minutes with mstack. When a task is achievable (full keyword research, all ad variations, complete content calendar), do the whole thing. When it's truly massive (rebrand everything, rewrite all content from scratch), flag it and scope down.
 
 Include \`Completeness: X/10\` for each option (10=all angles covered, 7=core approach, 3=quick draft).`;
 }
 
 function generateRepoModeSection(): string {
-  return `## Repo Ownership — See Something, Say Something
+  return `## Repo Ownership
 
 \`REPO_MODE\` controls how to handle issues outside your branch:
-- **\`solo\`** — You own everything. Investigate and offer to fix proactively.
-- **\`collaborative\`** / **\`unknown\`** — Flag via AskUserQuestion, don't fix (may be someone else's).
+- \`solo\`: You own everything. Investigate and offer to fix proactively.
+- \`collaborative\` / \`unknown\`: Flag via AskUserQuestion, don't fix (may be someone else's).
 
-Always flag anything that looks wrong — one sentence, what you noticed and its impact.`;
+Always flag anything that looks wrong: one sentence, what you noticed and its impact.`;
 }
 
 export function generateTestFailureTriage(): string {
   return `## Test Failure Ownership Triage
 
-When tests fail, do NOT immediately stop. First, determine ownership:
+When tests fail, do not immediately stop. First, determine ownership:
 
 ### Step T1: Classify each failure
 
 For each failing test:
 
-1. **Get the files changed on this branch:**
+1. Get the files changed on this branch:
    \`\`\`bash
    git diff origin/<base>...HEAD --name-only
    \`\`\`
 
-2. **Classify the failure:**
-   - **In-branch** if: the failing test file itself was modified on this branch, OR the test output references code that was changed on this branch, OR you can trace the failure to a change in the branch diff.
-   - **Likely pre-existing** if: neither the test file nor the code it tests was modified on this branch, AND the failure is unrelated to any branch change you can identify.
-   - **When ambiguous, default to in-branch.** It is safer to stop the developer than to let a broken test ship. Only classify as pre-existing when you are confident.
+2. Classify the failure:
+   - In-branch if the failing test file itself was modified on this branch, or the test output references code that was changed on this branch, or you can trace the failure to a change in the branch diff.
+   - Likely pre-existing if neither the test file nor the code it tests was modified on this branch, and the failure is unrelated to any branch change you can identify.
+   - When ambiguous, default to in-branch. It is safer to stop the developer than to let a broken test ship. Only classify as pre-existing when you are confident.
 
-   This classification is heuristic — use your judgment reading the diff and the test output. You do not have a programmatic dependency graph.
+This classification is heuristic. Use your judgment reading the diff and the test output. You do not have a programmatic dependency graph.
 
 ### Step T2: Handle in-branch failures
 
-**STOP.** These are your failures. Show them and do not proceed. The developer must fix their own broken tests before shipping.
+Stop. These are your failures. Show them and do not proceed. The developer must fix their own broken tests before shipping.
 
 ### Step T3: Handle pre-existing failures
 
 Check \`REPO_MODE\` from the preamble output.
 
-**If REPO_MODE is \`solo\`:**
+If REPO_MODE is \`solo\`:
 
 Use AskUserQuestion:
 
@@ -237,12 +232,12 @@ Use AskUserQuestion:
 >
 > Since this is a solo repo, you're the only one who will fix these.
 >
-> RECOMMENDATION: Choose A — fix now while the context is fresh. Completeness: 9/10.
-> A) Investigate and fix now (human: ~2-4h / CC: ~15min) — Completeness: 10/10
-> B) Add as P0 TODO — fix after this branch lands — Completeness: 7/10
-> C) Skip — I know about this, ship anyway — Completeness: 3/10
+> RECOMMENDATION: Choose A, fix now while the context is fresh. Completeness: 9/10.
+> A) Investigate and fix now (human: ~2-4h / CC: ~15min), Completeness: 10/10
+> B) Add as P0 TODO, fix after this branch lands, Completeness: 7/10
+> C) Skip, I know about this, ship anyway, Completeness: 3/10
 
-**If REPO_MODE is \`collaborative\` or \`unknown\`:**
+If REPO_MODE is \`collaborative\` or \`unknown\`:
 
 Use AskUserQuestion:
 
@@ -250,56 +245,46 @@ Use AskUserQuestion:
 >
 > [list each failure with file:line and brief error description]
 >
-> This is a collaborative repo — these may be someone else's responsibility.
+> This is a collaborative repo, these may be someone else's responsibility.
 >
-> RECOMMENDATION: Choose B — assign it to whoever broke it so the right person fixes it. Completeness: 9/10.
-> A) Investigate and fix now anyway — Completeness: 10/10
-> B) Blame + assign GitHub issue to the author — Completeness: 9/10
-> C) Add as P0 TODO — Completeness: 7/10
-> D) Skip — ship anyway — Completeness: 3/10
+> RECOMMENDATION: Choose B, assign it to whoever broke it so the right person fixes it. Completeness: 9/10.
+> A) Investigate and fix now anyway, Completeness: 10/10
+> B) Blame + assign GitHub issue to the author, Completeness: 9/10
+> C) Add as P0 TODO, Completeness: 7/10
+> D) Skip, ship anyway, Completeness: 3/10
 
 ### Step T4: Execute the chosen action
 
-**If "Investigate and fix now":**
-- Switch to /investigate mindset: root cause first, then minimal fix.
+If "Investigate and fix now":
+- Use a root-cause mindset: understand the failure first, then make the smallest correct fix.
 - Fix the pre-existing failure.
 - Commit the fix separately from the branch's changes: \`git commit -m "fix: pre-existing test failure in <test-file>"\`
 - Continue with the workflow.
 
-**If "Add as P0 TODO":**
-- If \`TODOS.md\` exists, add the entry following the format in \`review/TODOS-format.md\` (or \`.claude/skills/review/TODOS-format.md\`).
+If "Add as P0 TODO":
+- If \`TODOS.md\` exists, add a concise P0 entry with owner, symptom, evidence, and next step.
 - If \`TODOS.md\` does not exist, create it with the standard header and add the entry.
 - Entry should include: title, the error output, which branch it was noticed on, and priority P0.
-- Continue with the workflow — treat the pre-existing failure as non-blocking.
+- Continue with the workflow, treat the pre-existing failure as non-blocking.
 
-**If "Blame + assign GitHub issue" (collaborative only):**
-- Find who likely broke it. Check BOTH the test file AND the production code it tests:
+If "Blame + assign GitHub issue" (collaborative only):
+- Find who likely broke it. Check both the test file and the production code it tests:
   \`\`\`bash
-  # Who last touched the failing test?
   git log --format="%an (%ae)" -1 -- <failing-test-file>
-  # Who last touched the production code the test covers? (often the actual breaker)
   git log --format="%an (%ae)" -1 -- <source-file-under-test>
   \`\`\`
-  If these are different people, prefer the production code author — they likely introduced the regression.
+- If these are different people, prefer the production code author. They likely introduced the regression.
 - Create an issue assigned to that person (use the platform detected in Step 0):
-  - **If GitHub:**
-    \`\`\`bash
-    gh issue create \\
-      --title "Pre-existing test failure: <test-name>" \\
-      --body "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** mstack /ship on <date>" \\
-      --assignee "<github-username>"
-    \`\`\`
-  - **If GitLab:**
-    \`\`\`bash
-    glab issue create \\
-      -t "Pre-existing test failure: <test-name>" \\
-      -d "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** mstack /ship on <date>" \\
-      -a "<gitlab-username>"
-    \`\`\`
-- If neither CLI is available or \`--assignee\`/\`-a\` fails (user not in org, etc.), create the issue without assignee and note who should look at it in the body.
+  \`\`\`bash
+  gh issue create \\
+    --title "Pre-existing test failure: <test-name>" \\
+    --body "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** mstack /m-audit on <date>" \\
+    --assignee "<github-username>"
+  \`\`\`
+- If neither CLI is available or the assignee flag fails, create the issue without assignee and note who should look at it in the body.
 - Continue with the workflow.
 
-**If "Skip":**
+If "Skip":
 - Continue with the workflow.
 - Note in output: "Pre-existing test failure skipped: <test-name>"`;
 }
@@ -307,12 +292,14 @@ Use AskUserQuestion:
 function generateSearchBeforeBuildingSection(ctx: TemplateContext): string {
   return `## Search Before Building
 
-Before building anything unfamiliar, **search first.**
-- **Layer 1** (tried and true) — don't reinvent. **Layer 2** (new and popular) — scrutinize. **Layer 3** (first principles) — prize above all.
+Before making a marketing claim, check the evidence first.
+- Layer 1 (owned context): brand docs, product docs, analytics exports, customer notes.
+- Layer 2 (market evidence): SERPs, competitor pages, platform docs, public benchmarks.
+- Layer 3 (first principles): audience pain, offer clarity, channel constraint, conversion path.
 
-**Eureka:** When first-principles reasoning contradicts conventional wisdom, name it and log:
+Eureka: When first-principles reasoning contradicts conventional wisdom, name it and log it as a local learning:
 \`\`\`bash
-jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.mstack/analytics/eureka.jsonl 2>/dev/null || true
+${ctx.paths.binDir}/mstack-learnings-log '{"skill":"SKILL_NAME","type":"strategy","key":"SHORT_KEY","insight":"ONE_LINE_SUMMARY","confidence":7,"source":"observed"}'
 \`\`\``;
 }
 
@@ -320,19 +307,19 @@ function generateCompletionStatus(ctx: TemplateContext): string {
   return `## Completion Status Protocol
 
 When completing a skill workflow, report status using one of:
-- **DONE** — All steps completed successfully. Evidence provided for each claim.
-- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
-- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
-- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+- DONE: All steps completed successfully. Evidence provided for each claim.
+- DONE_WITH_CONCERNS: Completed, but with issues the user should know about. List each concern.
+- BLOCKED: Cannot proceed. State what is blocking and what was tried.
+- NEEDS_CONTEXT: Missing information required to continue. State exactly what you need.
 
 ### Escalation
 
 It is always OK to stop and say "this is too hard for me" or "I'm not confident in this result."
 
 Bad work is worse than no work. You will not be penalized for escalating.
-- If you have attempted a task 3 times without success, STOP and escalate.
-- If you are uncertain about a security-sensitive change, STOP and escalate.
-- If the scope of work exceeds what you can verify, STOP and escalate.
+- If you have attempted a task 3 times without success, stop and escalate.
+- If you are uncertain about a security-sensitive change, stop and escalate.
+- If the scope of work exceeds what you can verify, stop and escalate.
 
 Escalation format:
 \`\`\`
@@ -341,6 +328,17 @@ REASON: [1-2 sentences]
 ATTEMPTED: [what you tried]
 RECOMMENDATION: [what the user should do next]
 \`\`\`
+
+## Operator Mode
+
+Default to action. Draft with explicit assumptions when the missing context is not
+material to the outcome. Ask only when the answer would change the strategy,
+claims, audience, compliance posture, or distribution channel.
+
+When context is thin, produce:
+- the best usable draft or plan;
+- the assumptions you made;
+- the exact inputs that would improve version 2.
 
 ## Operational Self-Improvement
 
@@ -369,15 +367,14 @@ When the skill workflow completes, report the outcome (success, error, or abort)
 When in plan mode, these operations are always allowed because they produce
 artifacts that inform the plan, not code changes:
 
-- \`$B\` commands (browse: screenshots, page inspection, navigation, snapshots)
-- \`$D\` commands (design: generate mockups, variants, comparison boards, iterate)
-- \`codex exec\` / \`codex review\` (outside voice, plan review, adversarial challenge)
-- Writing to \`~/.mstack/\` (config, analytics, review logs, design artifacts, learnings)
+- \`$B\` commands when available (SERP checks, screenshots, page inspection, snapshots)
+- \`codex exec\` / \`codex review\` for outside-voice critique when the host supports it
+- Writing to \`~/.mstack/\` for config, brand context, project memory, and learnings
 - Writing to the plan file (already allowed by plan mode)
 - \`open\` commands for viewing generated artifacts (comparison boards, HTML previews)
 
-These are read-only in spirit — they inspect the live site, generate visual artifacts,
-or get independent opinions. They do NOT modify project source files.
+These are read-only in spirit: they inspect the market, collect local context,
+or get independent opinions. They do not modify project source files.
 
 ## Skill Invocation During Plan Mode
 
@@ -395,7 +392,7 @@ If the skill reaches a STOP point, stop immediately at that point, ask the requi
 question if any, and wait for the user's response. Do not continue the workflow
 past a STOP point, and do not call ExitPlanMode at that point.
 
-If the skill includes commands marked "PLAN MODE EXCEPTION — ALWAYS RUN," execute
+If the skill includes commands marked "PLAN MODE EXCEPTION - ALWAYS RUN," execute
 them. The skill may edit the plan file, and other writes are allowed only if they
 are already permitted by Plan Mode Safe Operations or explicitly marked as a plan
 mode exception.
@@ -408,36 +405,26 @@ cancel the skill or leave plan mode.
 
 When you are in plan mode and about to call ExitPlanMode:
 
-1. Check if the plan file already has a \`## MSTACK REVIEW REPORT\` section.
-2. If it DOES — skip (a review skill already wrote a richer report).
-3. If it does NOT — run this command:
-
-\\\`\\\`\\\`bash
-~/.claude/skills/mstack/bin/mstack-review-read
-\\\`\\\`\\\`
-
-Then write a \`## MSTACK REVIEW REPORT\` section to the end of the plan file:
-
-- If the output contains review entries (JSONL lines before \`---CONFIG---\`): format the
-  standard report table with runs/status/findings per skill, same format as the review
-  skills use.
-- If the output is \`NO_REVIEWS\` or empty: write this placeholder table:
+1. Check if the plan file already has a \`## MSTACK MARKETING STATUS\` section.
+2. If it does, update it instead of appending a duplicate.
+3. If it does not, append this section:
 
 \\\`\\\`\\\`markdown
-## MSTACK REVIEW REPORT
+## MSTACK MARKETING STATUS
 
-| Review | Trigger | Why | Runs | Status | Findings |
-|--------|---------|-----|------|--------|----------|
-| Strategy Review | \\\`/m-strategy\\\` | Scope & positioning | 0 | — | — |
-| Brand Review | \\\`/m-brand\\\` | Voice & messaging consistency | 0 | — | — |
-| SEO Review | \\\`/m-seo\\\` | Search visibility gaps | 0 | — | — |
-| Content Review | \\\`/m-write\\\` | Copy quality & completeness | 0 | — | — |
+| Area | Suggested skill | Why | Status |
+|------|-----------------|-----|--------|
+| Brand | \\\`/m-brand\\\` | Voice, audience, positioning | Not run |
+| Strategy | \\\`/m-strategy\\\` | Channel plan, offer, roadmap | Not run |
+| Content | \\\`/m-brief\\\`, \\\`/m-write\\\` | Briefs and copy | Not run |
+| Distribution | \\\`/m-social\\\`, \\\`/m-calendar\\\` | Platform execution | Not run |
+| Measurement | \\\`/m-report\\\` | Performance review | Not run |
 
-**VERDICT:** NO REVIEWS YET — run individual reviews above to populate this table.
+**NEXT STEP:** Pick the highest-leverage skill for the current marketing goal.
 \\\`\\\`\\\`
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
+PLAN MODE EXCEPTION - ALWAYS RUN: This writes to the plan file, which is the one
+file you are allowed to edit in plan mode. The marketing status section is part of the
 plan's living status.`;
 }
 
@@ -445,11 +432,11 @@ function generateVoiceDirective(tier: number): string {
   if (tier <= 1) {
     return `## Voice
 
-**Tone:** direct, concrete, sharp, never corporate, never academic. Sound like a builder, not a consultant. Name the file, the function, the command. No filler, no throat-clearing.
+Tone: direct, concrete, sharp, never corporate, never academic. Sound like a builder, not a consultant. Name the file, the function, the command. No filler, no throat-clearing.
 
-**Writing rules:** No em dashes (use commas, periods, "..."). No AI vocabulary (delve, crucial, robust, comprehensive, nuanced, etc.). Short paragraphs. End with what to do.
+Writing rules: No em dashes. Use commas, periods, or "...". No AI vocabulary (delve, crucial, robust, comprehensive, nuanced, etc.). Short paragraphs. End with what to do.
 
-The user always has context you don't. Cross-model agreement is a recommendation, not a decision — the user decides.`;
+The user always has context you don't. Cross-model agreement is a recommendation, not a decision. The user decides.`;
   }
 
   return `## Voice
@@ -460,20 +447,20 @@ Lead with the point. Say what it does, why it matters, and what the marketer sho
 
 Quality matters. Generic copy is the enemy. Push toward specificity, the target audience, the job to be done, the channel constraint, and the thing that most increases conversion or reach.
 
-**Tone:** direct, concrete, sharp, never corporate, never buzzword-heavy. Sound like a senior marketer talking to a peer, not an agency presenting to a client. Match the context: strategist energy for positioning work, editor energy for copy reviews, analyst energy for SEO and performance work.
+Tone: direct, concrete, sharp, never corporate, never buzzword-heavy. Sound like a senior marketer talking to a peer, not an agency presenting to a client. Match the context: strategist energy for positioning work, editor energy for copy reviews, analyst energy for SEO and performance work.
 
-**Concreteness is the standard.** Name the audience segment, the headline variant, the keyword cluster. Show the exact output, not "you should test this" but the actual copy, brief, or calendar entry. When explaining a tradeoff, use real numbers where available.
+Concreteness is the standard. Name the audience segment, the headline variant, the keyword cluster. Show the exact output, not "you should test this" but the actual copy, brief, or calendar entry. When explaining a tradeoff, use real numbers where available.
 
-**Connect to marketing outcomes.** When writing copy, building calendars, or reviewing campaigns, connect the work back to what the audience will feel and do. "This headline works because it names the pain directly." "This CTA is weak because it describes the action instead of the benefit."
+Connect to marketing outcomes. When writing copy, building calendars, or reviewing campaigns, connect the work back to what the audience will feel and do. "This headline works because it names the pain directly." "This CTA is weak because it describes the action instead of the benefit."
 
-**User sovereignty.** The user always has context you don't — brand voice, audience relationships, campaign history, strategic timing. When you recommend a direction, that is a recommendation, not a decision. Present it. The user decides.
+User sovereignty. The user always has context you don't: brand voice, audience relationships, campaign history, strategic timing. When you recommend a direction, that is a recommendation, not a decision. Present it. The user decides.
 
 Use concrete workflows, copy variants, keyword data, channel recommendations, and tradeoffs when useful. If something is weak, awkward, or off-brand, say so plainly.
 
 Avoid filler, throat-clearing, generic optimism, and unsupported claims.
 
-**Writing rules:**
-- No em dashes. Use commas, periods, or "..." instead.
+Writing rules:
+- No em dashes. Use commas, periods, or "...".
 - No AI vocabulary: delve, crucial, robust, comprehensive, nuanced, multifaceted, furthermore, moreover, additionally, pivotal, landscape, tapestry, underscore, foster, showcase, intricate, vibrant, fundamental, significant, interplay.
 - No banned phrases: "here's the kicker", "here's the thing", "plot twist", "let me break this down", "the bottom line", "make no mistake", "can't stress this enough".
 - Short paragraphs. Mix one-sentence paragraphs with 2-3 sentence runs.
@@ -481,7 +468,7 @@ Avoid filler, throat-clearing, generic optimism, and unsupported claims.
 - Be direct about quality. "Strong hook" or "this is generic." Don't dance around judgments.
 - End with what to do. Give the action.
 
-**Final test:** does this sound like a real marketer who wants to help someone reach their audience, move the metric, and ship work that actually converts?`;
+Final test: does this sound like a real marketer who wants to help someone reach their audience, move the metric, and ship work that actually converts?`;
 }
 
 function generateContextRecovery(ctx: TemplateContext): string {
@@ -497,54 +484,26 @@ eval "$(${binDir}/mstack-slug 2>/dev/null)"
 _PROJ="\${MSTACK_HOME:-$HOME/.mstack}/projects/\${SLUG:-unknown}"
 if [ -d "$_PROJ" ]; then
   echo "--- RECENT ARTIFACTS ---"
-  # Last 3 artifacts across ceo-plans/ and checkpoints/
-  find "$_PROJ/ceo-plans" "$_PROJ/checkpoints" -type f -name "*.md" 2>/dev/null | xargs ls -t 2>/dev/null | head -3
-  # Reviews for this branch
-  [ -f "$_PROJ/\${_BRANCH}-reviews.jsonl" ] && echo "REVIEWS: $(wc -l < "$_PROJ/\${_BRANCH}-reviews.jsonl" | tr -d ' ') entries"
-  # Timeline summary (last 5 events)
-  [ -f "$_PROJ/timeline.jsonl" ] && tail -5 "$_PROJ/timeline.jsonl"
-  # Cross-session injection
-  if [ -f "$_PROJ/timeline.jsonl" ]; then
-    _LAST=$(grep "\\"branch\\":\\"\${_BRANCH}\\"" "$_PROJ/timeline.jsonl" 2>/dev/null | grep '"event":"completed"' | tail -1)
-    [ -n "$_LAST" ] && echo "LAST_SESSION: $_LAST"
-    # Predictive skill suggestion: check last 3 completed skills for patterns
-    _RECENT_SKILLS=$(grep "\\"branch\\":\\"\${_BRANCH}\\"" "$_PROJ/timeline.jsonl" 2>/dev/null | grep '"event":"completed"' | tail -3 | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//;s/"//' | tr '\\n' ',')
-    [ -n "$_RECENT_SKILLS" ] && echo "RECENT_PATTERN: $_RECENT_SKILLS"
-  fi
-  _LATEST_CP=$(find "$_PROJ/checkpoints" -name "*.md" -type f 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
-  [ -n "$_LATEST_CP" ] && echo "LATEST_CHECKPOINT: $_LATEST_CP"
+  find "$_PROJ" -maxdepth 3 -type f \\( -name "*.md" -o -name "*.yaml" -o -name "*.jsonl" \\) 2>/dev/null | xargs ls -t 2>/dev/null | head -5
+  [ -f "$_PROJ/brand.yaml" ] && echo "BRAND_CONTEXT: $_PROJ/brand.yaml"
+  [ -f "$_PROJ/learnings.jsonl" ] && echo "LEARNINGS_FILE: $_PROJ/learnings.jsonl ($(wc -l < "$_PROJ/learnings.jsonl" | tr -d ' ') entries)"
   echo "--- END ARTIFACTS ---"
 fi
 \`\`\`
 
 If artifacts are listed, read the most recent one to recover context.
 
-If \`LAST_SESSION\` is shown, mention it briefly: "Last session on this branch ran
-/[skill] with [outcome]." If \`LATEST_CHECKPOINT\` exists, read it for full context
-on where work left off.
-
-If \`RECENT_PATTERN\` is shown, look at the skill sequence. If a pattern repeats
-(e.g., review,ship,review), suggest: "Based on your recent pattern, you probably
-want /[next skill]."
-
-**Welcome back message:** If any of LAST_SESSION, LATEST_CHECKPOINT, or RECENT ARTIFACTS
-are shown, synthesize a one-paragraph welcome briefing before proceeding:
-"Welcome back to {branch}. Last session: /{skill} ({outcome}). [Checkpoint summary if
-available]. [Health score if available]." Keep it to 2-3 sentences.`;
+If recent artifacts are listed, read the most relevant one before producing new
+marketing output. Prioritize \`brand.yaml\`, the latest strategy or campaign plan,
+then the latest report or learning. Mention the recovered context briefly before
+continuing.`;
 }
 
-// Preamble Composition (tier → sections)
-// ─────────────────────────────────────────────
-// T1: core + upgrade + lake + telemetry + voice(trimmed) + completion
+// Preamble Composition (tier -> sections)
+// T1: core + upgrade + proactive routing + voice(trimmed) + completion
 // T2: T1 + voice(full) + ask + completeness + context-recovery
 // T3: T2 + repo-mode + search
-// T4: (same as T3 — TEST_FAILURE_TRIAGE is a separate {{}} placeholder, not preamble)
-//
-// Skills by tier:
-//   T1: browse, setup-cookies, benchmark
-//   T2: investigate, cso, retro, doc-release, setup-deploy, canary, checkpoint, health
-//   T3: autoplan, codex, design-consult, office-hours, ceo/design/eng-review
-//   T4: ship, review, qa, qa-only, design-review, land-deploy
+// T4: same as T3. TEST_FAILURE_TRIAGE is a separate placeholder, not preamble.
 export function generatePreamble(ctx: TemplateContext): string {
   const tier = ctx.preambleTier ?? 4;
   if (tier < 1 || tier > 4) {

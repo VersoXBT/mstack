@@ -1,0 +1,81 @@
+---
+name: m-proof
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Proof and customer story workflow. Turns raw wins, testimonials, usage data,
+  sales notes, or interview transcripts into proof assets: case studies, quote banks,
+  landing-page proof blocks, objection-specific evidence, and social proof snippets.
+  Use when asked for testimonials, case studies, customer stories, proof, or credibility.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+# Proof Builder
+
+## Inputs
+
+Collect:
+- Customer or segment.
+- Before state.
+- After state.
+- Metric or qualitative result.
+- Quote source.
+- Consent constraints.
+- Product use case.
+- Objection the proof should answer.
+
+If consent is unclear, write anonymized/internal drafts and flag that approval is
+required before publication.
+
+## Workflow
+
+1. Classify proof type:
+   - Metric proof.
+   - Authority proof.
+   - Use-case proof.
+   - Peer proof.
+   - Process proof.
+   - Risk-reversal proof.
+2. Extract the strongest claim and evidence.
+3. Build a proof bank:
+   - Claim.
+   - Evidence.
+   - Source.
+   - Confidence.
+   - Usage channel.
+4. Draft assets:
+   - Landing-page proof block.
+   - Short testimonial.
+   - Case study outline.
+   - Sales enablement snippet.
+   - Social post.
+5. Add integrity checks:
+   - No invented metrics.
+   - No unverifiable quote changes.
+   - Consent status clear.
+   - Claims match evidence.
+6. Map proof to objections and funnel stages.
+
+## Output Format
+
+Return:
+- Proof summary.
+- Proof bank table.
+- Draft assets.
+- Objection mapping.
+- Consent and claim risks.
+- Next interviews or evidence to collect.
+
+{{PRIVACY_NOTE}}
+
+## Completion
+
+End with `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, or `NEEDS_CONTEXT`.

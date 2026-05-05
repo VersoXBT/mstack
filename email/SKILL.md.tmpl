@@ -1,0 +1,84 @@
+---
+name: m-email
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Email lifecycle and sequence builder. Creates onboarding, activation, nurture,
+  reactivation, launch, sales, and retention sequences with subject lines, body copy,
+  segmentation logic, timing, CTAs, and measurement. Use when asked for email flows,
+  lifecycle marketing, newsletters, drip campaigns, or launch sequences.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+# Email Lifecycle Builder
+
+## Inputs
+
+Capture:
+- Audience segment.
+- Lifecycle moment.
+- Product or offer.
+- Desired action.
+- Trigger event.
+- List source and consent constraints.
+- Existing brand voice or examples.
+
+If the user only asks for "emails", choose the most likely lifecycle moment and
+state the assumption before drafting.
+
+## Workflow
+
+1. Pick the sequence type: onboarding, activation, nurture, reactivation, launch,
+   sales follow-up, newsletter, retention, winback.
+2. Define the conversion path:
+   - Trigger.
+   - Main belief shift.
+   - CTA.
+   - Objection to remove.
+3. Build the sequence table:
+   - Email number.
+   - Send timing.
+   - Segment.
+   - Purpose.
+   - Subject line.
+   - CTA.
+4. Draft each email in brand voice.
+5. Add variants where useful:
+   - Short subject.
+   - Curiosity subject.
+   - Direct benefit subject.
+6. Add QA:
+   - Clear sender.
+   - One primary CTA.
+   - No unsupported claims.
+   - Plain-text readable.
+   - Mobile-short paragraphs.
+7. Add measurement:
+   - Open rate only as diagnostic.
+   - Click rate.
+   - Reply or conversion.
+   - Unsubscribe/spam risk.
+
+## Output Format
+
+Return:
+- Sequence strategy.
+- Email table.
+- Drafted emails.
+- Segmentation notes.
+- A/B test ideas.
+- Measurement plan.
+
+{{PRIVACY_NOTE}}
+
+## Completion
+
+End with `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, or `NEEDS_CONTEXT`.

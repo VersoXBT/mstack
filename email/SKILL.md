@@ -1,23 +1,16 @@
 ---
-name: m-strategy
-preamble-tier: 4
+name: m-email
+preamble-tier: 3
 version: 1.0.0
 description: |
-  Build a rigorous, data-informed marketing strategy using the Bullseye Framework
-  (19 channels, test 3, focus 1), STP model, and growth loops thinking. Covers
-  channel priorities with CAC/time-to-results benchmarks, a message-market fit
-  messaging framework, stage-aware budget allocation (pre-PMF / growth / scale),
-  a 90-day roadmap with weekly milestones, and leading vs lagging KPIs per channel.
-  Reads brand context, competitive analysis, and ICP if available. Produces a
-  structured strategy document. Use when asked to "create marketing strategy",
-  "plan marketing", or "build go-to-market".
+  Email lifecycle and sequence builder. Creates onboarding, activation, nurture,
+  reactivation, launch, sales, and retention sequences with subject lines, body copy,
+  segmentation logic, timing, CTAs, and measurement. Use when asked for email flows,
+  lifecycle marketing, newsletters, drip campaigns, or launch sequences.
 allowed-tools:
   - Bash
   - Read
   - Write
-  - Edit
-  - Grep
-  - Glob
   - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
@@ -387,352 +380,64 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
-## API Key Detection
-
-```bash
-echo "Marketing data credentials:"
-[ -n "${SEMRUSH_API_KEY:-}" ] && echo "  SEMRUSH: available" || echo "  SEMRUSH: not set"
-[ -n "${AHREFS_API_KEY:-}" ] && echo "  AHREFS: available" || echo "  AHREFS: not set"
-[ -n "${GA4_CREDENTIALS:-}" ] && echo "  GA4_CREDENTIALS: available" || echo "  GA4_CREDENTIALS: not set"
-[ -n "${GA4_PROPERTY_ID:-}" ] && echo "  GA4_PROPERTY_ID: available" || echo "  GA4_PROPERTY_ID: not set"
-[ -n "${SEARCH_CONSOLE_CREDENTIALS:-}" ] && echo "  SEARCH_CONSOLE_CREDENTIALS: available" || echo "  SEARCH_CONSOLE_CREDENTIALS: not set"
-[ -n "${GSC_SITE_URL:-}" ] && echo "  GSC_SITE_URL: available" || echo "  GSC_SITE_URL: not set"
-[ -n "${OPENAI_API_KEY:-}" ] && echo "  OPENAI: available" || echo "  OPENAI: not set"
-```
-
-Adapt your approach based on available APIs:
-- **SEMRUSH/AHREFS available**: Use API for keyword data, backlink analysis, domain metrics
-- **GA4/Search Console available**: Pull real performance data for reports
-- **No APIs**: Use browse-based SERP analysis, or ask user to provide data
-
-## Prior Learnings
-
-Search for relevant learnings from previous sessions:
-
-```bash
-_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
-  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
-else
-  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
-fi
-```
-
-If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
-
-> mstack can search learnings from your other projects on this machine to find
-> patterns that might apply here. This stays local (no data leaves your machine).
-> Recommended for solo developers. Skip if you work on multiple client codebases
-> where cross-contamination would be a concern.
-
-Options:
-- A) Enable cross-project learnings (recommended)
-- B) Keep learnings project-scoped only
-
-If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
-If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
-
-Then re-run the search with the appropriate flag.
-
-If learnings are found, incorporate them into your analysis. When a review finding
-matches a past learning, display:
-
-**"Prior learning applied: [key] (confidence N/10, from [date])"**
-
-This makes the compounding visible. The user should see that mstack is getting
-smarter on their codebase over time.
-
-## Browse Detection (optional)
-
-```bash
-_BROWSE_PATH=$(~/.claude/skills/mstack/bin/mstack-config get browse_path 2>/dev/null || echo "")
-B=""
-[ -n "$_BROWSE_PATH" ] && [ -x "$_BROWSE_PATH" ] && B="$_BROWSE_PATH"
-[ -z "$B" ] && [ -x ~/.claude/skills/gstack/browse/dist/browse ] && B=~/.claude/skills/gstack/browse/dist/browse
-if [ -n "$B" ]; then
-  echo "BROWSE: available at $B"
-else
-  echo "BROWSE: not available (using text-based analysis)"
-fi
-```
-
-If browse is available (`$B` is set), use it for web analysis (SERP scraping,
-competitor page analysis, site auditing). If not available, fall back to:
-- WebSearch/WebFetch tools if available
-- Asking the user to paste content or provide URLs
-
-## Setup
-
-Check for existing artifacts that inform the strategy:
-
-```bash
-eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
-PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
-
-# Check for brand context
-[ -f "$PROJECT_DIR/brand.yaml" ] && echo "BRAND: found" || echo "BRAND: not found"
-
-# Check for previous strategy docs
-find . -name "*strategy*" -o -name "*marketing-plan*" 2>/dev/null | head -5
-```
-
-If brand context is not configured, strongly recommend running /m-brand first:
-> "I recommend running `/m-brand` first to set up your brand context. It takes 5 minutes
-> and makes the strategy much more targeted. Want to do that now, or proceed without it?"
-
-STOP and wait for response.
-
-## Step 1: Audit Current State
-
-If browse is available, analyze the user's current web presence:
-```bash
-$B goto "{website URL from brand.yaml}"
-$B text
-$B links
-```
-
-If not, ask:
-> "Brief overview of your current marketing: what channels are you using,
-> what's working, what's not? (2-3 sentences is fine)"
-
-Also identify the business stage to calibrate all recommendations:
-- **Pre-PMF**: fewer than ~100 paying customers or clear product-market fit signal
-- **Growth**: PMF confirmed, scaling acquisition
-- **Scale**: established channels, optimizing unit economics
-
-## Step 2: Define Goals
-
-Use AskUserQuestion:
-> "What's your primary marketing goal for the next 90 days?
-> A) Brand awareness — get known in your space
-> B) Lead generation — drive signups, demos, waitlist
-> C) User activation — get existing users to engage more
-> D) Community building — grow an engaged audience
-> E) Other — describe it"
-
-Then ask:
-> "Any specific metric targets? (e.g., '1000 Twitter followers', '500 signups',
-> '10 blog posts published'). Say 'no specific targets' if unsure."
-
-## Step 3: Audience Segmentation (STP Model)
-
-Before recommending channels, apply the Segmentation → Targeting → Positioning framework:
-
-**Segmentation** — Divide the addressable market into distinct groups by:
-- Demographics / firmographics (company size, role, industry)
-- Behavioral (how they currently solve the problem)
-- Psychographic (values, risk tolerance, buy triggers)
-
-**Targeting** — Select the one beachhead segment to win first. Apply three filters:
-1. *Reachability*: can you get to them affordably with existing channels?
-2. *Problem intensity*: do they feel the pain acutely enough to act?
-3. *Willingness to pay / advocate*: will they convert and refer others?
-
-**Positioning** — State one sentence per segment: "For [TARGET] who [PROBLEM], [PRODUCT] is the [CATEGORY] that [KEY BENEFIT], unlike [ALTERNATIVE]."
-
-Output this STP summary before channel work begins.
-
-## Step 4: Channel Strategy (Bullseye Framework)
-
-The Bullseye Framework forces disciplined channel selection across all 19 traction channels. Run through the full outer ring, then narrow.
-
-**Full 19-channel brainstorm** (score each 1–5 for fit):
-Viral Marketing, PR, Unconventional PR, SEM/Paid Search, Social Ads, Offline Ads,
-SEO, Content Marketing, Email Marketing, Engineering as Marketing, Targeting Blogs,
-Business Development, Sales (Outbound), Affiliate Programs, Existing Platforms,
-Trade Shows, Speaking Engagements, Community Building, Existing Networks
-
-**Inner ring (test 3)**: Select the top 3 channels with the best fit score. For each, run a 2–4 week cheap experiment before committing budget.
-
-**Bullseye (focus 1)**: After experiments, double down on the single channel showing the best CAC-to-LTV ratio and repeatability.
-
-For each recommended channel, provide the full context:
-
-| Channel | Why This Audience | Content Format Fit | Expected CAC Range | Time to Results | Leading Indicator | Lagging Indicator |
-|---------|------------------|-------------------|-------------------|----------------|-----------------|------------------|
-| Twitter/X | Developers, founders, crypto-native audiences self-select here; high organic amplification via RT/quote | Threads (insight + story), single-insight tweets, engagement replies | $0–$15 organic; $20–$80 paid per lead | 4–12 weeks to meaningful follower growth | Reply rate, profile visits | Follower growth rate, inbound DMs |
-| SEO / Blog | Intent-driven traffic; high purchase intent keywords convert at 3–5× social | Long-form tutorials (1500–3000 words), comparison posts, glossary pages | $5–$30 per organic lead (after 6-month ramp) | 3–6 months to rank; 6–12 months to meaningful volume | Indexed pages, avg position for target KWs | Organic sessions, leads from organic |
-| Email / Newsletter | Owned channel; 0 algorithmic risk; highest LTV cohorts often come from email | Value-first education, curated roundups, case studies | $2–$10 per subscriber; near-zero marginal cost to existing list | Immediate for existing list; 4–8 weeks to build new list | Open rate, click rate | Conversion rate, revenue per subscriber |
-| LinkedIn | B2B decision-makers; C-suite, directors, senior ICs skew here | Insight posts (short), carousel how-tos, case study threads | $30–$150 paid per lead; organic highly variable | 6–12 weeks organic; paid results in days | Profile views, connection acceptance rate | Pipeline generated, demo requests |
-| Community (Discord/Slack/Reddit) | High-trust peer influence; ideal for PLG products with viral loops | AMAs, behind-the-scenes, early access drops, peer support | $0–$5 per member (community-led); $15–$60 paid | 8–16 weeks to self-sustaining community | DAU/WAU, posts per member | NPS, referral rate from community members |
-| Paid Search (SEM) | Bottom-of-funnel, high purchase intent; best when category is established | Search ads, landing page copy, competitor conquest | $15–$200+ per lead depending on vertical | 1–2 weeks to data; 4–6 weeks to optimization | CTR, Quality Score, CPC | CPA, ROAS, MQL volume |
-
-**Stage-specific channel guidance:**
-
-- **Pre-PMF**: Avoid paid channels that burn budget before messaging is proven. Focus on founder-led content (Twitter/LinkedIn), direct outreach (Sales/BD), and 1:1 community channels where you can get qualitative feedback fast. Target 1 channel only.
-- **Growth**: Add a second channel once primary channel CAC is stable and conversion rate is known. Introduce paid amplification only after organic content proves message-market fit.
-- **Scale**: Diversify across 3–5 channels with dedicated budget per channel. Introduce affiliate and partnership channels. Run always-on paid alongside content.
-
-Use AskUserQuestion:
-> "Does this channel mix look right? Want to add, remove, or adjust any channels?"
-
-STOP and wait.
-
-## Step 5: Messaging Framework (Message-Market Fit)
-
-A message has market fit when a prospect can accurately repeat it to a colleague without coaching. Test every message with the "friend repeat" heuristic before approving it.
-
-**Primary message** — one sentence, jargon-free, that passes this test:
-> "Would a busy, skeptical prospect repeat this to a friend in a noisy hallway?"
-> If it needs context to land, it's not ready.
-
-**Three supporting pillar messages** — each pillar should:
-1. Answer a specific objection or desire of the target segment
-2. Be provable with a concrete proof point (metric, case study, feature demo)
-3. Reinforce, not repeat, the primary message
-
-For each pillar:
-- **Pillar**: one-sentence claim
-- **Proof point**: specific evidence (e.g., "cuts onboarding from 3 days to 4 hours — verified across 12 beta customers")
-- **Channel fit**: where this pillar resonates best (e.g., pillar 2 works better in case studies than tweets)
-
-**Tone guidelines** (derive from brand voice in brand.yaml):
-- Specify 3 concrete "do" examples and 3 "don't" examples, not abstract adjectives
-- E.g., DO: "We cut your reporting time in half" — DON'T: "We leverage synergistic reporting solutions"
-
-**Segment-specific message variants**: For each target segment identified in Step 3, note one key message tweak (the core value is the same; the framing shifts to match their priority).
-
-Present the full framework and get explicit approval before proceeding.
-
-## Step 6: Budget Allocation
-
-Recommend budget splits based on stage and channel mix:
-
-**Pre-PMF** (total monthly budget: any amount)
-- 70% founder time / organic content — zero paid until message is proven
-- 20% tools and content production (design, writing, scheduling)
-- 10% small experiments ($50–$200 per channel test, max 2 channels)
-- Do NOT run paid acquisition until: conversion rate on landing page is known AND at least one organic channel is producing leads at a repeatable rate
-
-**Growth** (monthly budget: e.g., $2K–$20K)
-- 40% primary channel (double down on what's working)
-- 30% paid amplification of proven organic content
-- 20% second channel experiment
-- 10% retention/email (owned channel insurance)
-- Target: overall blended CAC < 1/3 of LTV
-
-**Scale** (monthly budget: $20K+)
-- 30% primary channel (now optimized, lower marginal return)
-- 25% paid search / performance marketing
-- 20% content + SEO (compounding asset)
-- 15% partnerships / BD / affiliate
-- 10% brand / awareness experiments
-- Target: LTV:CAC > 3:1, payback period < 12 months
-
-Flag if the user's stated budget conflicts with their stated stage or goals.
-
-## Step 7: 90-Day Roadmap
-
-Break into 3 phases with explicit success metrics per phase.
-
----
-
-**Month 1: Foundation**
-
-Goal: Establish proof-of-concept for 1–2 channels. Prove message resonance with real audience before scaling.
-
-Weekly milestones:
-
-| Week | Actions | Success Metric |
-|------|---------|---------------|
-| Week 1 | Finalize messaging framework; set up analytics (GA4, Plausible, or Mixpanel); create channel profiles; write 5 pieces of evergreen cornerstone content | Analytics tracking live; 5 content assets ready to publish |
-| Week 2 | Publish first 3 content pieces; establish publishing cadence; begin manual outreach to 20 target audience members | 3 pieces live; 20 outreach contacts; first engagement data |
-| Week 3 | Review week 1–2 engagement data; double down on best-performing format; launch email capture on site | Open rate, CTR, or reply data on first posts; email list started |
-| Week 4 | Publish remaining content; conduct 5 customer conversations to validate messaging; report on Month 1 leading indicators | 5 customer calls done; leading indicator baseline established |
-
-Month 1 success gate: At least one piece of content produced a meaningful signal (replies, shares, inbound DMs, or email signups). If not, the message or channel needs adjustment before Month 2.
-
----
-
-**Month 2: Growth**
-
-Goal: Increase cadence on the winning channel; launch one additional channel experiment; first paid amplification test if pre-conditions are met.
-
-Deliverables:
-- Increase primary channel publishing cadence by 50%
-- Launch Channel 2 experiment with defined 2-week test budget and success criteria
-- Set up retargeting pixel if running paid ads
-- Publish first case study or social proof asset
-- Build email nurture sequence (3–5 emails) for leads from Month 1
-
-Month 2 success gate: Primary channel CAC is measurable; Channel 2 experiment produced a data point (even negative is useful).
-
----
-
-**Month 3: Optimize**
-
-Goal: Cut what isn't working; optimize what is; establish repeatable system the team can run without the founder.
-
-Deliverables:
-- Full 90-day performance review (leading and lagging indicators per channel)
-- Kill or pause the channel with worst CAC or lowest signal quality
-- Document the content and distribution playbook
-- Set Month 4–6 growth targets based on actual data
-- Produce a one-page "what we learned" summary for stakeholders
-
-Month 3 success gate: At least one channel has a repeatable CAC you're willing to scale. You have a written playbook.
-
----
-
-**Growth Loop Design**
-
-For sustainable growth, identify the loop type that fits the product:
-
-- **Viral loop**: users invite others as part of core use (referral, sharing, co-creation)
-- **Content loop**: content drives traffic → signups → users who generate more content
-- **Paid loop**: revenue funds more ads → more revenue (only viable when LTV:CAC > 3:1)
-- **Community loop**: members recruit members through peer value
-
-State which loop this strategy is designed to feed, and how each channel step reinforces the loop.
-
-## Step 8: Save Strategy Document
-
-Save the complete strategy to a markdown file:
-
-Use AskUserQuestion:
-> "Where should I save the strategy document? (default: `docs/marketing-strategy-{date}.md`)"
-
-Write the document with all sections: STP model, channel strategy with CAC benchmarks, messaging framework, budget allocation, 90-day roadmap with weekly milestones, and growth loop design.
-
-## Completion
-
-Report:
-- Strategy document saved to {path}
-- Business stage identified: {pre-PMF / growth / scale}
-- Channels covered: {list with expected CAC range per channel}
-- 90-day roadmap: {Month 1 focus + Week 1 actions}, {Month 2 focus}, {Month 3 focus}
-- Growth loop type: {viral / content / paid / community}
-
-Suggest next steps:
-- "Run `/m-calendar` to build a detailed content calendar from this strategy"
-- "Run `/m-brief` to create your first content brief"
-- "Run `/m-keywords` to research keywords for your SEO content"
-
-## Capture Learnings
-
-If you discovered a non-obvious pattern, pitfall, or architectural insight during
-this session, log it for future sessions:
-
-```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-strategy","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
-```
-
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
-
-**Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
-
-**Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
-An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
-
-**files:** Include the specific file paths this learning references. This enables
-staleness detection: if those files are later deleted, the learning can be flagged.
-
-**Only log genuine discoveries.** Don't log obvious things. Don't log things the user
-already knows. A good test: would this insight save time in a future session? If yes, log it.
+# Email Lifecycle Builder
+
+## Inputs
+
+Capture:
+- Audience segment.
+- Lifecycle moment.
+- Product or offer.
+- Desired action.
+- Trigger event.
+- List source and consent constraints.
+- Existing brand voice or examples.
+
+If the user only asks for "emails", choose the most likely lifecycle moment and
+state the assumption before drafting.
+
+## Workflow
+
+1. Pick the sequence type: onboarding, activation, nurture, reactivation, launch,
+   sales follow-up, newsletter, retention, winback.
+2. Define the conversion path:
+   - Trigger.
+   - Main belief shift.
+   - CTA.
+   - Objection to remove.
+3. Build the sequence table:
+   - Email number.
+   - Send timing.
+   - Segment.
+   - Purpose.
+   - Subject line.
+   - CTA.
+4. Draft each email in brand voice.
+5. Add variants where useful:
+   - Short subject.
+   - Curiosity subject.
+   - Direct benefit subject.
+6. Add QA:
+   - Clear sender.
+   - One primary CTA.
+   - No unsupported claims.
+   - Plain-text readable.
+   - Mobile-short paragraphs.
+7. Add measurement:
+   - Open rate only as diagnostic.
+   - Click rate.
+   - Reply or conversion.
+   - Unsubscribe/spam risk.
+
+## Output Format
+
+Return:
+- Sequence strategy.
+- Email table.
+- Drafted emails.
+- Segmentation notes.
+- A/B test ideas.
+- Measurement plan.
 
 ## Privacy Boundary
 
@@ -744,3 +449,7 @@ Network access may still happen when a workflow explicitly needs live marketing
 research, such as SERP checks, competitor page review, or API-backed reporting.
 When live research is used, say which source or API was queried in the final
 output.
+
+## Completion
+
+End with `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, or `NEEDS_CONTEXT`.

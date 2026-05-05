@@ -1,11 +1,12 @@
 import type { TemplateContext } from './types';
 
-export function resolveBrowseOptional(_ctx: TemplateContext): string {
+export function resolveBrowseOptional(ctx: TemplateContext): string {
+  const binDir = ctx.paths.binDir;
   return `
 ## Browse Detection (optional)
 
 \`\`\`bash
-_BROWSE_PATH=$(~/.claude/skills/mstack/bin/mstack-config get browse_path 2>/dev/null || echo "")
+_BROWSE_PATH=$(${binDir}/mstack-config get browse_path 2>/dev/null || echo "")
 B=""
 [ -n "$_BROWSE_PATH" ] && [ -x "$_BROWSE_PATH" ] && B="$_BROWSE_PATH"
 [ -z "$B" ] && [ -x ~/.claude/skills/gstack/browse/dist/browse ] && B=~/.claude/skills/gstack/browse/dist/browse

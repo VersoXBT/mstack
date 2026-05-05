@@ -1,0 +1,81 @@
+---
+name: m-experiment
+preamble-tier: 3
+version: 1.0.0
+description: |
+  Marketing experiment planner for CRO, landing pages, lifecycle, paid creative,
+  messaging, pricing, and activation tests. Turns a growth question into a hypothesis,
+  test design, variants, sample-size caveats, instrumentation checklist, decision rule,
+  and follow-up plan. Use when asked to test, optimize, A/B test, or improve conversion.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+{{BRAND_CONTEXT}}
+
+# Experiment Planner
+
+## Inputs
+
+Capture:
+- Current baseline.
+- Target metric.
+- Traffic or audience size.
+- Funnel step.
+- Variant idea.
+- Constraints and risk.
+
+If data is missing, create a directional test plan and mark confidence as low.
+Do not fake sample sizes or significance.
+
+## Workflow
+
+1. State the growth question.
+2. Convert it into a falsifiable hypothesis.
+3. Define:
+   - Primary metric.
+   - Guardrail metric.
+   - Segment.
+   - Test surface.
+   - Expected lift.
+4. Design variants:
+   - Control.
+   - Variant A.
+   - Variant B if traffic allows.
+5. Add instrumentation:
+   - Event names.
+   - Conversion window.
+   - Attribution assumptions.
+   - Data owner.
+6. Set decision rules:
+   - Ship.
+   - Iterate.
+   - Kill.
+   - Need more data.
+7. Add experiment QA:
+   - One variable per test when possible.
+   - No overlapping campaigns without notation.
+   - No dark patterns.
+   - No unsupported claims.
+
+## Output Format
+
+Return:
+- Hypothesis.
+- Experiment design.
+- Variants.
+- Instrumentation checklist.
+- Decision rule.
+- Risks.
+- Next experiment after each possible outcome.
+
+{{PRIVACY_NOTE}}
+
+## Completion
+
+End with `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, or `NEEDS_CONTEXT`.
