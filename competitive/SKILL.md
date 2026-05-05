@@ -486,11 +486,24 @@ STOP and wait for response.
 
 ## Step 1: Identify Competitors
 
-Build the final competitor list. For each competitor, determine:
+Build the final competitor list. Include four competitor types:
+- Direct product competitor: solves the same problem for the same buyer.
+- Indirect/substitute: solves the job differently.
+- SERP/content competitor: ranks for buyer queries even if it does not sell the
+  same product.
+- Channel/attention competitor: competes for the same audience attention.
+
+If browse is available, discover SERP competitors with category, "best X",
+"X alternatives", "X vs Y", problem-aware, and job-to-be-done queries. Keep
+publishers, directories, review sites, and products in separate labels.
+
+For each competitor, determine:
 - Company name
 - Website URL
+- Competitor type and reason
 - Known market position (if any)
 - Estimated company stage (startup / growth / enterprise)
+- Evidence source
 
 If browse is available, visit each competitor's website:
 ```bash
@@ -510,6 +523,21 @@ If browse is not available, ask the user:
 > 3. What channels they use most
 > 4. Anything notable about their recent product or marketing moves"
 
+## Evidence Standard
+
+Maintain an evidence log throughout the analysis:
+
+| Evidence ID | Claim | Source URL/tool | Observed date | Quote/snippet | Confidence | Used in |
+|-------------|-------|-----------------|---------------|---------------|------------|---------|
+
+Rules:
+- Every positioning, pricing, channel, content, proof, or hiring claim needs an
+  evidence ID or must be marked `unknown`.
+- Do not fill unknown cells with guesses.
+- Use confidence: high, medium, low.
+- If evidence coverage is below 60%, suppress total ranking and report a
+  directional read only.
+
 ## Step 2: Analyze Each Competitor
 
 For each competitor, build a profile across six lenses:
@@ -527,6 +555,10 @@ For each competitor, build a profile across six lenses:
 - Annual vs. monthly pricing delta (signals commitment incentive)
 - Free trial or freemium model (signals acquisition motion)
 - Notable feature gaps or limitations visible from public info
+- Pricing transparency, entry price, expansion path, contract friction, and
+  packaging model.
+- Proof assets: logos, testimonials, case studies, review ratings, quantified
+  outcomes, guarantees, proof recency, and proof strength.
 
 **Marketing Channels**
 - Active channels (social links, community links, podcast appearances)
@@ -534,6 +566,11 @@ For each competitor, build a profile across six lenses:
 - Estimated posting frequency per channel
 - Paid ads presence (check Facebook Ad Library, Google ad previews if browse available)
 - Influencer / partnership signals (mentioned collaborations, co-marketing)
+
+Sampling rule: use the last 30 days for social/channel activity and the last
+90 days for long-form content unless the platform is blocked. Record sample size,
+last-post date, median engagement when visible, and `unknown` when data is not
+available.
 
 **Content Strategy**
 - Blog topic clusters and depth (surface-level vs. practitioner-grade)
@@ -593,13 +630,14 @@ Note top-performing content themes and open role patterns.
 Build a structured markdown table with a 1-5 score for each dimension (5 = clear leader):
 
 ```
-| Dimension                  | Score Basis                          | Your Brand | {Comp 1} | {Comp 2} | {Comp 3} |
-|----------------------------|--------------------------------------|:----------:|:--------:|:--------:|:--------:|
-| **Positioning clarity**    | How crisp and ownable is the claim?  |            |          |          |          |
+| Dimension                  | Score Basis                          | Your Brand | {Comp 1} | {Comp 2} | {Comp 3} | Evidence IDs | Confidence |
+|----------------------------|--------------------------------------|:----------:|:--------:|:--------:|:--------:|--------------|------------|
+| **Positioning clarity**    | How crisp and ownable is the claim?  |            |          |          |          |              |            |
 | **Target audience fit**    | Specificity of ICP they address      |            |          |          |          |
 | **Value prop strength**    | Unique, credible, and compelling?    |            |          |          |          |
 | **Pricing competitiveness**| Price-to-value ratio vs. market      |            |          |          |          |
 | **Free / trial offer**     | Reduces acquisition friction?        |            |          |          |          |
+| **Proof strength**         | Quantity, quality, recency, specificity |         |          |          |          |
 | **Content depth**          | Practitioner-grade vs. surface-level |            |          |          |          |
 | **Content velocity**       | Posts/week across all channels       |            |          |          |          |
 | **Channel diversity**      | Number of active channels            |            |          |          |          |
@@ -612,7 +650,9 @@ Build a structured markdown table with a 1-5 score for each dimension (5 = clear
 | **TOTAL SCORE (out of 60)**|                                      |            |          |          |          |
 ```
 
-Fill in all cells based on research. Use "?" for unknown data. Tally total scores.
+Fill in all cells based on research. Use "unknown" for missing data. Unknowns do
+not silently reduce or inflate totals. Include a short rationale and evidence IDs
+for each score. Tally total scores only when evidence coverage is at least 60%.
 
 ## Step 4: Porter's Five Forces Snapshot
 
@@ -644,8 +684,12 @@ Format as a prioritized list. Each item must answer "so what?":
 
 ### 1. {Opportunity Title} [Impact: High | Effort: Low]
 **Gap observed:** {what you saw in the data}
+**Evidence:** {evidence IDs}
 **Why it matters now:** {why this is actionable, not just interesting}
 **Suggested action:** {concrete next step — a content series, a landing page, a pricing page change, a channel test}
+**Risk or assumption:** {what could be wrong}
+**Test metric:** {how to know if it worked}
+**Timeframe:** {this week / this month / this quarter}
 
 ### 2. {Opportunity Title} [Impact: High | Effort: Medium]
 ...
@@ -690,18 +734,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-competitive","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-competitive","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-competitive"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
