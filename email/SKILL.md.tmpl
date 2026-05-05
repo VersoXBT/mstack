@@ -18,6 +18,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 # Email Lifecycle Builder
 
 ## Inputs
@@ -29,43 +31,111 @@ Capture:
 - Desired action.
 - Trigger event.
 - List source and consent constraints.
+- Legal region and consent posture: opted-in, transactional, customer list,
+  partner list, or cold outbound.
+- Suppression rules: unsubscribed, bounced, inactive, current customers,
+  competitors, recent purchasers, or segments already in another sequence.
+- Frequency cap and current email calendar.
+- Required footer, unsubscribe, preference center, sender identity, and postal
+  address rules.
 - Existing brand voice or examples.
 
 If the user only asks for "emails", choose the most likely lifecycle moment and
 state the assumption before drafting.
 
+If consent posture or legal region is unclear, do not draft promotional email
+as if it is safe. Ask one bundled question or mark the plan as
+DONE_WITH_CONCERNS with the exact compliance assumption.
+
+## Lifecycle Defaults
+
+Use these defaults when the user gives only a high-level sequence type:
+
+| Type | Entry trigger | Exit trigger | Default cadence | Primary KPI |
+|------|---------------|--------------|-----------------|-------------|
+| Onboarding | Signup or account created | Activated or day 14 | Day 0, 1, 3, 7, 14 | Activation rate |
+| Activation | Key setup step missing | Setup completed | Day 0, 2, 5, 10 | Setup completion |
+| Nurture | Lead captured | Demo booked, purchase, or unsubscribe | 3-5 emails over 2-4 weeks | MQL to SQL or conversion |
+| Reactivation | Inactive for defined window | Session, purchase, reply, or unsubscribe | 2-4 emails over 2 weeks | Reactivated users |
+| Launch | Pre-launch or release window | Launch campaign ends | Teaser, reveal, proof, urgency, follow-up | Launch conversion |
+| Sales follow-up | Sales call, demo, or inquiry | Reply, closed won/lost | Same day, day 2, day 5, day 10 | Reply or next step |
+| Retention | Renewal or risk signal | Renewed, expansion, or saved account | Based on renewal date | Retention or expansion |
+| Winback | Churned or canceled | Returned, declined, or suppressed | 2-3 emails over 30 days | Winback conversion |
+
 ## Workflow
 
 1. Pick the sequence type: onboarding, activation, nurture, reactivation, launch,
    sales follow-up, newsletter, retention, winback.
+   Define entry trigger, exit trigger, primary KPI, suppression rules, and
+   cadence. If the type is promotional and consent is unclear, ask before
+   drafting.
 2. Define the conversion path:
    - Trigger.
    - Main belief shift.
    - CTA.
    - Objection to remove.
+   - Proof needed.
+   - Risk or compliance constraint.
 3. Build the sequence table:
    - Email number.
    - Send timing.
    - Segment.
+   - Entry/exit rule.
+   - Suppression rule.
    - Purpose.
    - Subject line.
+   - Preview text.
    - CTA.
+   - Primary metric.
 4. Draft each email in brand voice.
+   Include subject, preview text, body, CTA label, destination, plain-text
+   fallback URL, and personalization tokens.
 5. Add variants where useful:
    - Short subject.
    - Curiosity subject.
    - Direct benefit subject.
+   - Preview text variant.
 6. Add QA:
    - Clear sender.
    - One primary CTA.
    - No unsupported claims.
    - Plain-text readable.
    - Mobile-short paragraphs.
+   - Unsubscribe or preference-center present when required.
+   - Footer, postal address, and sender identity present when required.
+   - Links, UTMs, personalization tokens, and rendering checked.
+   - Deliverability risk reviewed: spammy phrasing, image dependence, link
+     count, bounce risk, complaint risk, and list quality.
 7. Add measurement:
    - Open rate only as diagnostic.
    - Click rate.
    - Reply or conversion.
    - Unsubscribe/spam risk.
+   - Primary KPI by lifecycle type.
+   - Event names and UTM structure.
+   - Attribution window.
+   - Holdout or cohort comparison where useful.
+8. Add test plan:
+   - Hypothesis.
+   - One variable per test.
+   - Audience split or holdout.
+   - Success metric.
+   - Minimum runtime or sample-size caveat.
+   - Decision rule.
+
+## Compliance And Deliverability
+
+Do not give legal advice, but do surface operational risk. Call out the expected
+posture for CAN-SPAM, GDPR/UK GDPR/PECR, CASL, or other obvious regional rules
+when the audience region is known. For regulated categories, require claim
+review before sending.
+
+Deliverability QA must include:
+- SPF, DKIM, and DMARC status if the user is preparing a real launch.
+- Bounce and complaint thresholds that would trigger a pause.
+- List hygiene and suppression-list check.
+- Warmup or throttling note for new sender domains.
+- Plain-text fallback and mobile rendering check.
 
 ## Output Format
 
@@ -73,7 +143,10 @@ Return:
 - Sequence strategy.
 - Email table.
 - Drafted emails.
+- Subject lines and preview text.
 - Segmentation notes.
+- Consent/compliance notes.
+- Deliverability QA.
 - A/B test ideas.
 - Measurement plan.
 
