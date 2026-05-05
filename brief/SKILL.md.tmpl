@@ -23,6 +23,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 {{BROWSE_OPTIONAL}}
 
 ## Setup
@@ -34,6 +36,7 @@ eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || tru
 PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 find . -name "*keyword*" -o -name "*brief*" 2>/dev/null | head -5
 find . -name "*.md" -path "*/content/*" 2>/dev/null | head -10
+[ -f "$PROJECT_DIR/icp.yaml" ] && echo "ICP: found" || echo "ICP: not found"
 ```
 
 Parse the user's request for a target keyword or topic.
@@ -50,7 +53,32 @@ Then ask:
 > C) General audience — not persona-specific
 > D) Let me describe the audience"
 
+Also capture:
+- Product/offer and CTA destination.
+- Funnel goal.
+- Geography/language.
+- Publishing site.
+- Reader sophistication.
+- Proof, compliance, and claim constraints.
+- Source keyword row if `/m-keywords` produced one.
+
 STOP and wait.
+
+## Brief Inputs
+
+Summarize before research:
+
+| Field | Value |
+|-------|-------|
+| Keyword/topic | {keyword} |
+| Audience/ICP | {persona from icp.yaml or brand context} |
+| Funnel goal | {goal} |
+| Offer/CTA | {offer and destination} |
+| Locale | {market/language} |
+| Proof constraints | {constraints} |
+| Compliance constraints | {constraints} |
+
+If `icp.yaml` exists, use it before asking generic audience questions.
 
 ## Step 1: Analyze Search Intent
 
@@ -146,6 +174,20 @@ When 50 articles already cover the topic, winning requires a reason to exist bey
 
 Select the 1-2 levers most feasible for this piece and document them in the brief under "Unique Angle."
 
+## Evidence Plan
+
+Create an evidence plan before building the outline:
+
+| Claim or section | Evidence needed | Source type | Owner/source | Required before draft? |
+|------------------|-----------------|-------------|--------------|------------------------|
+
+Do not let `/m-write` invent proof. Mark missing evidence as `needs source`.
+
+## Competitor Gap Matrix
+
+| Competitor URL | What they cover | What they miss | Weak proof | Format gap | Our information gain |
+|----------------|-----------------|----------------|------------|------------|----------------------|
+
 ## Step 3: Build the Brief
 
 Generate the complete content brief:
@@ -233,6 +275,12 @@ H2: {Section 1 — directly addresses the primary search intent}
     - {specific claim or fact to cover}
     - {specific claim or fact to cover}
   Featured snippet target: {yes/no — if yes, place a direct 40-50 word answer immediately under this H2}
+  Reader question: {what the reader needs answered}
+  Intent/PAA source: {SERP/PAA/evidence id}
+  Required proof: {source or needs source}
+  Visual/table need: {none/table/diagram/screenshot}
+  Internal link placement: {anchor and target}
+  CTA cue: {soft/hard/none}
 
 H2: {Section 2 — addresses top PAA question #1}
   Key points:
@@ -304,6 +352,15 @@ Review checkpoint: {e.g., "Revisit ranking and update content at 3-month mark if
 - {data point, case study, or example to reference if known}
 - Avoid: {common filler phrases, hedging language, or clichés found in competitors}
 - Tables and structured lists are preferred over dense paragraphs for scannability
+
+## Writer Handoff For /m-write
+
+Treat this brief as source of truth. `/m-write` should:
+- Follow the outline unless the user approves a change.
+- Use the audience, funnel goal, CTA, and proof constraints above.
+- Preserve the unique angle and information gain.
+- Use only approved claims or mark missing evidence.
+- Return a draft plus evidence gaps and suggested internal links.
 ```
 
 ---

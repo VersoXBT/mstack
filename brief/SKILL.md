@@ -365,6 +365,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Browse Detection (optional)
 
 ```bash
@@ -393,6 +431,7 @@ eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || tru
 PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 find . -name "*keyword*" -o -name "*brief*" 2>/dev/null | head -5
 find . -name "*.md" -path "*/content/*" 2>/dev/null | head -10
+[ -f "$PROJECT_DIR/icp.yaml" ] && echo "ICP: found" || echo "ICP: not found"
 ```
 
 Parse the user's request for a target keyword or topic.
@@ -409,7 +448,32 @@ Then ask:
 > C) General audience — not persona-specific
 > D) Let me describe the audience"
 
+Also capture:
+- Product/offer and CTA destination.
+- Funnel goal.
+- Geography/language.
+- Publishing site.
+- Reader sophistication.
+- Proof, compliance, and claim constraints.
+- Source keyword row if `/m-keywords` produced one.
+
 STOP and wait.
+
+## Brief Inputs
+
+Summarize before research:
+
+| Field | Value |
+|-------|-------|
+| Keyword/topic | {keyword} |
+| Audience/ICP | {persona from icp.yaml or brand context} |
+| Funnel goal | {goal} |
+| Offer/CTA | {offer and destination} |
+| Locale | {market/language} |
+| Proof constraints | {constraints} |
+| Compliance constraints | {constraints} |
+
+If `icp.yaml` exists, use it before asking generic audience questions.
 
 ## Step 1: Analyze Search Intent
 
@@ -505,6 +569,20 @@ When 50 articles already cover the topic, winning requires a reason to exist bey
 
 Select the 1-2 levers most feasible for this piece and document them in the brief under "Unique Angle."
 
+## Evidence Plan
+
+Create an evidence plan before building the outline:
+
+| Claim or section | Evidence needed | Source type | Owner/source | Required before draft? |
+|------------------|-----------------|-------------|--------------|------------------------|
+
+Do not let `/m-write` invent proof. Mark missing evidence as `needs source`.
+
+## Competitor Gap Matrix
+
+| Competitor URL | What they cover | What they miss | Weak proof | Format gap | Our information gain |
+|----------------|-----------------|----------------|------------|------------|----------------------|
+
 ## Step 3: Build the Brief
 
 Generate the complete content brief:
@@ -592,6 +670,12 @@ H2: {Section 1 — directly addresses the primary search intent}
     - {specific claim or fact to cover}
     - {specific claim or fact to cover}
   Featured snippet target: {yes/no — if yes, place a direct 40-50 word answer immediately under this H2}
+  Reader question: {what the reader needs answered}
+  Intent/PAA source: {SERP/PAA/evidence id}
+  Required proof: {source or needs source}
+  Visual/table need: {none/table/diagram/screenshot}
+  Internal link placement: {anchor and target}
+  CTA cue: {soft/hard/none}
 
 H2: {Section 2 — addresses top PAA question #1}
   Key points:
@@ -663,6 +747,15 @@ Review checkpoint: {e.g., "Revisit ranking and update content at 3-month mark if
 - {data point, case study, or example to reference if known}
 - Avoid: {common filler phrases, hedging language, or clichés found in competitors}
 - Tables and structured lists are preferred over dense paragraphs for scannability
+
+## Writer Handoff For /m-write
+
+Treat this brief as source of truth. `/m-write` should:
+- Follow the outline unless the user approves a change.
+- Use the audience, funnel goal, CTA, and proof constraints above.
+- Preserve the unique angle and information gain.
+- Use only approved claims or mark missing evidence.
+- Return a draft plus evidence gaps and suggested internal links.
 ```
 
 ---
@@ -707,18 +800,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-brief","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-brief","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-brief"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
