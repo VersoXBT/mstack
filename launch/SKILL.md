@@ -392,9 +392,42 @@ Collect:
 - Release date or target window.
 - Channels and constraints.
 - Proof, assets, and product readiness.
+- Launch owner, budget, required approvals, and decision owner.
+- Product state: alpha, beta, GA, feature, campaign, community, partner, content,
+  or relaunch.
+- Positioning source, ICP/persona source, legal/compliance constraints, support
+  needs, sales needs, and analytics stack.
 
 If timing is unknown, create a relative launch plan: T-14, T-7, launch day, T+7,
 T+30.
+
+## Launch Classification
+
+Classify before planning:
+
+| Field | Value |
+|-------|-------|
+| Launch type | product GA / beta / feature / campaign / community / partner / content / relaunch |
+| Tier | tier 1 company-level / tier 2 major segment / tier 3 narrow update |
+| Audience | primary ICP and secondary audiences |
+| Business goal | pipeline / signups / revenue / activation / retention / awareness |
+| Launch date | fixed / target / relative |
+| Risk level | low / medium / high |
+| Required approvals | product / legal / support / sales / exec / partner |
+
+If launch type or tier is unclear, state the assumption and ask only if it changes
+gates, assets, or launch date.
+
+## Messaging Source Of Truth
+
+Tie the launch narrative to brand, ICP, positioning, and proof:
+- Announcement.
+- Value proposition.
+- Audience trigger and why now.
+- Approved claims and proof.
+- Objections and replies.
+- CTA.
+- Claims to avoid.
 
 ## Workflow
 
@@ -415,6 +448,7 @@ T+30.
    - Support.
    - Sales or community enablement.
    - Creative assets.
+   Use the readiness gate table below. Mandatory failed gates mean BLOCKED.
 4. Create the timeline:
    - Pre-launch.
    - Launch day.
@@ -430,6 +464,59 @@ T+30.
    - Announcement snippets.
 7. Define metrics and post-launch review.
 
+## Readiness Gates
+
+| Workstream | Requirement | Owner | Due date | Dependency | Evidence | Status | Blocker | Go/no-go criterion |
+|------------|-------------|-------|----------|------------|----------|--------|---------|--------------------|
+
+Statuses: `not_started`, `in_progress`, `blocked`, `ready`, `approved`.
+
+## Cross-Channel Timeline
+
+Use T-minus phases:
+
+| Phase | Channel/workstream | Role | Asset | Owner | Dependency | Handoff |
+|-------|--------------------|------|-------|-------|------------|---------|
+| T-21 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T-14 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T-7 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T-3 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T-1 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| Launch | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T+1 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T+7 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+| T+30 | {workstream} | {role} | {asset} | {owner} | {dependency} | {handoff} |
+
+## Asset Matrix
+
+| Asset | Channel | Source message | Format/spec | Owner | Reviewer | Due date | Approval status | QA status |
+|-------|---------|----------------|-------------|-------|----------|----------|-----------------|-----------|
+
+## Risk Register
+
+| Risk | Category | Probability | Impact | Trigger | Owner | Mitigation | Contingency | Decision needed |
+|------|----------|-------------|--------|---------|-------|------------|-------------|-----------------|
+
+## QA And Analytics
+
+Include:
+- Landing/product smoke tests.
+- Forms, payments, signup, booking, email capture, and confirmation states.
+- Links, social previews, email deliverability, and UTM checks.
+- Event schema, dashboard, baseline, target, leading metrics, lagging metrics,
+  guardrails, and decision thresholds.
+- Rollback or pause path.
+
+## Post-Launch Review
+
+Plan:
+- T+1 operational check: broken links, support tickets, conversion tracking,
+  channel publishing status.
+- T+7 performance readout: leading indicators, audience response, asset winners,
+  blockers.
+- T+30 retro: goal attainment, lessons, scale/iterate/pause/rollback/relaunch
+  decision.
+
 ## Output Format
 
 Return:
@@ -442,6 +529,7 @@ Return:
 - Metrics.
 - Risks and mitigations.
 - Next actions.
+- Go/no-go status and unresolved blockers.
 
 ## Privacy Boundary
 
