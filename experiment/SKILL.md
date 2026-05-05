@@ -391,9 +391,52 @@ Capture:
 - Funnel step.
 - Variant idea.
 - Constraints and risk.
+- Segment and eligibility.
+- Source of truth for metrics.
+- Conversion window and attribution rule.
 
 If data is missing, create a directional test plan and mark confidence as low.
 Do not fake sample sizes or significance.
+
+## Hypothesis Standard
+
+Use this format:
+
+> For [segment] on [surface], changing [variable] from [control] to [variant]
+> will move [primary metric] from [baseline] to [target] within [window],
+> because [behavioral mechanism]. Reject the hypothesis if [kill condition].
+
+Require:
+- Segment and eligibility.
+- Baseline and source.
+- Expected lift or minimum detectable effect.
+- Behavioral mechanism.
+- Time window.
+- Rejection condition.
+
+## Metric Design
+
+Define:
+- Primary metric with numerator, denominator, unit of analysis, and source of truth.
+- Guardrail metrics with explicit fail thresholds.
+- Diagnostic metrics that explain why the result moved.
+- Conversion window and attribution rule.
+- Segment cuts to inspect after the primary readout.
+
+## Sample Size And Traffic Caveats
+
+Do not invent sample sizes. If traffic data is missing, mark the plan directional.
+
+When data exists, include:
+- Baseline rate.
+- Minimum detectable effect.
+- Expected exposure volume per arm.
+- Estimated runtime.
+- Confidence/power caveat.
+- Warning against early peeking.
+- Multiple-comparison caveat when using more than one variant or many segments.
+- Low-traffic fallback: larger-effect test, sequential rollout, qualitative test,
+  or holdout.
 
 ## Workflow
 
@@ -401,7 +444,12 @@ Do not fake sample sizes or significance.
 2. Convert it into a falsifiable hypothesis.
 3. Define:
    - Primary metric.
+   - Numerator and denominator.
+   - Unit of analysis.
+   - Source of truth.
    - Guardrail metric.
+   - Guardrail fail threshold.
+   - Diagnostic metrics.
    - Segment.
    - Test surface.
    - Expected lift.
@@ -409,21 +457,43 @@ Do not fake sample sizes or significance.
    - Control.
    - Variant A.
    - Variant B if traffic allows.
+   - One changed variable per variant.
+   - Traffic allocation.
+   - Eligibility and exclusion rules.
+   - Sample-ratio mismatch check.
 5. Add instrumentation:
+   - Assignment event.
+   - Exposure event.
    - Event names.
+   - Required event properties.
+   - Identity/user/session handling.
    - Conversion window.
    - Attribution assumptions.
+   - Internal traffic and bot exclusion.
+   - Dashboard or query source.
    - Data owner.
+   - Pre-launch QA checklist.
 6. Set decision rules:
-   - Ship.
-   - Iterate.
-   - Kill.
-   - Need more data.
+   - Ship only if the primary metric clears the practical lift threshold,
+     sample maturity is met, and guardrails pass.
+   - Iterate if the primary metric is positive but below threshold, or
+     diagnostics show a fixable bottleneck.
+   - Kill if the primary metric is negative, guardrails fail, or the mechanism
+     is disproven.
+   - Need more data if exposure, runtime, or event quality is insufficient.
 7. Add experiment QA:
    - One variable per test when possible.
    - No overlapping campaigns without notation.
    - No dark patterns.
    - No unsupported claims.
+   - No privacy, consent, accessibility, sensitive-audience, regulated-claim,
+     manipulative scarcity, or price-discrimination risks left unflagged.
+   - Rollback condition is explicit.
+8. Branch the follow-up plan:
+   - Positive result.
+   - Negative result.
+   - Null or inconclusive result.
+   - Positive result with guardrail failure.
 
 ## Output Format
 
@@ -433,6 +503,8 @@ Return:
 - Variants.
 - Instrumentation checklist.
 - Decision rule.
+- Sample-size and traffic caveats.
+- Guardrails and rollback condition.
 - Risks.
 - Next experiment after each possible outcome.
 
