@@ -371,6 +371,7 @@ Check for existing ICP or persona documents:
 eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
 PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 find . -name "*persona*" -o -name "*icp*" -o -name "*customer*" 2>/dev/null | head -5
+[ -f "$PROJECT_DIR/icp.yaml" ] && echo "ICP_YAML: found" || echo "ICP_YAML: not found"
 ```
 
 If brand context is configured, use audience data as the foundation. If not, ask:
@@ -392,6 +393,21 @@ STOP and wait.
 
 Based on brand.yaml and user input, identify the distinct audience segments.
 
+## Evidence Standard
+
+Do not present plausible personas as validated truth. For each persona, maintain:
+
+| Claim | Evidence | Source | Confidence | Gap |
+|-------|----------|--------|------------|-----|
+
+Rules:
+- Each persona needs at least 3 evidence-backed claims or must be marked
+  `assumption`.
+- Use source labels: customer interview, sales call, analytics, CRM, review,
+  community thread, support ticket, market research, founder assumption.
+- If evidence is thin, final status is DONE_WITH_CONCERNS.
+- Unknowns stay unknown; do not fill them with stereotypes.
+
 **Segmentation strategy:**
 
 For **B2B products**, segment by firmographics first:
@@ -410,6 +426,13 @@ For **B2C products**, segment by demographics and psychographics first:
 
 If the product serves both technical and non-technical users, create separate personas.
 If the audience is homogeneous, create variations by company stage or role seniority.
+
+Prioritize segments with a scoring table:
+
+| Segment | Pain intensity | Budget | Reachability | Urgency | ACV/LTV | Sales cycle | Channel fit | Confidence | Priority |
+|---------|----------------|--------|--------------|---------|---------|-------------|-------------|------------|----------|
+
+Score each 1-5. Explain the top priority and mark weak evidence.
 
 Briefly describe each planned persona segment:
 > "Here are the {N} personas I'll build:
@@ -458,6 +481,13 @@ For B2C:
 2. {Workflow frustration — a recurring daily/weekly inefficiency they've normalised but hate}
 3. {Gap in current tools or approaches — what their current stack doesn't do, and what they patch with workarounds}
 
+For every pain, include:
+- Frequency.
+- Cost or business impact.
+- Current workaround.
+- Owner of the pain.
+- Willingness to pay signal.
+
 **Jobs to Be Done (JTBD — Clayton Christensen framework)**
 
 JTBD reframes the purchase question from "who is this customer?" to "what progress are they trying to make?" Each job has three dimensions:
@@ -472,6 +502,11 @@ Write 2–3 JTBD statements in this format:
 Then annotate each with the emotional and social layer:
 - Emotional undercurrent: {e.g., feel confident presenting to the board; stop feeling like they're guessing}
 - Social signal: {e.g., be seen as data-driven by peers; be known as the person who shipped fast}
+- Current alternative or workaround.
+- Switching trigger.
+- Anxiety or inertia that slows purchase.
+- Desired measurable outcome.
+- Why now.
 
 Example across industries:
 - *SaaS ops manager*: "When my team misses SLA targets two weeks in a row, I want to pinpoint the bottleneck without running manual SQL queries, so I can fix it before the quarterly review."
@@ -535,6 +570,12 @@ Content format preferences:
 |---------|------------------------------|--------------|-----------|
 | {channel} | {reason tied to their habits} | {type} | {cadence} |
 
+**Disqualifiers / Anti-ICP**
+
+| Disqualifier | Why bad fit | Detection signal | Later-skill impact |
+|--------------|-------------|------------------|--------------------|
+| {poor fit} | {reason} | {signal} | {ads/landing/email/content consequence} |
+
 ---
 
 Repeat for all personas.
@@ -582,6 +623,30 @@ Use AskUserQuestion:
 
 Save all personas plus the cross-persona analysis.
 
+Also save a canonical structured artifact to `$PROJECT_DIR/icp.yaml` for other
+mstack skills. Include stable fields:
+
+```yaml
+schema_version: 1
+primary_persona: ""
+segments: []
+jtbd: []
+pains: []
+objections: []
+buying_triggers: []
+channels: []
+messaging_terms:
+  use: []
+  avoid: []
+proof_needed: []
+disqualifiers: []
+confidence: low
+evidence_gaps: []
+```
+
+If the user picked a custom markdown save path, still write `$PROJECT_DIR/icp.yaml`
+unless they explicitly decline.
+
 ## Completion
 
 Report:
@@ -590,6 +655,9 @@ Report:
 - Top 3 shared pain points across all personas
 - Top 2 universal buying triggers
 - File saved to: {path}
+- Structured ICP saved to: `$PROJECT_DIR/icp.yaml`
+- Confidence: {high / medium / low}
+- Evidence gaps: {count and top gaps}
 
 Suggest next steps:
 - "Run `/m-strategy` to build a channel strategy targeting these personas"
@@ -602,18 +670,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-icp","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-icp","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-icp"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
