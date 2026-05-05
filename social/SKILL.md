@@ -363,6 +363,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Setup
 
 Check for brand context and existing social content:
@@ -406,6 +444,31 @@ Extract:
 
 If it's an announcement or original take, work from the user's description.
 
+## Proof And Inputs Gate
+
+Before writing, create:
+
+| Claim | Source | Confidence | Approved to use | Treatment |
+|-------|--------|------------|-----------------|-----------|
+
+Rules:
+- No invented numbers, fake personal stories, fake customer quotes, or fake
+  founder lessons.
+- Unsupported claims are softened or removed.
+- "Unpopular opinion" and drama hooks require source support.
+- Note which prior social/audience learnings were applied, or say none found.
+
+## Shared Output Contract
+
+Every platform output includes:
+
+| Platform | Audience | Objective | Native format | Hook | Body | CTA | Link placement | UTM | Status | Owner | Schedule timezone | Approval state |
+|----------|----------|-----------|---------------|------|------|-----|----------------|-----|--------|-------|-------------------|----------------|
+
+Statuses: `draft`, `needs_review`, `approved`, `scheduled`, `live`.
+UTM: `utm_source={platform}`, `utm_medium=social`,
+`utm_campaign={campaign}`, `utm_content={platform}-{variant}`.
+
 **Adaptation principle:** The same topic requires completely different execution per platform.
 A stat that works as a punchy tweet needs to become a story on LinkedIn, a genuine question on Reddit,
 and a visual hook on Instagram. Never copy-paste across platforms.
@@ -433,7 +496,7 @@ and a visual hook on Instagram. Never copy-paste across platforms.
 
 **Hashtag strategy:** 0-2 max. Only add if the hashtag has active community traffic. Never pad.
 
-Write 2-3 variations:
+Write 3 variations:
 
 **Option A — Curiosity hook:**
 ```
@@ -457,7 +520,8 @@ Write 2-3 variations:
 ```
 {hook tweet that makes people want to read more}
 ```
-→ If you want the full thread, run `/m-threads`
+If this deserves a thread, include a 5-9 tweet outline, first reply, CTA
+placement, and handoff note for `/m-threads`.
 
 **Best time to post:**
 - B2B audience: Tuesday–Thursday, 8am–10am or 5pm–6pm in their timezone
@@ -626,18 +690,33 @@ Present all posts. Use AskUserQuestion:
 
 STOP and wait.
 
+## Engagement Follow-Up
+
+For approved posts, plan:
+- 30 minutes: reply to early comments, fix broken link if needed.
+- 2 hours: answer substantive replies, hide/report abuse if applicable.
+- 24 hours: capture winners, objections, and follow-up topics.
+- 48 hours: decide whether to repurpose, boost, or retire.
+
+If replies become sensitive, hand off to `/m-engage` with the post, platform,
+speaker identity, and risk context.
+
 ## Step 7: Save
 
 Use AskUserQuestion:
 > "Where should I save these posts? (default: `social/{topic-slug}-{date}.md`)"
 
 Save all approved posts in a single file with platform sections.
+If approval was not granted, save as draft and label every asset `needs_review`.
 
 ## Completion
 
 Report:
 - Platforms covered: {list}
 - Posts created: {count}
+- Claims checked: {count}; unsupported removed/softened: {count}
+- Tracking: {UTM campaign and content IDs}
+- Follow-up plan: {30m/2h/24h/48h}
 - File saved to: {path}
 
 Suggest next steps:
@@ -651,18 +730,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-social","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-social","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-social"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.

@@ -21,6 +21,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 ## Setup
 
 Check for brand context and existing social content:
@@ -64,6 +66,31 @@ Extract:
 
 If it's an announcement or original take, work from the user's description.
 
+## Proof And Inputs Gate
+
+Before writing, create:
+
+| Claim | Source | Confidence | Approved to use | Treatment |
+|-------|--------|------------|-----------------|-----------|
+
+Rules:
+- No invented numbers, fake personal stories, fake customer quotes, or fake
+  founder lessons.
+- Unsupported claims are softened or removed.
+- "Unpopular opinion" and drama hooks require source support.
+- Note which prior social/audience learnings were applied, or say none found.
+
+## Shared Output Contract
+
+Every platform output includes:
+
+| Platform | Audience | Objective | Native format | Hook | Body | CTA | Link placement | UTM | Status | Owner | Schedule timezone | Approval state |
+|----------|----------|-----------|---------------|------|------|-----|----------------|-----|--------|-------|-------------------|----------------|
+
+Statuses: `draft`, `needs_review`, `approved`, `scheduled`, `live`.
+UTM: `utm_source={platform}`, `utm_medium=social`,
+`utm_campaign={campaign}`, `utm_content={platform}-{variant}`.
+
 **Adaptation principle:** The same topic requires completely different execution per platform.
 A stat that works as a punchy tweet needs to become a story on LinkedIn, a genuine question on Reddit,
 and a visual hook on Instagram. Never copy-paste across platforms.
@@ -91,7 +118,7 @@ and a visual hook on Instagram. Never copy-paste across platforms.
 
 **Hashtag strategy:** 0-2 max. Only add if the hashtag has active community traffic. Never pad.
 
-Write 2-3 variations:
+Write 3 variations:
 
 **Option A — Curiosity hook:**
 ```
@@ -115,7 +142,8 @@ Write 2-3 variations:
 ```
 {hook tweet that makes people want to read more}
 ```
-→ If you want the full thread, run `/m-threads`
+If this deserves a thread, include a 5-9 tweet outline, first reply, CTA
+placement, and handoff note for `/m-threads`.
 
 **Best time to post:**
 - B2B audience: Tuesday–Thursday, 8am–10am or 5pm–6pm in their timezone
@@ -284,18 +312,33 @@ Present all posts. Use AskUserQuestion:
 
 STOP and wait.
 
+## Engagement Follow-Up
+
+For approved posts, plan:
+- 30 minutes: reply to early comments, fix broken link if needed.
+- 2 hours: answer substantive replies, hide/report abuse if applicable.
+- 24 hours: capture winners, objections, and follow-up topics.
+- 48 hours: decide whether to repurpose, boost, or retire.
+
+If replies become sensitive, hand off to `/m-engage` with the post, platform,
+speaker identity, and risk context.
+
 ## Step 7: Save
 
 Use AskUserQuestion:
 > "Where should I save these posts? (default: `social/{topic-slug}-{date}.md`)"
 
 Save all approved posts in a single file with platform sections.
+If approval was not granted, save as draft and label every asset `needs_review`.
 
 ## Completion
 
 Report:
 - Platforms covered: {list}
 - Posts created: {count}
+- Claims checked: {count}; unsupported removed/softened: {count}
+- Tracking: {UTM campaign and content IDs}
+- Follow-up plan: {30m/2h/24h/48h}
 - File saved to: {path}
 
 Suggest next steps:
