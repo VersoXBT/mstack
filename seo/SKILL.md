@@ -464,6 +464,8 @@ Parse the user's request. Determine if they provided:
 - A URL to analyze
 - A local content file
 - Both (live page + source content)
+- Page type, target intent, business locality, YMYL/regulatory category,
+  competitors, and any `/m-keywords` or `/m-brief` artifact paths.
 
 If neither is provided, use AskUserQuestion:
 > "What do you want me to optimize?
@@ -477,6 +479,16 @@ Then ask:
 
 STOP and wait.
 
+## Evidence Model
+
+Every finding must include:
+
+| Issue ID | Source | Observed value | Expected value | Severity | Confidence | Recommendation | Verification |
+|----------|--------|----------------|----------------|----------|------------|----------------|--------------|
+
+If a value is not measured, mark `not_measured` with the reason. Do not present
+source-only risk triage as measured SEO performance.
+
 ## Step 1: Load the Content
 
 If a URL was provided and browse is available:
@@ -485,6 +497,15 @@ $B goto "{URL}"
 $B text
 $B links
 ```
+
+Collect crawl and indexability evidence:
+- HTTP status and redirect chain.
+- Raw HTML head and rendered DOM head.
+- Title, meta description, canonical, robots meta, X-Robots-Tag, hreflang.
+- robots.txt allow/deny for the URL.
+- XML sitemap presence and whether this URL is listed.
+- Mobile viewport.
+- Raw vs rendered metadata differences.
 
 If a local file was provided:
 ```bash
@@ -504,6 +525,8 @@ Extract:
 - Existing schema markup (`application/ld+json` blocks)
 - Viewport meta tag presence
 - Canonical tag presence
+- Robots meta and X-Robots status when available
+- Hreflang when relevant
 
 ## Step 2: Title Tag Analysis
 
@@ -572,6 +595,10 @@ Provide heading suggestions where needed.
 
 Target keyword: {keyword}
 
+Treat keyword density as a weak diagnostic only. Prioritize search intent,
+semantic coverage, entity coverage, and alignment with the supplied brief/SERP
+evidence over exact density.
+
 Check usage:
 - First mention: paragraph {N} (ideal: paragraph 1)
 - Total mentions: {count}
@@ -618,6 +645,11 @@ Note every URL that appears — more than 2 results is a cannibalization risk.
 | Pages with same primary keyword | {count} pages found |
 | URLs in conflict | {list} |
 | Severity | None / Low / Medium / High |
+
+Base cannibalization on same-intent overlap, not keyword presence alone. Compare
+title, H1, canonical target, URL slug, internal links, sitemap inventory, and
+Search Console query/page data when available before recommending redirects or
+canonicals.
 
 **Fixes by severity:**
 - **Low (2 pages, different intent):** Add canonical tag on the weaker page pointing to the stronger; differentiate the content angle (informational vs. commercial).
@@ -708,6 +740,14 @@ grep -i "schema.org\|application/ld+json\|itemtype" {file} 2>/dev/null | head -2
 
 Identify the page type and apply the appropriate schema(s). Multiple schemas can coexist on one page.
 
+Policy caveats:
+- Schema must match visible page content.
+- FAQ rich results are limited and should not be promised as generally available.
+- HowTo rich-result display is limited; use HowTo only when the page truly has
+  step-by-step instructions.
+- Avoid self-serving review markup on your own product/service pages.
+- Validate with Rich Results Test or Schema.org validator and record the result.
+
 | Page Type | Recommended Schema | Rich Result Unlocked |
 |-----------|--------------------|----------------------|
 | Blog post / article | `Article` or `BlogPosting` | Author, date, headline |
@@ -787,7 +827,8 @@ Validate any existing or new schema at: `https://validator.schema.org/` or `http
 
 ## Step 10: Core Web Vitals
 
-Core Web Vitals are Google ranking signals. Assess what is detectable from the page source; flag risks that require lab or field measurement.
+Core Web Vitals are Google ranking signals. Measure first; use source inspection
+only as risk triage.
 
 **Thresholds:**
 
@@ -841,13 +882,14 @@ grep -i "width\|height\|aspect-ratio\|font-display\|@font-face" {file} 2>/dev/nu
 
 **CWV assessment for this page:**
 
-| Metric | Risk Signals Found | Estimated Impact |
-|--------|-------------------|-----------------|
-| LCP | {list signals or "none detected"} | {Low/Medium/High} |
-| INP | {list signals or "none detected"} | {Low/Medium/High} |
-| CLS | {list signals or "none detected"} | {Low/Medium/High} |
+| Metric | Field value | Lab value | Source | Status | Risk signals | Confidence |
+|--------|-------------|-----------|--------|--------|--------------|------------|
+| LCP | {value or not_measured} | {value or not_measured} | PSI/CrUX/GSC/Lighthouse/source | {good/needs improvement/poor/not_measured} | {signals} | {confidence} |
+| INP | {value or not_measured} | {value or not_measured} | PSI/CrUX/GSC/source | {status} | {signals} | {confidence} |
+| CLS | {value or not_measured} | {value or not_measured} | PSI/CrUX/GSC/Lighthouse/source | {status} | {signals} | {confidence} |
 
 Measurement tools: PageSpeed Insights (`pagespeed.web.dev`), Chrome DevTools > Lighthouse, CrUX Dashboard (field data).
+If none are available, say `CWV not measured` and list source-risk signals only.
 
 ## Step 11: Mobile-First Check
 
@@ -931,7 +973,7 @@ $B goto "{domain}/robots.txt"
 
 ## Step 13: Compile Checklist
 
-Generate a prioritized fix list:
+Generate a prioritized fix list plus a machine-readable JSON block:
 
 ```
 ## SEO Audit: {Page Title or URL}
@@ -951,6 +993,25 @@ Audit date: {date}
 
 ### Passing Already
 - [x] {Element that's already optimized}
+
+```json
+{
+  "issues": [
+    {
+      "id": "SEO-001",
+      "source": "crawl",
+      "observed_value": "",
+      "expected_value": "",
+      "severity": "high",
+      "confidence": "medium",
+      "recommendation": "",
+      "patch_target": "",
+      "verification": "",
+      "unresolved_gaps": []
+    }
+  ]
+}
+```
 ```
 
 Use AskUserQuestion:
@@ -983,18 +1044,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-seo","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-seo","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-seo"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
