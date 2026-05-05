@@ -374,6 +374,9 @@ Parse the user's request. Determine:
 - The context: what was said, what thread or conversation this is in
 - Whether a URL or pasted text was provided
 - Your engagement tier in this community (see Engagement Tiers below)
+- Speaker identity: brand account, founder, employee, community manager,
+  partner, customer, or unaffiliated observer.
+- Whether affiliation disclosure is required.
 
 If context is not provided, use AskUserQuestion:
 > "Share the context for this engagement. Paste:
@@ -415,6 +418,19 @@ Engagement is earned, not assumed. Skipping tiers is the fastest way to be dismi
 - Respond to a direct question (answer honestly, mention your product only if genuinely relevant AND you are Tier 3+)
 - Skip it (if your only contribution would be promotional, or you're Tier 1 in a new community)
 
+**Risk level**
+- Low: normal question or discussion, no controversy, no product complaint, no
+  private data, no legal or safety implication.
+- Medium: criticism, competitor comparison, pricing concern, mild complaint,
+  moderator attention, or ambiguous affiliation.
+- High: legal threat, safety issue, privacy claim, security report, harassment,
+  doxxing, billing/account-specific complaint, press inquiry, regulator mention,
+  pile-on, or moderator conflict.
+
+High-risk cases do not get a public draft by default. Recommend escalation or a
+support handoff. Medium-risk cases should include a skip option and avoid product
+promotion unless directly necessary.
+
 **When NOT to engage — hard stops:**
 - Flame wars or heated arguments where logic has left the chat
 - Trolling bait designed to provoke a defensive response
@@ -422,16 +438,51 @@ Engagement is earned, not assumed. Skipping tiers is the fastest way to be dismi
 - Topics outside your actual expertise — shallow takes get exposed fast
 - Threads where three or more people already gave the same answer you'd give
 - Any context where engaging would look like reputation management rather than genuine participation
+- Any legal, safety, privacy, security, harassment, doxxing, billing/account,
+  press, regulator, or moderator-conflict case that needs an accountable owner
+  before a public reply.
 
 Present the assessment:
 > "Platform: {platform}
 > Community tier: {Tier 1 / 2 / 3 / 4 — with one sentence of reasoning}
 > Thread type: {type}
+> Risk level: {low / medium / high}
+> Speaker identity: {identity and disclosure requirement}
 > Recommended approach: {respond with expertise / respond to direct question / skip with reason}
 >
 > Should I proceed?"
 
-Use AskUserQuestion if the right approach is unclear.
+Proceed without asking when the case is low risk and the right approach is clear.
+Use AskUserQuestion only when the right approach is unclear, risk is medium/high,
+or the response depends on private context.
+
+## Conflict Response Playbooks
+
+Use these when the thread is negative, ambiguous, or reputation-sensitive:
+
+- Valid criticism: acknowledge the specific point, state what is true, avoid
+  defensiveness, and say what would help next.
+- False claim: correct the claim with evidence or a narrow factual statement.
+  Do not dunk, mock, or escalate the tone.
+- Angry user: validate the frustration without over-admitting liability. Move
+  account-specific details to support.
+- Competitor bait: answer the buyer question, name tradeoffs, and avoid attacking
+  competitors.
+- Pile-on: usually skip. If a reply is needed, make one calm factual correction
+  and stop.
+- Moderator pressure: be brief, respectful, and follow the moderator's requested
+  process. Do not argue rules in public.
+- Bad-faith thread: recommend no reply.
+
+## Speaker Identity Rules
+
+- Never pretend to be a customer, neutral reviewer, or unaffiliated user.
+- If affiliated, disclose when product, competitor, or recommendation context
+  makes that affiliation material.
+- Brand accounts can speak for the company. Employees and founders should avoid
+  making commitments unless they own the outcome.
+- Personal accounts should sound human, but still disclose conflicts.
+- Community norms override brand voice. Brand voice is a constraint, not the goal.
 
 ## Step 2: Write the Response
 
@@ -565,6 +616,8 @@ Check against brand voice:
 - No items from avoid list
 - No AI vocabulary ("crucial", "leverage", "in today's digital landscape", "it's worth noting", "game-changing", "robust", "seamless")
 - Sounds like a real person, not a brand
+- Community norms and risk posture override brand voice when they conflict.
+- Product mentions require relevance, honesty, and disclosure when affiliated.
 - Passes the "would a community member screenshot this as cringe" test
 
 ## Step 3: Self-Check
@@ -584,20 +637,31 @@ If any check fails, revise.
 
 ## Step 4: Variants
 
-For important threads, write 2 variations:
+For important threads, write variants by risk level. Include a skip option for
+medium or high risk.
 
-**Option A — {approach description}:**
+**Option A — value-only:**
 ```
 {variant A}
 ```
 
-**Option B — {approach description}:**
+**Option B — transparent affiliation:**
 ```
 {variant B}
 ```
 
+**Option C — de-escalation / support handoff:**
+```
+{variant C if needed}
+```
+
+**Option D — do not post:**
+```
+{skip rationale if risk is medium or high}
+```
+
 Use AskUserQuestion:
-> "Here's the response draft. Which version (A or B), or what would you change?"
+> "Here's the response draft. Which version should we use, or what would you change?"
 
 STOP and wait.
 
@@ -655,18 +719,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-engage","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-engage","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-engage"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
