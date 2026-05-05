@@ -374,6 +374,8 @@ Check for existing positioning artifacts and competitive analysis:
 eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || true
 PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 find . -name "*competi*" -o -name "*positioning*" 2>/dev/null | head -5
+[ -f "$PROJECT_DIR/icp.yaml" ] && echo "ICP: found" || echo "ICP: not found"
+[ -f "$PROJECT_DIR/brand.yaml" ] && echo "BRAND: found" || echo "BRAND: not found"
 ```
 
 If competitive analysis exists, read it:
@@ -428,6 +430,13 @@ A real differentiator passes three tests:
 If a claim fails any test, it is a table-stakes feature, not a differentiator. Keep
 searching until you find one that passes all three.
 
+Maintain a proof ledger:
+
+| Claim | True? | Relevant? | Exclusive? | Source | Confidence | Proof gap |
+|-------|-------|-----------|------------|--------|------------|-----------|
+
+Every major claim must have proof, a source label, or be marked as an assumption.
+
 Draft a positioning statement using the Dunford template:
 ```
 For [target customer] who [have this problem or goal],
@@ -448,11 +457,28 @@ category, make the problem vivid first, then name the space.
 Example: "A new category of revenue intelligence — not CRM, not BI — that tells sales
 teams which deals will close before the rep even asks."
 
+**Alternatives And Status Quo Map**
+
+| Alternative | Buyer uses it because | Where it fails | Our contrast | Evidence |
+|-------------|-----------------------|----------------|--------------|----------|
+
+Include direct competitors, indirect substitutes, spreadsheets/manual process,
+doing nothing, legacy tools, agencies/services, or internal build.
+
 **Target Audience Statement**
 Be specific: role + context + trigger moment (what just happened that makes them seek
 this solution today?).
 Example: "VP of Sales at B2B SaaS companies (50–500 employees) who just missed a
 quarterly forecast and can no longer trust their pipeline data."
+
+**Anti-Positioning**
+
+State:
+- Who this is not for.
+- Categories we should not chase.
+- Claims we should not make.
+- Tradeoffs we accept.
+- Competitors or alternatives we should not frame against.
 
 **Key Differentiator — "Only We..." Statement**
 One claim that is true, relevant, and exclusive. Lead with the outcome, not the feature.
@@ -478,6 +504,27 @@ validation, or technical fact}
 
 *Pillar 2 — {Name}:* {one-line explanation}
 Proof point: {specific, verifiable evidence}
+
+**Downstream Handoff**
+
+Create reusable fields for other mstack skills:
+
+| Destination | Fields |
+|-------------|--------|
+| /m-brand | category, differentiator, competitors, voice constraints, claims to avoid |
+| /m-landing | hero headline, subhead, proof points, objections, FAQ angles, CTA |
+| /m-ads | hooks, value props, audience, proof, claims to avoid |
+| /m-strategy | target segment, category bet, channel implications, proof gaps |
+
+Also include:
+- One-liner.
+- Hero headline.
+- Ad hooks.
+- Proof points.
+- Buyer objections.
+- FAQ angles.
+- Target segment.
+- Claims to avoid.
 
 *Pillar 3 — {Name}:* {one-line explanation}
 Proof point: {specific, verifiable evidence}
@@ -516,6 +563,11 @@ Before publishing, run at least two of these:
 4. **The Sales Team Test** — ask a sales rep to use the elevator pitch in their next
    call; debrief on which phrases landed and which prompted confusion
 
+Convert validation into tests:
+
+| Hypothesis | Audience | Channel | Asset | Metric | Pass/fail threshold | Next action |
+|------------|----------|---------|-------|--------|---------------------|-------------|
+
 ---
 
 Present the draft framework. Use AskUserQuestion:
@@ -549,6 +601,17 @@ Use AskUserQuestion:
 
 Save the approved framework as a markdown document.
 
+Before updating brand context, ask explicitly:
+> "Should I also update brand.yaml with the approved category, differentiator,
+> competitors, and claims-to-avoid?
+> A) Save the positioning doc only
+> B) Save the doc and update brand.yaml
+> C) Save a structured positioning artifact too"
+
+If C, also save `$PROJECT_DIR/positioning.yaml` with category, target audience,
+differentiator, proof ledger, alternatives, anti-positioning, handoff fields,
+and validation tests.
+
 ## Completion
 
 Report:
@@ -558,6 +621,8 @@ Report:
 - Elevator pitches: 30s, 60s, 2min created
 - Validation tests suggested: {list of tests recommended}
 - File saved to: {path}
+- Handoff fields: landing / ads / strategy ready
+- Proof gaps: {count}
 
 Suggest next steps:
 - "Run `/m-strategy` to build a marketing strategy using this positioning"
@@ -570,18 +635,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-positioning","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-positioning","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-positioning"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
