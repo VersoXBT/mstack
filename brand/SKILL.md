@@ -283,11 +283,12 @@ plan's living status.
 Check if brand context already exists:
 
 ```bash
-BRAND_EXISTS=$(~/.claude/skills/mstack/bin/mstack-brand exists)
+MSTACK_BIN="${MSTACK_BIN:-$HOME/.claude/skills/mstack/bin}"
+BRAND_EXISTS=$("$MSTACK_BIN/mstack-brand" exists)
 echo "BRAND_EXISTS: $BRAND_EXISTS"
 if [ "$BRAND_EXISTS" = "true" ]; then
   echo "Current brand:"
-  ~/.claude/skills/mstack/bin/mstack-brand read
+  "$MSTACK_BIN/mstack-brand" read
 fi
 ```
 
@@ -320,6 +321,10 @@ After they answer, ask:
 If the user gives a vague answer (e.g., "it's a platform" or "helps businesses"), probe:
 > "Can you be more specific? What type of business or person uses it, and what's the single most important thing they can do with it?"
 
+Then ask:
+> "What category should buyers put this in, and what short tagline should we use?
+> If unsure, give the closest category and a rough tagline. We'll tighten it later."
+
 ## Step 2: Target Audience
 
 Use AskUserQuestion:
@@ -348,6 +353,10 @@ Then ask:
 >
 > Example: 'Secondary: CFOs and finance teams who need to approve spend visible in the primary tool.'"
 
+Then ask:
+> "Who is the buyer, who is the daily user, and what triggers urgency now?
+> Include budget owner, main objection, and the moment they start looking."
+
 ## Step 3: Competitors
 
 Use AskUserQuestion:
@@ -365,6 +374,10 @@ Use AskUserQuestion:
 
 If the user lists only one competitor or says "none", ask:
 > "Even if they're not perfect comparisons, who do buyers evaluate alongside you? This helps with positioning copy and SEO."
+
+Also capture indirect competitors and status quo:
+> "What do customers do instead if they do not buy anything?
+> Examples: spreadsheet, agency, internal build, manual workflow, legacy tool."
 
 ## Step 4: Positioning
 
@@ -411,6 +424,10 @@ Then ask:
 > "Paste 1-3 sentences that already sound like your brand. Pull from your website, a tweet, a Slack announcement, a sales email — anything you'd be proud to publish.
 >
 > These become calibration examples for all AI-generated content. If you don't have any yet, write a sentence right now — it doesn't have to be perfect."
+
+Then ask:
+> "Give one sentence that should NOT sound like your brand.
+> I will use it as a negative calibration example."
 
 ## Step 6: Channels
 
@@ -460,8 +477,12 @@ Use AskUserQuestion:
 Assemble all answers into brand.yaml format:
 
 ```yaml
+schema_version: 1
 name: "{name}"
 tagline: "{tagline}"
+category: "{category}"
+core_offer: "{what is being sold or offered}"
+primary_cta: "{main CTA}"
 voice:
   tone: "{tone from step 5}"
   personality: "{personality description}"
@@ -469,9 +490,20 @@ voice:
   examples:
     - "{example sentence 1}"
     - "{example sentence 2}"
+  never_sounds_like:
+    - "{negative calibration example}"
+  channel_rules:
+    social: "{tone rule}"
+    email: "{tone rule}"
+    ads: "{tone rule}"
+    longform: "{tone rule}"
 audience:
   primary:
     description: "{primary audience}"
+    buyer: "{budget owner or decision maker}"
+    user: "{daily user}"
+    buying_trigger: "{why now}"
+    objections: ["{objection 1}", "{objection 2}"]
     pain_points: ["{pain 1}", "{pain 2}", "{pain 3}"]
     channels: ["{channels}"]
   secondary:
@@ -481,11 +513,25 @@ audience:
 positioning:
   category: "{category}"
   differentiator: "{differentiator}"
+  messaging_pillars:
+    - name: "{pillar 1}"
+      proof: "{proof point}"
+    - name: "{pillar 2}"
+      proof: "{proof point}"
+  proof_points: ["{proof 1}", "{proof 2}"]
+  claims_allowed: ["{claim 1}"]
+  claims_avoid: ["{claim to avoid}"]
   competitors:
     - name: "{competitor 1}"
+      type: "direct"
       weakness: "{weakness}"
     - name: "{competitor 2}"
+      type: "direct"
       weakness: "{weakness}"
+  alternatives:
+    - name: "{status quo or substitute}"
+      type: "status_quo"
+      weakness: "{why it fails}"
 channels:
   active: ["{active channels}"]
   planned: ["{planned channels}"]
@@ -501,6 +547,9 @@ Before presenting, do a quality check:
 - Differentiator should name what competitors cannot say about themselves
 - Pain points should be concrete, not generic
 - Voice examples should match the selected tone
+- Required fields must exist: schema_version, name, category, tagline, audience,
+  positioning, voice, channels, urls
+- Claims and proof points must be marked real or assumption
 
 Present the generated YAML to the user. Use AskUserQuestion:
 > "Here's your brand.yaml — review it before saving.
@@ -518,7 +567,7 @@ If B, ask what to change. Make targeted edits (do not regenerate the whole file 
 Write the approved YAML to brand.yaml:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-brand write << 'BRAND_EOF'
+"$MSTACK_BIN/mstack-brand" write << 'BRAND_EOF'
 {the approved yaml content}
 BRAND_EOF
 ```
@@ -541,18 +590,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-brand","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-brand","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-brand"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
