@@ -18,6 +18,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 # Campaign Builder
 
 ## Inputs
@@ -28,9 +30,21 @@ Identify the campaign frame:
 - Offer, promise, proof, and objection.
 - Channels: email, paid social, organic social, SEO/content, landing page, partners, community.
 - Dates, budget, owner, and constraints.
+- North-star metric and baseline.
+- Launch window, final decision date, and rollback condition.
+- Compliance category and review owner if claims are regulated.
 
 If any input is missing, draft with explicit assumptions unless it would change the
 offer, audience, compliance posture, or launch date.
+
+Check for existing campaign inputs before drafting:
+
+```bash
+find . -name "*campaign*" -o -name "*strategy*" -o -name "*landing*" -o -name "*report*" 2>/dev/null | head -10
+```
+
+Ask one bundled question only for material gaps. Do not ask for information that
+can be inferred from brand context, prior learnings, or existing campaign files.
 
 ## Workflow
 
@@ -54,12 +68,46 @@ offer, audience, compliance posture, or launch date.
    - Channel metrics.
    - Leading indicators.
    - Decision thresholds.
+   - Baseline and target.
+   - Source of truth.
+   - Instrumentation needed.
+   - Review cadence.
+   - Owner.
 7. Add a risk checklist:
    - Message risk.
    - Audience mismatch.
    - Tracking gap.
    - Legal/compliance risk.
    - Creative production bottleneck.
+8. Save the execution plan to the default path unless the user asks otherwise:
+   `campaigns/{campaign-slug}-{date}.md`.
+
+## Asset Matrix
+
+Use this table:
+
+| Asset | Channel | Purpose | Message angle | Format/spec | CTA | Proof needed | Owner | Due | Status | Dependency | Acceptance criteria |
+|-------|---------|---------|---------------|-------------|-----|--------------|-------|-----|--------|------------|---------------------|
+
+Statuses: `needed`, `drafting`, `review`, `approved`, `scheduled`, `live`.
+
+## Measurement Matrix
+
+Use this table:
+
+| Metric | Baseline | Target | Source | Instrumentation needed | Review cadence | Owner | Decision rule |
+|--------|----------|--------|--------|------------------------|----------------|-------|---------------|
+
+Decision rules must say what to scale, pause, revise, or kill. Avoid vague
+thresholds like "good engagement" unless the user has no baseline; in that case,
+mark the plan directional.
+
+## Risk Register
+
+Use this table:
+
+| Risk | Trigger | Severity | Mitigation | Owner | Fallback |
+|------|---------|----------|------------|-------|----------|
 
 ## Output Format
 
@@ -73,6 +121,7 @@ Return:
 - Measurement plan.
 - Risks and fixes.
 - Next three actions.
+- Save path and open assumptions.
 
 {{PRIVACY_NOTE}}
 

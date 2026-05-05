@@ -380,6 +380,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 # Campaign Builder
 
 ## Inputs
@@ -390,9 +428,21 @@ Identify the campaign frame:
 - Offer, promise, proof, and objection.
 - Channels: email, paid social, organic social, SEO/content, landing page, partners, community.
 - Dates, budget, owner, and constraints.
+- North-star metric and baseline.
+- Launch window, final decision date, and rollback condition.
+- Compliance category and review owner if claims are regulated.
 
 If any input is missing, draft with explicit assumptions unless it would change the
 offer, audience, compliance posture, or launch date.
+
+Check for existing campaign inputs before drafting:
+
+```bash
+find . -name "*campaign*" -o -name "*strategy*" -o -name "*landing*" -o -name "*report*" 2>/dev/null | head -10
+```
+
+Ask one bundled question only for material gaps. Do not ask for information that
+can be inferred from brand context, prior learnings, or existing campaign files.
 
 ## Workflow
 
@@ -416,12 +466,46 @@ offer, audience, compliance posture, or launch date.
    - Channel metrics.
    - Leading indicators.
    - Decision thresholds.
+   - Baseline and target.
+   - Source of truth.
+   - Instrumentation needed.
+   - Review cadence.
+   - Owner.
 7. Add a risk checklist:
    - Message risk.
    - Audience mismatch.
    - Tracking gap.
    - Legal/compliance risk.
    - Creative production bottleneck.
+8. Save the execution plan to the default path unless the user asks otherwise:
+   `campaigns/{campaign-slug}-{date}.md`.
+
+## Asset Matrix
+
+Use this table:
+
+| Asset | Channel | Purpose | Message angle | Format/spec | CTA | Proof needed | Owner | Due | Status | Dependency | Acceptance criteria |
+|-------|---------|---------|---------------|-------------|-----|--------------|-------|-----|--------|------------|---------------------|
+
+Statuses: `needed`, `drafting`, `review`, `approved`, `scheduled`, `live`.
+
+## Measurement Matrix
+
+Use this table:
+
+| Metric | Baseline | Target | Source | Instrumentation needed | Review cadence | Owner | Decision rule |
+|--------|----------|--------|--------|------------------------|----------------|-------|---------------|
+
+Decision rules must say what to scale, pause, revise, or kill. Avoid vague
+thresholds like "good engagement" unless the user has no baseline; in that case,
+mark the plan directional.
+
+## Risk Register
+
+Use this table:
+
+| Risk | Trigger | Severity | Mitigation | Owner | Fallback |
+|------|---------|----------|------------|-------|----------|
 
 ## Output Format
 
@@ -435,6 +519,7 @@ Return:
 - Measurement plan.
 - Risks and fixes.
 - Next three actions.
+- Save path and open assumptions.
 
 ## Privacy Boundary
 
