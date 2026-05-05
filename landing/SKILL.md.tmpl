@@ -20,6 +20,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 ## Setup
 
 Check for existing landing pages and related content:
@@ -35,6 +37,12 @@ Parse the user's request. Determine:
 - Target audience segment (specific: "SaaS founders with <10 employees", not "businesses")
 - Primary CTA (sign up, book a demo, download, buy)
 - Traffic source — if known (paid ad, email, SEO). Message match requires the landing page headline to mirror the ad or email subject line the visitor came from.
+- Source message: ad headline, email subject, keyword, referral promise, or campaign
+  angle that sent the visitor.
+- Awareness stage and current alternative.
+- Offer economics: price, commitment, incentive, urgency, sales motion, and friction.
+- Primary metric and analytics stack.
+- Compliance category and claim review needs.
 
 If the core details are missing, use AskUserQuestion:
 > "Tell me about this landing page:
@@ -53,11 +61,28 @@ Then ask:
 
 STOP and wait.
 
+## Claims And Proof Guardrails
+
+Do not invent testimonials, metrics, logos, benchmarks, or customer outcomes.
+Maintain this table before writing public-facing proof:
+
+| Claim | Evidence | Source | Consent | Confidence | Publication risk | Legal review needed |
+|-------|----------|--------|---------|------------|------------------|---------------------|
+
+Rules:
+- Claims without evidence are marked `needs proof` and should be phrased as
+  product capability, not proven customer outcome.
+- Regulated, financial, health, employment, housing, security, or performance
+  claims require explicit review before publication.
+- Use the strongest real proof available, not the strongest-sounding proof.
+
 ## Conversion Principles (apply throughout all steps)
 
 These rules govern every decision on the page:
 
-**One CTA per page.** Every link that isn't the primary CTA is a conversion leak. No nav bar. No footer links to other pages. The only escape should be the CTA button.
+**Single primary conversion path.** Keep one primary CTA. A measured secondary CTA
+may appear below the fold for unready visitors. Required legal, privacy, terms,
+security, and accessibility links are allowed and do not count as competing CTAs.
 
 **Message match.** The headline must echo the ad, email subject, or search query that brought the visitor here. If the ad says "Automate your invoicing", the headline cannot say "Streamline your workflow". Mirror the exact language.
 
@@ -73,8 +98,11 @@ These rules govern every decision on the page:
 
 A landing page must have exactly ONE goal. Confirm:
 - Primary CTA: `{CTA verb}` + `{specific outcome}` — e.g., "Start free trial", "Book a 20-minute demo", "Get the free guide"
-- Secondary CTA (for unready visitors only): lower-commitment alternative placed below the fold — e.g., "See how it works →" linking to a demo video anchor. Never place this near the primary CTA.
-- Remove all navigation links — they bleed traffic to pages that don't convert.
+- Secondary CTA (for unready visitors only): lower-commitment alternative placed
+  below the fold and tracked separately.
+- Required legal/privacy/security links: keep them low prominence but present.
+- Remove unrelated navigation links that bleed traffic to pages that do not help
+  conversion or trust.
 
 If the user hasn't decided on the CTA, suggest options:
 > "For {product/feature}, the most common CTAs are:
@@ -144,6 +172,20 @@ Use AskUserQuestion:
 > "Which headline do you prefer? (A, B, or C) Or what would you change?"
 
 STOP and wait.
+
+## Above-Fold Wireframe
+
+Output an above-fold wireframe for desktop and mobile:
+
+| Element | Desktop placement | Mobile order | Copy/content | Tracking event |
+|---------|-------------------|--------------|--------------|----------------|
+| H1 | {placement} | 1 | {headline} | page_view |
+| Subhead | {placement} | 2 | {subhead} | none |
+| Primary CTA | {placement} | 3 | {button} | cta_click_primary |
+| Risk reducer | {placement} | 4 | {text} | none |
+| Proof anchor | {placement} | 5 | {proof} | proof_visible |
+| Visual/demo slot | {placement} | 6 | {screenshot/demo guidance} | hero_visual_visible |
+| Form fields | {placement} | {order} | {fields} | form_start / form_submit |
 
 ## Step 3: Write the Problem Section (Pain–Agitate–Solve)
 
@@ -313,9 +355,33 @@ Assemble all sections and run this conversion checklist before presenting:
 - [ ] Social proof uses real attribution (name, title, company) or is omitted
 - [ ] FAQ addresses objections, not features
 - [ ] No navigation links on the page
+- [ ] Required privacy, terms, security, or legal links are present when needed
 - [ ] No more than one form field above the fold (email or CTA only)
 - [ ] No video backgrounds, no heavy carousels, no 3+ external font loads recommended
 - [ ] Mobile: all CTAs reachable by thumb, benefits stack vertically
+- [ ] Claim/proof table has no unsupported public claim
+- [ ] Analytics/event plan exists for the primary funnel
+- [ ] Experiment handoff is ready if this page will be tested
+
+## Section Blueprint
+
+For every page block, include:
+
+| Section | Goal | Reader objection | Copy | Proof | Visual/wireframe note | Tracking event |
+|---------|------|------------------|------|-------|-----------------------|----------------|
+
+## Measurement And Experiment Handoff
+
+Include:
+- Primary metric and baseline if known.
+- Funnel events: `page_view`, `hero_cta_click`, `form_start`, `form_submit`,
+  `secondary_cta_click`, `faq_expand`, `proof_visible`.
+- Required event properties: source, campaign, variant, device, audience segment.
+- UTM structure and attribution assumptions.
+- Guardrail metrics: bounce, form abandonment, unsubscribe, spam complaint,
+  sales quality, support load, page speed.
+- Test hypothesis, control, variant ideas, practical lift threshold, and decision
+  rule for `/m-experiment`.
 
 Present the complete landing page copy.
 
@@ -347,12 +413,16 @@ Report:
 - Traffic source / message match confirmed: {yes/no}
 - Sections: Hero, Problem (PAS), {N} Benefits, Social Proof, FAQ ({N} objections), Final CTA
 - Conversion checklist: passed / {N} items flagged
+- Proof status: {approved / needs proof / legal review needed}
+- Event list: {events}
+- Experiment handoff: {hypothesis and next test}
 - File saved to: {path}
 
 Suggest next steps:
 - "Run `/m-ads` to create paid campaigns that drive traffic to this page — use the headline from Option A as the ad headline for message match"
 - "Run `/m-edit` to check the copy against your brand voice"
 - "Run `/m-seo` if this is a public landing page that needs search optimization"
+- "Run `/m-experiment` to test the hero, proof, CTA, or form friction"
 
 {{OPERATIONAL_LEARNING}}
 

@@ -362,6 +362,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Setup
 
 Check for existing landing pages and related content:
@@ -377,6 +415,12 @@ Parse the user's request. Determine:
 - Target audience segment (specific: "SaaS founders with <10 employees", not "businesses")
 - Primary CTA (sign up, book a demo, download, buy)
 - Traffic source — if known (paid ad, email, SEO). Message match requires the landing page headline to mirror the ad or email subject line the visitor came from.
+- Source message: ad headline, email subject, keyword, referral promise, or campaign
+  angle that sent the visitor.
+- Awareness stage and current alternative.
+- Offer economics: price, commitment, incentive, urgency, sales motion, and friction.
+- Primary metric and analytics stack.
+- Compliance category and claim review needs.
 
 If the core details are missing, use AskUserQuestion:
 > "Tell me about this landing page:
@@ -395,11 +439,28 @@ Then ask:
 
 STOP and wait.
 
+## Claims And Proof Guardrails
+
+Do not invent testimonials, metrics, logos, benchmarks, or customer outcomes.
+Maintain this table before writing public-facing proof:
+
+| Claim | Evidence | Source | Consent | Confidence | Publication risk | Legal review needed |
+|-------|----------|--------|---------|------------|------------------|---------------------|
+
+Rules:
+- Claims without evidence are marked `needs proof` and should be phrased as
+  product capability, not proven customer outcome.
+- Regulated, financial, health, employment, housing, security, or performance
+  claims require explicit review before publication.
+- Use the strongest real proof available, not the strongest-sounding proof.
+
 ## Conversion Principles (apply throughout all steps)
 
 These rules govern every decision on the page:
 
-**One CTA per page.** Every link that isn't the primary CTA is a conversion leak. No nav bar. No footer links to other pages. The only escape should be the CTA button.
+**Single primary conversion path.** Keep one primary CTA. A measured secondary CTA
+may appear below the fold for unready visitors. Required legal, privacy, terms,
+security, and accessibility links are allowed and do not count as competing CTAs.
 
 **Message match.** The headline must echo the ad, email subject, or search query that brought the visitor here. If the ad says "Automate your invoicing", the headline cannot say "Streamline your workflow". Mirror the exact language.
 
@@ -415,8 +476,11 @@ These rules govern every decision on the page:
 
 A landing page must have exactly ONE goal. Confirm:
 - Primary CTA: `{CTA verb}` + `{specific outcome}` — e.g., "Start free trial", "Book a 20-minute demo", "Get the free guide"
-- Secondary CTA (for unready visitors only): lower-commitment alternative placed below the fold — e.g., "See how it works →" linking to a demo video anchor. Never place this near the primary CTA.
-- Remove all navigation links — they bleed traffic to pages that don't convert.
+- Secondary CTA (for unready visitors only): lower-commitment alternative placed
+  below the fold and tracked separately.
+- Required legal/privacy/security links: keep them low prominence but present.
+- Remove unrelated navigation links that bleed traffic to pages that do not help
+  conversion or trust.
 
 If the user hasn't decided on the CTA, suggest options:
 > "For {product/feature}, the most common CTAs are:
@@ -486,6 +550,20 @@ Use AskUserQuestion:
 > "Which headline do you prefer? (A, B, or C) Or what would you change?"
 
 STOP and wait.
+
+## Above-Fold Wireframe
+
+Output an above-fold wireframe for desktop and mobile:
+
+| Element | Desktop placement | Mobile order | Copy/content | Tracking event |
+|---------|-------------------|--------------|--------------|----------------|
+| H1 | {placement} | 1 | {headline} | page_view |
+| Subhead | {placement} | 2 | {subhead} | none |
+| Primary CTA | {placement} | 3 | {button} | cta_click_primary |
+| Risk reducer | {placement} | 4 | {text} | none |
+| Proof anchor | {placement} | 5 | {proof} | proof_visible |
+| Visual/demo slot | {placement} | 6 | {screenshot/demo guidance} | hero_visual_visible |
+| Form fields | {placement} | {order} | {fields} | form_start / form_submit |
 
 ## Step 3: Write the Problem Section (Pain–Agitate–Solve)
 
@@ -655,9 +733,33 @@ Assemble all sections and run this conversion checklist before presenting:
 - [ ] Social proof uses real attribution (name, title, company) or is omitted
 - [ ] FAQ addresses objections, not features
 - [ ] No navigation links on the page
+- [ ] Required privacy, terms, security, or legal links are present when needed
 - [ ] No more than one form field above the fold (email or CTA only)
 - [ ] No video backgrounds, no heavy carousels, no 3+ external font loads recommended
 - [ ] Mobile: all CTAs reachable by thumb, benefits stack vertically
+- [ ] Claim/proof table has no unsupported public claim
+- [ ] Analytics/event plan exists for the primary funnel
+- [ ] Experiment handoff is ready if this page will be tested
+
+## Section Blueprint
+
+For every page block, include:
+
+| Section | Goal | Reader objection | Copy | Proof | Visual/wireframe note | Tracking event |
+|---------|------|------------------|------|-------|-----------------------|----------------|
+
+## Measurement And Experiment Handoff
+
+Include:
+- Primary metric and baseline if known.
+- Funnel events: `page_view`, `hero_cta_click`, `form_start`, `form_submit`,
+  `secondary_cta_click`, `faq_expand`, `proof_visible`.
+- Required event properties: source, campaign, variant, device, audience segment.
+- UTM structure and attribution assumptions.
+- Guardrail metrics: bounce, form abandonment, unsubscribe, spam complaint,
+  sales quality, support load, page speed.
+- Test hypothesis, control, variant ideas, practical lift threshold, and decision
+  rule for `/m-experiment`.
 
 Present the complete landing page copy.
 
@@ -689,12 +791,16 @@ Report:
 - Traffic source / message match confirmed: {yes/no}
 - Sections: Hero, Problem (PAS), {N} Benefits, Social Proof, FAQ ({N} objections), Final CTA
 - Conversion checklist: passed / {N} items flagged
+- Proof status: {approved / needs proof / legal review needed}
+- Event list: {events}
+- Experiment handoff: {hypothesis and next test}
 - File saved to: {path}
 
 Suggest next steps:
 - "Run `/m-ads` to create paid campaigns that drive traffic to this page — use the headline from Option A as the ad headline for message match"
 - "Run `/m-edit` to check the copy against your brand voice"
 - "Run `/m-seo` if this is a public landing page that needs search optimization"
+- "Run `/m-experiment` to test the hero, proof, CTA, or form friction"
 
 ## Capture Learnings
 
@@ -702,18 +808,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-landing","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-landing","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-landing"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
