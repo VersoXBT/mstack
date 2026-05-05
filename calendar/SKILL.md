@@ -363,6 +363,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Setup
 
 Check for existing strategy and content assets:
@@ -372,6 +410,7 @@ eval "$(~/.claude/skills/mstack/bin/mstack-slug 2>/dev/null)" 2>/dev/null || tru
 PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 find . -name "*strategy*" -o -name "*calendar*" -o -name "*brief*" 2>/dev/null | head -10
 find . -name "*.md" -path "*/content/*" 2>/dev/null | head -10
+find . -name "*campaign*" -o -name "*keywords*" -o -name "*repurpose*" 2>/dev/null | head -10
 ```
 
 If a strategy document was found, read it:
@@ -382,6 +421,7 @@ cat {strategy file} 2>/dev/null | head -80
 Parse the user's request. Determine:
 - Which month to plan (current month if not specified)
 - Which channels to include
+- Active campaigns, launch windows, offers, CTAs, owners, and constraints.
 
 If not provided, use AskUserQuestion:
 > "Let's build your content calendar. A few questions:
@@ -448,6 +488,21 @@ If a strategy doc was found, derive pillars from it. Otherwise, suggest defaults
 
 Add a `Pillar` column to every calendar row.
 
+## Asset Reuse
+
+Inventory reusable assets before creating new topics:
+- Existing briefs, blogs, reports, webinars, videos, testimonials, case studies,
+  social posts, email sequences, and high-performing posts.
+- Pick anchor assets and derive channel-native pieces from them.
+- Mark every derivative with `Source Asset` and `Derivative Of`.
+
+## Campaign Alignment
+
+Every row maps to an active campaign or `always_on`. Capture:
+
+| Campaign | Offer | Segment | Funnel stage | Launch date | CTA | Landing page | KPI |
+|----------|-------|---------|--------------|-------------|-----|--------------|-----|
+
 ## Step 2: Identify Themes and Series
 
 A calendar with random topics burns out quickly. Build structure:
@@ -505,7 +560,19 @@ Track every piece through six stages. A slot without a stage is invisible to the
 | `publish` | Approved, scheduled or live | Publisher |
 | `repurpose` | Published piece being adapted for other channels | Repurposing lead |
 
-Use `Status` column in the calendar to track current stage. On first generation, all pieces start at `idea` or `brief` depending on whether a brief already exists.
+Use separate fields:
+- `Pipeline Stage`: `idea`, `brief`, `draft`, `edit`, `approved`, `scheduled`,
+  `published`, `repurpose`.
+- `Status`: `not_started`, `blocked`, `in_progress`, `ready`, `done`.
+
+On first generation, all pieces start at `idea` or `brief` depending on whether a
+brief already exists.
+
+Deadline math by content type:
+- Blog: brief due 10 business days before publish, draft 7, edit 4, approval 2.
+- Social: draft 3 business days before publish, approval 1.
+- Email: draft 5 business days before send, QA/approval 2.
+- Video: script 14 business days before publish, edit 5, approval 2.
 
 ### Buffer content
 
@@ -534,9 +601,9 @@ Buffer slots: {N_buffer} evergreen pieces held in reserve
 
 ## Calendar
 
-| Date | Day | Channel | Content Type | Topic | Theme | Pillar | Mix | Pipeline | Status |
-|------|-----|---------|-------------|-------|-------|--------|-----|----------|--------|
-| {date} | {Mon} | {channel} | {type} | {topic} | {theme} | {pillar} | proven/exp/brand | idea/brief/draft | Draft |
+| Publish Date | Publish Time | Channel | Format | Topic | Theme Week | Pillar | Campaign | Funnel Stage | CTA | Source Asset | Derivative Of | Owner | Reviewer | Brief Due | Draft Due | Asset Due | Approval Due | Pipeline Stage | Status | Priority | Notes |
+|--------------|--------------|---------|--------|-------|------------|--------|----------|--------------|-----|--------------|---------------|-------|----------|-----------|-----------|-----------|--------------|----------------|--------|----------|-------|
+| {date} | {time} | {channel} | {format} | {topic} | {theme} | {pillar} | {campaign} | {stage} | {CTA} | {asset} | {source} | {owner} | {reviewer} | {date} | {date} | {date} | {date} | idea | not_started | {priority} | {notes} |
 | {date} | {Tue} | {channel} | {type} | {topic} | {theme} | {pillar} | proven/exp/brand | idea/brief/draft | Draft |
 ...
 ```
@@ -583,7 +650,7 @@ Save the calendar as a markdown file with the full table.
 Generate a CSV file for importing into Notion, Airtable, or Google Sheets:
 
 ```
-Date,Day,Channel,Content Type,Topic,Theme,Pillar,Mix,Pipeline,Status
+Publish Date,Publish Time,Channel,Format,Topic,Theme Week,Pillar,Campaign,Funnel Stage,CTA,Source Asset,Derivative Of,Owner,Reviewer,Brief Due,Draft Due,Asset Due,Approval Due,Pipeline Stage,Status,Priority,Notes
 {row}
 {row}
 ```
@@ -620,18 +687,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-calendar","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-calendar","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-calendar"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
