@@ -479,6 +479,10 @@ Parse the user's request. Determine if they provided:
 - A seed topic or keyword
 - A specific URL to analyze
 - A competitor to match
+- Target market: country, language, search engine, and locale
+- Target customer segment and buyer stage
+- Product goal: awareness, signup, demo, purchase, retention
+- Existing site/domain and whether this is new content, refresh, or consolidation
 
 If not provided, use AskUserQuestion:
 > "What topic or product area should I research keywords for?
@@ -492,7 +496,45 @@ Then ask:
 > C) Both
 > D) I'll tell you which content pieces I want to target"
 
+Then ask:
+> "Which market should this target?
+> Include country, language, and search engine if it matters.
+> Example: US / English / Google, Germany / German / Google, Japan / Japanese / Google.
+> I will not silently default to US."
+
 STOP and wait.
+
+## Data Sources And Evidence Rules
+
+For every priority recommendation, record the source used. If API data is not
+available, mark values as estimated and cite the SERP evidence.
+
+SERP evidence table:
+
+| Query | Locale | Date checked | Rank | URL | Title | Format | SERP features | PAA/related | Source |
+|-------|--------|--------------|------|-----|-------|--------|---------------|-------------|--------|
+
+Rules:
+- Locale is mandatory: country, language, and search engine.
+- Every primary recommendation needs at least one source citation or
+  `estimated/no live source`.
+- Do not claim volume, KD, CPC, or trend as fact unless the source produced it.
+- Use the API/database matching the requested market. Do not hardcode `database=us`
+  when another locale is requested.
+- Keep query URL or tool name so another operator can reproduce the research.
+
+## Production Keyword Schema
+
+Use this schema for the main table, CSV, and JSON export:
+
+`keyword`, `normalized_keyword`, `cluster`, `parent_topic`, `intent_primary`,
+`intent_secondary`, `buyer_stage`, `content_type`, `locale`, `volume`, `kd`,
+`cpc`, `trend`, `serp_features`, `top_urls`, `opportunity_score`,
+`business_fit`, `effort`, `cannibalization_status`, `recommended_action`,
+`brief_ready`, `calendar_month`, `sources`, `confidence`.
+
+Buyer stages: `awareness`, `consideration`, `decision`, `retention`.
+Recommended actions: `new`, `refresh`, `merge`, `canonicalize`, `avoid`.
 
 ## Step 1: Seed Keyword Expansion
 
@@ -529,9 +571,13 @@ If API keys are available:
 ```bash
 # SEMrush keyword overview
 curl -s "https://api.semrush.com/?" \
-  --data "type=phrase_related&key=${SEMRUSH_API_KEY}&phrase={seed}&database=us&export_columns=Ph,Nq,Cp,Co" \
+  --data "type=phrase_related&key=${SEMRUSH_API_KEY}&phrase={seed}&database={locale_database}&export_columns=Ph,Nq,Cp,Co,Kd,In" \
   2>/dev/null | head -50
 ```
+
+If Ahrefs is available, use its keyword explorer or matching endpoint configured
+for the requested market. If the exact endpoint is unknown in the current
+environment, state that Ahrefs data is unavailable instead of inventing fields.
 
 If browse is available but no API:
 ```bash
@@ -555,12 +601,14 @@ $B text
 - **Difficulty estimate**: see Step 3
 - **Content type**: Blog post, Pillar page, Comparison, Tutorial, Landing page, Case study, Glossary entry, FAQ
 - **Seasonal flag**: Y/N (see Step 6)
+- **Buyer stage**: awareness / consideration / decision / retention
+- **Conversion role**: traffic, education, evaluation, capture, conversion, support
 
 Build a table:
 
-| Keyword | Intent | Volume | Difficulty | Content Type | Cluster | Seasonal |
-|---------|--------|--------|------------|-------------|---------|---------|
-| {keyword} | {I/N/C/T} | {H/M/L/Micro} | {Easy/Med/Hard} | {type} | {cluster name} | {Y/N} |
+| Keyword | Intent | Buyer Stage | Volume | Difficulty | Content Type | Cluster | Seasonal | Sources | Confidence |
+|---------|--------|-------------|--------|------------|--------------|---------|----------|---------|------------|
+| {keyword} | {I/N/C/T} | {stage} | {H/M/L/Micro} | {Easy/Med/Hard} | {type} | {cluster name} | {Y/N} | {evidence ids} | {high/medium/low} |
 
 ## Step 3: Assess Keyword Difficulty Without API
 
@@ -631,6 +679,14 @@ Aim for 3–5 clusters. Mark which cluster to build first based on business prio
 
 **Cross-cluster opportunities:** List keywords that could appear in multiple clusters — these are often the highest-value comparison or "best X for Y" terms.
 
+Clustering rules:
+- Normalize duplicates and near-duplicates before grouping.
+- Group by SERP overlap, semantic similarity, and buyer intent.
+- Assign one canonical page target per cluster.
+- Flag keywords where SERP overlap suggests a single page should target multiple
+  terms.
+- Flag cross-cluster conflicts before prioritization.
+
 ## Step 5: Identify Content Gaps
 
 Content gaps = keywords where competitors rank in positions 1–10 but you have no page targeting them.
@@ -649,9 +705,24 @@ $B text
 **Method B — API gap analysis:**
 ```bash
 curl -s "https://api.semrush.com/?" \
-  --data "type=domain_organic&key=${SEMRUSH_API_KEY}&domain={competitor}&database=us&export_columns=Ph,Po,Nq,Ur" \
+  --data "type=domain_organic&key=${SEMRUSH_API_KEY}&domain={competitor}&database={locale_database}&export_columns=Ph,Po,Nq,Ur,Kd,Tg" \
   2>/dev/null | head -100
 ```
+
+## Cannibalization Pass
+
+Before prioritizing, inspect existing content and known URLs:
+
+```bash
+find . -name "*.md" -o -name "*.mdx" -o -name "*.html" 2>/dev/null | head -100
+```
+
+For each priority keyword or cluster, classify:
+- `new`: no existing page targets the intent.
+- `refresh`: an existing page targets the intent but is stale or weak.
+- `merge`: multiple pages overlap and should be consolidated.
+- `canonicalize`: one canonical page exists but needs internal links/metadata.
+- `avoid`: not worth targeting because of intent mismatch, poor fit, or conflict.
 
 **Gap categories — prioritise in this order:**
 
@@ -701,6 +772,13 @@ Look for:
 
 Present a prioritized keyword plan:
 
+Use this scoring formula:
+
+`opportunity_score = business_fit * 0.25 + intent_value * 0.20 + achievable_difficulty * 0.15 + serp_weakness * 0.15 + volume_trend * 0.10 + conversion_proximity * 0.10 + cannibalization_safety * 0.05`
+
+Score each input 1-5. Include confidence and source IDs. If evidence is thin,
+mark the score directional.
+
 **Quick wins** (medium–high volume, easy difficulty, strong intent match, no competing internal page):
 1. {keyword} — Intent: {C/I} — Volume: {M/H} — Why: {thin SERP, niche domain competition, PAA opportunity}
 
@@ -728,10 +806,16 @@ Use AskUserQuestion:
 > "Where should I save the keyword research? (default: `docs/keywords-{date}.md`)"
 
 Save the full document with these sections:
-1. Structured keyword table (all columns: keyword, intent, volume, difficulty, content type, cluster, seasonal)
+1. Structured keyword table using the production schema above
 2. Cluster map with pillar + spoke structure
 3. Content gap analysis by priority tier
 4. Priority action plan (quick wins, long-term, seasonal)
+5. Brief Queue: top 10 records ready for `/m-brief`
+6. Calendar Queue: publish month, channel/content type, topic, pillar, CTA
+
+Also save:
+- `docs/keywords-{date}.csv`
+- `docs/keywords-{date}.json`
 
 ## Completion
 
@@ -754,18 +838,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-keywords","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-keywords","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-keywords"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
