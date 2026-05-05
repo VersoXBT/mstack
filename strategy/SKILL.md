@@ -472,10 +472,24 @@ PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 
 # Check for brand context
 [ -f "$PROJECT_DIR/brand.yaml" ] && echo "BRAND: found" || echo "BRAND: not found"
+[ -f "$PROJECT_DIR/icp.yaml" ] && echo "ICP: found" || echo "ICP: not found"
+[ -f "$PROJECT_DIR/positioning.yaml" ] && echo "POSITIONING: found" || echo "POSITIONING: not found"
 
-# Check for previous strategy docs
-find . -name "*strategy*" -o -name "*marketing-plan*" 2>/dev/null | head -5
+# Check for previous strategy and upstream artifacts
+find . -name "*strategy*" -o -name "*marketing-plan*" -o -name "*competi*" -o -name "*positioning*" -o -name "*report*" -o -name "*campaign*" 2>/dev/null | head -12
 ```
+
+## Input Inventory
+
+Before strategy work, list what was loaded and what is missing:
+
+| Artifact | Status | Path/source | How it changes strategy | Assumption if missing |
+|----------|--------|-------------|-------------------------|-----------------------|
+| brand.yaml | found/missing | {path} | voice, audience, category | {assumption} |
+| icp.yaml | found/missing | {path} | segments, disqualifiers, proof gaps | {assumption} |
+| competitive analysis | found/missing | {path} | gaps, threats, channel opportunities | {assumption} |
+| positioning | found/missing | {path} | category, differentiator, claims | {assumption} |
+| reports/campaigns | found/missing | {path} | baselines, learnings, constraints | {assumption} |
 
 If brand context is not configured, strongly recommend running /m-brand first:
 > "I recommend running `/m-brand` first to set up your brand context. It takes 5 minutes
@@ -500,6 +514,21 @@ Also identify the business stage to calibrate all recommendations:
 - **Pre-PMF**: fewer than ~100 paying customers or clear product-market fit signal
 - **Growth**: PMF confirmed, scaling acquisition
 - **Scale**: established channels, optimizing unit economics
+
+Build a diagnostic scorecard:
+
+| Area | Current state | Evidence/source | Confidence | Implication |
+|------|---------------|-----------------|------------|-------------|
+| Stage | {pre-PMF/growth/scale} | {source} | {confidence} | {implication} |
+| Goal | {goal} | {source} | {confidence} | {implication} |
+| Funnel baseline | traffic/leads/signups/revenue | {source} | {confidence} | {implication} |
+| Unit economics | CAC/LTV/payback if known | {source} | {confidence} | {implication} |
+| Offer/pricing | {summary} | {source} | {confidence} | {implication} |
+| Team capacity | hours/owners | {source} | {confidence} | {implication} |
+| Monthly budget | {budget} | {source} | {confidence} | {implication} |
+| Channels tried | {channels} | {source} | {confidence} | {implication} |
+| Analytics state | {quality} | {source} | {confidence} | {implication} |
+| Constraints/non-goals | {constraints} | {source} | {confidence} | {implication} |
 
 ## Step 2: Define Goals
 
@@ -533,6 +562,13 @@ Before recommending channels, apply the Segmentation → Targeting → Positioni
 
 Output this STP summary before channel work begins.
 
+Use a scored segmentation table:
+
+| Segment | Buyer | User | JTBD | Pain intensity | Reachability | Willingness to pay | Proof needed | Confidence | Priority | Excluded? |
+|---------|-------|------|------|----------------|--------------|--------------------|--------------|------------|----------|-----------|
+
+Name the beachhead segment and excluded segments with reasons.
+
 ## Step 4: Channel Strategy (Bullseye Framework)
 
 The Bullseye Framework forces disciplined channel selection across all 19 traction channels. Run through the full outer ring, then narrow.
@@ -557,6 +593,13 @@ For each recommended channel, provide the full context:
 | LinkedIn | B2B decision-makers; C-suite, directors, senior ICs skew here | Insight posts (short), carousel how-tos, case study threads | $30–$150 paid per lead; organic highly variable | 6–12 weeks organic; paid results in days | Profile views, connection acceptance rate | Pipeline generated, demo requests |
 | Community (Discord/Slack/Reddit) | High-trust peer influence; ideal for PLG products with viral loops | AMAs, behind-the-scenes, early access drops, peer support | $0–$5 per member (community-led); $15–$60 paid | 8–16 weeks to self-sustaining community | DAU/WAU, posts per member | NPS, referral rate from community members |
 | Paid Search (SEM) | Bottom-of-funnel, high purchase intent; best when category is established | Search ads, landing page copy, competitor conquest | $15–$200+ per lead depending on vertical | 1–2 weeks to data; 4–6 weeks to optimization | CTR, Quality Score, CPC | CPA, ROAS, MQL volume |
+
+Replace raw fit scores with a weighted channel-bet matrix:
+
+| Channel | Audience fit | Intent fit | CAC risk | Time to signal | Team capability | Budget fit | Proof availability | Confidence | Decision |
+|---------|--------------|------------|----------|----------------|-----------------|------------|--------------------|------------|----------|
+
+Decision must be `Focus 1`, `Test 3`, or `Ignore for now`.
 
 **Stage-specific channel guidance:**
 
@@ -622,6 +665,11 @@ Recommend budget splits based on stage and channel mix:
 
 Flag if the user's stated budget conflicts with their stated stage or goals.
 
+Include resource planning:
+
+| Channel/workstream | Dollars/month | Hours/week | Owner | Tools | Production load | Minimum viable test budget |
+|--------------------|---------------|------------|-------|-------|-----------------|-----------------------------|
+
 ## Step 7: 90-Day Roadmap
 
 Break into 3 phases with explicit success metrics per phase.
@@ -686,6 +734,31 @@ For sustainable growth, identify the loop type that fits the product:
 
 State which loop this strategy is designed to feed, and how each channel step reinforces the loop.
 
+## Operating Cadence, Risks, And Handoff
+
+Add:
+
+| Cadence | Owner | Agenda | Decision rule |
+|---------|-------|--------|---------------|
+| Weekly growth review | {owner} | KPI review, blockers, next experiments | scale/iterate/kill |
+| Monthly strategy review | {owner} | budget, channel bets, roadmap | reallocate or stay course |
+
+Risk register:
+
+| Risk | Assumption | Trigger | Impact | Owner | Mitigation |
+|------|------------|---------|--------|-------|------------|
+
+KPI matrix:
+
+| KPI | Baseline | Target | Source | Owner | Review cadence | Guardrail |
+|-----|----------|--------|--------|-------|----------------|-----------|
+
+Execution handoff:
+- `/m-campaign`: audience, offer, channel roles, launch sequence, measurement,
+  owners, risks, decision rules.
+- `/m-calendar`: channels, cadence, pillars, themes, content mix, campaign windows,
+  CTAs, owners.
+
 ## Step 8: Save Strategy Document
 
 Save the complete strategy to a markdown file:
@@ -694,6 +767,9 @@ Use AskUserQuestion:
 > "Where should I save the strategy document? (default: `docs/marketing-strategy-{date}.md`)"
 
 Write the document with all sections: STP model, channel strategy with CAC benchmarks, messaging framework, budget allocation, 90-day roadmap with weekly milestones, and growth loop design.
+Also include input inventory, diagnostic scorecard, weighted channel-bet matrix,
+resource plan, KPI matrix, risk register, operating cadence, assumptions, evidence
+confidence, and execution handoff.
 
 ## Completion
 
@@ -715,18 +791,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-strategy","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-strategy","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-strategy"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
