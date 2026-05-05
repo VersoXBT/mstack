@@ -22,6 +22,8 @@ allowed-tools:
 
 {{BRAND_CONTEXT}}
 
+{{LEARNINGS_SEARCH}}
+
 ## Content Pyramid Model
 
 Every piece of content has one pillar and many derivatives. The pillar is the authoritative,
@@ -70,6 +72,35 @@ Then ask:
 
 STOP and wait.
 
+## Source Inventory
+
+Before extracting derivative ideas, capture:
+
+| Field | Value |
+|-------|-------|
+| Source URL/path | {source} |
+| Title | {title} |
+| Author/owner | {author} |
+| Publish date | {date} |
+| Audience | {audience} |
+| Original CTA | {CTA} |
+| Reusable assets | quotes, charts, screenshots, clips, transcript timestamps |
+| Rights/permissions | {status} |
+| Missing context | {gaps} |
+
+## Claim Ledger
+
+Every derivative must reference source claim IDs internally.
+
+| Claim ID | Exact source text | Source location | Claim type | Allowed transformations | Risk | Approval needed |
+|----------|-------------------|-----------------|------------|-------------------------|------|-----------------|
+
+Rules:
+- Exact quotes and stats are preserved unless marked paraphrase-safe.
+- Inferred claims are marked `NEEDS_APPROVAL`.
+- Unsupported additions are removed, not smuggled in as stronger copy.
+- Every derivative lists source claim IDs.
+
 ## Step 1: Extract Key Ideas
 
 Read the source content and extract:
@@ -99,6 +130,25 @@ for its platform. Same insight, different entry point.
 - **Short Video Script**: Hook (5s) + core insight (30s) + CTA (5s). For Reels/Shorts/TikTok.
 
 **UTM convention:** append `?utm_source={platform}&utm_medium=social&utm_campaign={pillar-slug}` to all links.
+If the destination URL already has query parameters, append with `&`, not `?`.
+Always include `utm_content={asset-id}`.
+
+## Asset Matrix
+
+Use this production handoff table:
+
+| Asset ID | Channel | Format/spec | Copy | CTA | Link/UTM | Source claim IDs | Media needed | Owner | Due | Status | Acceptance criteria |
+|----------|---------|-------------|------|-----|----------|------------------|--------------|-------|-----|--------|---------------------|
+
+Statuses: `draft`, `review`, `approved`, `scheduled`, `live`.
+
+Channel specs to include:
+- X: char count, link placement, image/video need, optional thread handoff.
+- LinkedIn: first-fold text, carousel option, link/comment placement.
+- Reddit: subreddit rule gate, flair, disclosure, no-promotional-title check.
+- Email: subject, preview text, body, CTA, plain-text URL, consent note.
+- Video: hook, on-screen text, captions, thumbnail, aspect ratio.
+- Image: ratio, alt text, source quote/stat, brand mark.
 
 ---
 
@@ -292,9 +342,12 @@ Use AskUserQuestion:
 
 Save all derivatives in a single file with:
 - Platform labels and derivative type
+- Source inventory and claim ledger
+- Asset matrix
 - Scheduling block with exact dates (calculated from today)
 - UTM links per derivative
 - Evergreen rotation reminder (if flagged)
+- Handoff sections for `/m-calendar`, `/m-social`, `/m-email`, and asset production
 
 ## Completion
 
@@ -303,6 +356,8 @@ Report:
 - Content type: EVERGREEN or DATE-SENSITIVE
 - Derivatives created: {count} ({list of types})
 - Drip schedule: {start date} → {end date}
+- Claim ledger: {count} claims, {count} approvals needed
+- Asset matrix status: {draft/review/approved}
 - File saved to: {path}
 
 Suggest next steps:

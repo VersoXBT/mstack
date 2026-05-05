@@ -364,6 +364,44 @@ for all content in this skill. If not configured, ask the user for:
 2. Tone (formal, casual, technical, friendly)
 3. Any phrases or terms to avoid
 
+## Prior Learnings
+
+Search for relevant learnings from previous sessions:
+
+```bash
+_CROSS_PROJ=$(~/.claude/skills/mstack/bin/mstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  ~/.claude/skills/mstack/bin/mstack-learnings-search --limit 10 2>/dev/null || true
+fi
+```
+
+If `CROSS_PROJECT` is `unset` (first time): Use AskUserQuestion:
+
+> mstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
+
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
+
+If A: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings true`
+If B: run `~/.claude/skills/mstack/bin/mstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that mstack is getting
+smarter on their codebase over time.
+
 ## Content Pyramid Model
 
 Every piece of content has one pillar and many derivatives. The pillar is the authoritative,
@@ -412,6 +450,35 @@ Then ask:
 
 STOP and wait.
 
+## Source Inventory
+
+Before extracting derivative ideas, capture:
+
+| Field | Value |
+|-------|-------|
+| Source URL/path | {source} |
+| Title | {title} |
+| Author/owner | {author} |
+| Publish date | {date} |
+| Audience | {audience} |
+| Original CTA | {CTA} |
+| Reusable assets | quotes, charts, screenshots, clips, transcript timestamps |
+| Rights/permissions | {status} |
+| Missing context | {gaps} |
+
+## Claim Ledger
+
+Every derivative must reference source claim IDs internally.
+
+| Claim ID | Exact source text | Source location | Claim type | Allowed transformations | Risk | Approval needed |
+|----------|-------------------|-----------------|------------|-------------------------|------|-----------------|
+
+Rules:
+- Exact quotes and stats are preserved unless marked paraphrase-safe.
+- Inferred claims are marked `NEEDS_APPROVAL`.
+- Unsupported additions are removed, not smuggled in as stronger copy.
+- Every derivative lists source claim IDs.
+
 ## Step 1: Extract Key Ideas
 
 Read the source content and extract:
@@ -441,6 +508,25 @@ for its platform. Same insight, different entry point.
 - **Short Video Script**: Hook (5s) + core insight (30s) + CTA (5s). For Reels/Shorts/TikTok.
 
 **UTM convention:** append `?utm_source={platform}&utm_medium=social&utm_campaign={pillar-slug}` to all links.
+If the destination URL already has query parameters, append with `&`, not `?`.
+Always include `utm_content={asset-id}`.
+
+## Asset Matrix
+
+Use this production handoff table:
+
+| Asset ID | Channel | Format/spec | Copy | CTA | Link/UTM | Source claim IDs | Media needed | Owner | Due | Status | Acceptance criteria |
+|----------|---------|-------------|------|-----|----------|------------------|--------------|-------|-----|--------|---------------------|
+
+Statuses: `draft`, `review`, `approved`, `scheduled`, `live`.
+
+Channel specs to include:
+- X: char count, link placement, image/video need, optional thread handoff.
+- LinkedIn: first-fold text, carousel option, link/comment placement.
+- Reddit: subreddit rule gate, flair, disclosure, no-promotional-title check.
+- Email: subject, preview text, body, CTA, plain-text URL, consent note.
+- Video: hook, on-screen text, captions, thumbnail, aspect ratio.
+- Image: ratio, alt text, source quote/stat, brand mark.
 
 ---
 
@@ -634,9 +720,12 @@ Use AskUserQuestion:
 
 Save all derivatives in a single file with:
 - Platform labels and derivative type
+- Source inventory and claim ledger
+- Asset matrix
 - Scheduling block with exact dates (calculated from today)
 - UTM links per derivative
 - Evergreen rotation reminder (if flagged)
+- Handoff sections for `/m-calendar`, `/m-social`, `/m-email`, and asset production
 
 ## Completion
 
@@ -645,6 +734,8 @@ Report:
 - Content type: EVERGREEN or DATE-SENSITIVE
 - Derivatives created: {count} ({list of types})
 - Drip schedule: {start date} → {end date}
+- Claim ledger: {count} claims, {count} approvals needed
+- Asset matrix status: {draft/review/approved}
 - File saved to: {path}
 
 Suggest next steps:
@@ -658,18 +749,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-repurpose","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-repurpose","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-repurpose"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
