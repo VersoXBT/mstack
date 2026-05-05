@@ -468,6 +468,23 @@ Then ask:
 
 ## Step 1: Audience Definition
 
+Before platform work, define campaign fit:
+
+| Field | Value |
+|-------|-------|
+| ICP / segment | {segment} |
+| Offer | {offer} |
+| Funnel stage | awareness / consideration / decision / retargeting |
+| Geography / language | {market} |
+| Monthly budget | {budget} |
+| Landing page | {URL/status} |
+| Conversion volume | {baseline or unknown} |
+| Sales cycle | {self-serve / sales-led / hybrid} |
+| Compliance category | {none / regulated / restricted} |
+
+If compliance category is regulated or restricted, add claim review before
+drafting public copy.
+
 Based on brand.yaml audience and campaign goal, define targeting:
 
 **For Google Search:**
@@ -475,6 +492,7 @@ Based on brand.yaml audience and campaign goal, define targeting:
 - Negative keywords (see Negative Keywords section below)
 - Match types (broad, phrase, exact)
 - Audience layers: in-market segments, customer match, remarketing lists
+- Campaign split: brand, non-brand, competitor, retargeting/RLSA where relevant.
 
 **For Meta:**
 - Demographics (age, location, interests)
@@ -489,6 +507,12 @@ Based on brand.yaml audience and campaign goal, define targeting:
 - Minimum audience size: 50,000 members (campaigns with smaller audiences won't deliver)
 - ABM targeting: upload account lists via Matched Audiences for account-based campaigns
 - Layering: combine job title + seniority + company size rather than using each alone
+
+**For Google Display:**
+- Audience: remarketing, custom intent, affinity/in-market, placement, topic,
+  exclusion lists.
+- Brand safety: sensitive category exclusions, placement exclusions, frequency cap.
+- Creative inventory: responsive display assets, images, logo, business name.
 
 Present targeting and get approval via AskUserQuestion.
 
@@ -535,6 +559,9 @@ $10,000+/mo (scale):
 ## Step 3: Write Ad Copy
 
 For each ad, write platform-specific copy:
+
+Every output table must include character count, final URL, UTM, CTA, proof/claim
+source, and PASS/FAIL validation.
 
 ### Google Search Ads (Responsive Search Ads)
 
@@ -593,7 +620,7 @@ Improving QS lowers your cost-per-click and improves ad rank.
 4. Bidding last: test bid strategies (Cost Cap vs. Lowest Cost) only after creative and audience are stable
 
 **LinkedIn Ads:**
-- Sponsored content (single image): intro text 150 chars visible without "see more" (600 max), headline 70 chars, description 100 chars
+- Sponsored content (single image): intro text 150 chars visible without "see more" (600 max), headline 70 chars, description 70 chars for single-image ads
 - Conversation ads: 60-char message body per CTA button (max 5 buttons), message text 500 chars
 - Lead gen forms: auto-populated from LinkedIn profile; limit to 3–4 fields for highest conversion rate
 - Message ads (InMail): subject 60 chars, body 1500 chars; sent from a real LinkedIn member profile for authenticity
@@ -603,6 +630,35 @@ Improving QS lowers your cost-per-click and improves ad rank.
 Write all copy in the brand voice from brand.yaml. Avoid the brand's avoid list.
 
 For each ad group, write 2–3 ad variations for A/B testing.
+
+### Required Output Schemas
+
+Google Search:
+
+| Campaign | Ad group | Keyword theme | Match type | Negatives | Final URL | UTM | RSA headline | Chars | Description | Chars | Asset | PASS/FAIL |
+|----------|----------|---------------|------------|-----------|-----------|-----|--------------|-------|-------------|-------|-------|-----------|
+
+Google Display:
+
+| Campaign | Audience | Placement/exclusions | Image/logo spec | Short headline | Long headline | Description | Business name | CTA | Final URL | UTM | PASS/FAIL |
+|----------|----------|----------------------|-----------------|----------------|---------------|-------------|---------------|-----|-----------|-----|-----------|
+
+Meta:
+
+| Campaign | Ad set | Objective | Event | Placement | Creative concept | Ratio | Primary text | Chars | Headline | Chars | Description | CTA | Final URL | UTM | PASS/FAIL |
+|----------|--------|-----------|-------|-----------|------------------|-------|--------------|-------|----------|-------|-------------|-----|-----------|-----|-----------|
+
+LinkedIn:
+
+| Campaign group | Campaign | Audience | Audience size | Format | Intro text | Chars | Headline | Chars | Description | Chars | CTA | Lead form fields | Final URL | UTM | PASS/FAIL |
+|----------------|----------|----------|---------------|--------|------------|-------|----------|-------|-------------|-------|-----|------------------|-----------|-----|-----------|
+
+Compliance checklist:
+- Claims supported by proof or marked needs review.
+- No restricted-category targeting misuse.
+- No trademark issue in competitor copy.
+- Privacy and consent constraints respected.
+- Landing page promise matches ad promise.
 
 **Copywriting formula cheat sheet (apply per component):**
 
@@ -741,18 +797,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-ads","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-ads","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-ads"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
