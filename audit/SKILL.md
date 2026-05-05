@@ -492,6 +492,21 @@ STOP and wait for response.
 
 ---
 
+## Evidence Standard
+
+Every finding must include evidence:
+- Source URL, file, tool, or observation.
+- Date checked.
+- Sample size.
+- Exact metric, quote, or screenshot reference when available.
+- Confidence: high, medium, or low.
+- Unknown fields are marked `unknown`, not pass or fail.
+
+Use this table for findings:
+
+| Finding | Evidence | Source | Date | Sample size | Confidence | Unknowns |
+|---------|----------|--------|------|-------------|------------|----------|
+
 ## Scoring Rubric (apply to every section)
 
 All dimensions are scored **1–10**. Use these anchors consistently:
@@ -510,6 +525,19 @@ Convert checklist pass/fail counts to a 1–10 score within each section:
 - 55–74% → 5–6
 - 35–54% → 3–4
 - 0–34% → 1–2
+
+Overall score is weighted:
+- SEO: 30%
+- Content: 25%
+- Social: 15%
+- Brand consistency: 15%
+- Competitor position: 15%
+
+For each section, report:
+- Score.
+- Confidence.
+- Unknown count.
+- Biggest driver of the score.
 
 ---
 
@@ -545,6 +573,8 @@ Check and score each item (Pass / Partial / Fail):
 - [ ] Canonical tags present on key pages
 - [ ] robots.txt accessible and not blocking key sections
 - [ ] XML sitemap exists and submitted
+- [ ] Index coverage known from Search Console or crawl evidence
+- [ ] Key pages return indexable status and canonical to themselves
 
 ### 1b. On-Page SEO
 
@@ -653,6 +683,13 @@ For each of the 5 most recent articles, note:
 Flag articles > 18 months old with no update as "staleness risk." Benchmark: Google prefers freshness for news, trends, and YMYL; evergreen content can hold rankings longer if authoritative.
 
 **Section score: {X}/10** *(benchmark: content-led companies average 7+; most SMBs score 3–5)*
+
+Create a URL inventory:
+
+| URL | Type | Target keyword | Intent | Last updated | Traffic/conversions if known | Status | Action |
+|-----|------|----------------|--------|--------------|------------------------------|--------|--------|
+
+Actions: keep, refresh, consolidate, prune, redirect, brief new piece.
 
 ---
 
@@ -809,17 +846,23 @@ Status thresholds: 8–10 = Excellent, 6–7 = Good, 4–5 = Needs Work, 1–3 =
 
 ## Priority Matrix
 
-All findings are ranked by **Impact (1–5) × Effort (1–5 inverse: 5 = low effort, 1 = high effort)**.
-Priority score = Impact × Effort. Higher = fix first.
+All findings are ranked by:
 
-| # | Finding | Impact | Effort | Priority Score | Category |
-|---|---------|--------|--------|----------------|---------|
-| 1 | {Issue} | {1–5} | {1–5} | {score} | {SEO/Content/Social/Brand} |
+`Priority = Impact (1-5) x Confidence (1-5) x Urgency (1-5) / Effort (1-5)`
+
+Classify each as:
+- Quick win.
+- Strategic fix.
+- Defer.
+
+| # | Finding | Evidence | Impact | Confidence | Urgency | Effort | Priority Score | Class | Category |
+|---|---------|----------|--------|------------|---------|--------|----------------|-------|---------|
+| 1 | {Issue} | {evidence id} | {1-5} | {1-5} | {1-5} | {1-5} | {score} | {quick win/strategic/defer} | {SEO/Content/Social/Brand} |
 | 2 | {Issue} | {1–5} | {1–5} | {score} | {SEO/Content/Social/Brand} |
 | … | … | … | … | … | … |
 
 ### Tier 1 — Fix This Week (Priority Score ≥ 15)
-1. {Issue} — {specific action} — Expected outcome: {metric improvement}
+1. {Issue} — {specific action} — Owner: {owner} — KPI: {metric} — Validation: {how to confirm}
 2. {Issue} — {specific action} — Expected outcome: {metric improvement}
 
 ### Tier 2 — Fix This Month (Priority Score 8–14)
@@ -852,6 +895,11 @@ Priority score = Impact × Effort. Higher = fix first.
 
 ## What's Working
 {Positive findings — be specific, cite scores that are at or above benchmark}
+
+## Action Table
+
+| Finding | Evidence | Why it matters | Exact fix | Owner | Effort | KPI | Validation |
+|---------|----------|----------------|-----------|-------|--------|-----|------------|
 
 ## Industry Context
 {Summarize which benchmarks were used and where the brand sits relative to them}
@@ -887,18 +935,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-audit","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-audit","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-audit"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
