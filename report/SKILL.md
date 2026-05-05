@@ -450,7 +450,8 @@ PROJECT_DIR="${MSTACK_HOME:-$HOME/.mstack}/projects/${SLUG:-unknown}"
 
 # Check for analytics API keys
 echo "GA4_PROPERTY_ID: ${GA4_PROPERTY_ID:+set}"
-echo "GA4_API_KEY: ${GA4_API_KEY:+set}"
+echo "GA4_CREDENTIALS: ${GA4_CREDENTIALS:+set}"
+echo "SEARCH_CONSOLE_CREDENTIALS: ${SEARCH_CONSOLE_CREDENTIALS:+set}"
 echo "GSC_SITE_URL: ${GSC_SITE_URL:+set}"
 
 # Find previous reports for trend comparison
@@ -479,16 +480,44 @@ Then ask:
 
 STOP and wait.
 
+## Data Contract
+
+Before collecting data, define:
+
+| Field | Value |
+|-------|-------|
+| Source of truth | GA4 / Search Console / CRM / ad platform / manual |
+| Owner | {person/team} |
+| Freshness | {last updated} |
+| Timezone | {timezone} |
+| Currency | {currency} |
+| Identity grain | user / account / session / lead / customer |
+| Conversion window | {window} |
+| Channel and UTM rules | {rules} |
+| Bot/internal exclusions | {rules} |
+
+Every reported metric must have:
+
+| Metric | Numerator | Denominator | Unit | Event/query source | Filters/exclusions | Period | Owner | Freshness | Confidence |
+|--------|-----------|-------------|------|--------------------|--------------------|--------|-------|-----------|------------|
+
+If data is missing, sampled, stale, low volume, mismatched by period, or affected
+by bot/internal traffic, label the section `directional`.
+
 ## Step 1: Collect Data
 
-**If API keys are available:**
+**If credentials are available:**
 
-Pull GA4 data for current period AND prior period (for trend comparison):
+Pull GA4 data for current period AND prior period using configured credentials.
+If the environment has only credential file paths, use the local auth helper or
+ask the user for exported metrics. Do not use `GA4_API_KEY` as a Bearer token.
+
+Example request shape after obtaining a valid OAuth access token:
 ```bash
 # GA4 data pull — current period
 curl -s -X POST \
   "https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runReport" \
-  -H "Authorization: Bearer ${GA4_API_KEY}" \
+  -H "Authorization: Bearer {OAUTH_ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
     "dateRanges": [
@@ -513,7 +542,7 @@ Pull Search Console data with keyword-level detail:
 ```bash
 curl -s -X POST \
   "https://www.googleapis.com/webmasters/v3/sites/${GSC_SITE_URL}/searchAnalytics/query" \
-  -H "Authorization: Bearer ${GA4_API_KEY}" \
+  -H "Authorization: Bearer {OAUTH_ACCESS_TOKEN_FROM_SEARCH_CONSOLE_CREDENTIALS}" \
   -H "Content-Type: application/json" \
   -d '{
     "startDate": "{start}",
@@ -581,6 +610,8 @@ Before channel analysis, establish the metrics framework for this report.
 | Payback period | | | | |
 
 Flag any metric with a change >15% (positive or negative) with a note explaining likely cause. Changes between 5–15% are normal variance; treat as signal only if consistent across 3+ periods.
+Do not call a change causal unless an event annotation, campaign, deployment, or
+channel source supports it.
 
 ## Step 3: Trend Analysis
 
@@ -606,6 +637,10 @@ Flag any metric with a change >15% (positive or negative) with a note explaining
 - Changes consistent across 2+ periods: signal — investigate cause
 - Metric moves opposite to a correlated metric: flag as anomaly (e.g., traffic up but conversions flat)
 - Seasonality: note if change aligns with known seasonal patterns for the vertical
+- Use minimum volume and variance checks before flagging anomalies. Mark low
+  volume changes as directional.
+- Include calendar-matched prior periods and YoY when seasonality matters.
+- Add acquisition, retention, and revenue cohorts when the data supports them.
 
 ## Step 4: Channel Performance
 
@@ -733,6 +768,14 @@ Top 3 conversion paths by frequency:
 - Channels that appear weak in last-touch but strong in first-touch: {list} — may be undervalued; supports top-of-funnel
 - Recommended: review budget allocation quarterly as attribution picture matures
 
+Include:
+- Conversion window.
+- Channel mapping and UTM taxonomy.
+- First-touch vs last-touch vs data-driven comparison if available.
+- CRM/offline revenue reconciliation.
+- Cookie loss, consent, and identity caveats.
+- Budget recommendation confidence.
+
 ## Step 7: Executive Summary
 
 Write this section FIRST in the final report — stakeholders read only this.
@@ -759,6 +802,15 @@ Write this section FIRST in the final report — stakeholders read only this.
 Status: {on track / needs attention / at risk}
 ```
 
+Frame the executive summary as a decision memo:
+- Thesis.
+- Scorecard.
+- Business impact.
+- Risks.
+- Confidence.
+- Decision needed.
+- Owner and deadline.
+
 ## Step 8: Recommendations
 
 Each recommendation follows this format: **What → Why → Expected Impact → Effort**
@@ -770,6 +822,11 @@ Based on the data, provide 3–5 prioritized recommendations:
 - Why: {data point that motivates this — cite the metric and its value}
 - Expected impact: {quantified if possible — e.g., "+15–20% organic sessions within 60 days based on current keyword gap"}
 - Effort: Low / Medium / High — {1–2 sentence effort description}
+- Confidence: {high/medium/low}
+- Owner: {owner}
+- Deadline: {date}
+- Guardrail: {metric that should not degrade}
+- Monitoring path: {dashboard/chart/query}
 
 **Priority 2 — {Action title}**
 - What: {specific, actionable instruction}
@@ -805,6 +862,13 @@ When presenting this report (in a deck, dashboard, or doc), use the following ch
 | NSM over time with events annotated | Line chart + event markers | Connects actions to outcomes |
 
 Annotation rule: any chart showing a >15% swing should include a text annotation explaining the likely cause.
+
+## Dashboard Spec
+
+For every chart or table, include:
+
+| Chart | Metric | Source/query | Refresh cadence | Owner | Filters | Target | Alert threshold | Link |
+|-------|--------|--------------|-----------------|-------|---------|--------|-----------------|------|
 
 ## Step 10: Benchmark Summary
 
@@ -844,6 +908,15 @@ Save the complete report with all sections in the following order:
 7. Recommendations (prioritized, with What/Why/Impact/Effort)
 8. Visualization Guide (for deck use)
 9. Benchmark Comparison
+10. Source/query appendix
+11. Dashboard spec
+12. Privacy and data-quality notes
+
+Reporting privacy:
+- Do not save raw PII or secrets in reports.
+- Aggregate small cohorts when individual users could be identified.
+- Name external APIs used.
+- Log only sanitized learnings; no customer names, tokens, or raw identifiers.
 
 ## Completion
 
@@ -868,18 +941,22 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-~/.claude/skills/mstack/bin/mstack-learnings-log '{"skill":"m-report","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+~/.claude/skills/mstack/bin/mstack-learnings-log '{"id":"learn-SHORT_KEY","skill":"m-report","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","scope":"project","evidence":[],"applies_to":["m-report"],"status":"active","supersedes":[],"files":["path/to/relevant/file"]}'
 ```
 
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
+**Types:** `content`, `seo`, `social`, `ads`, `audience`, `operational`.
+Use `operational` for project environment, CLI, or workflow knowledge.
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
 `inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**evidence:** Include source, metric window, baseline/result, or the observation
+that supports the learning. Leave empty only for operational facts.
+
+**applies_to:** List the mstack skills that should use this learning later.
 
 **files:** Include the specific file paths this learning references. This enables
 staleness detection: if those files are later deleted, the learning can be flagged.
